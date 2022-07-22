@@ -3,17 +3,9 @@ import requests
 import json
 from bs4 import BeautifulSoup
 import re
+import scraper
 
 app = Flask(__name__)
-
-# TO DO:
-# General movie search: parse data, then add some filters
-# General TV show search: parse data, then add some filters
-
-# Director search
-# Producer search
-# Actor(s) search
-
 
 @app.route('/')
 def index():
@@ -27,15 +19,28 @@ def test():
         print(request.form["audienceSlider"])
     return render_template("test.html")
 
-@app.route('/movies/', methods=['GET', 'POST'])
-def get_movies():
-    if request.method == "POST":
-        print(request.form.getlist("genre"))
-        print(request.form.getlist("rating"))
-        print(request.form.getlist("platform"))
-        print(request.form["tomatometerSlider"])
-        print(request.form["audienceSlider"])
-        print(request.form["recommendationsNumber"])
+@app.route('/movies/', methods=['GET'])
+def movies():
+    return render_template('movies.html')
+
+@app.route('/movies/recommendations/', methods=['POST'])
+def movieRecommendations():
+  
+    genres = request.form.getlist("genres")
+    ratings = request.form.getlist("ratings")
+    platforms = request.form.getlist("platforms")
+    tomatometerScore = request.form["tomatometerSlider"]
+    audienceScore = request.form["audienceSlider"]
+    recommendationsNumber = request.form["recommendationsNumber"]
+
+    print(genres)
+    print(ratings)
+    print(platforms)
+    print(tomatometerScore)
+    print(audienceScore)
+    print(recommendationsNumber)
+
+    print(scraper.generateURLs("MOVIE", genres, ratings, platforms))
 
     html_text = requests.get(
         url="https://www.rottentomatoes.com/browse/movies_at_home/sort:popular?page=1"
@@ -44,7 +49,7 @@ def get_movies():
     movies = moviePageSoup.find_all(
         "a", 
         attrs={"href": re.compile("/m/"), "data-id": True}, 
-        limit=1 # LIMIT IS 5 FOR NOW
+        limit=5 # DEBUGGING
     )
     movieInfo = {}
 
@@ -97,5 +102,5 @@ def get_movies():
             else:
                 continue
             movieInfo[name][info.text[0:-1].lower()] = formattedInfo
-   
-    return render_template('movies.html', movieInfo=movieInfo)
+
+    return render_template("movieRecommendations.html", movieInfo=movieInfo)
