@@ -17,66 +17,32 @@
         Need something to watch? Check out these recommendations scraped from
         <strong>Rotten Tomatoes</strong>!
       </p>
-        <a class="button" href="/"> Home </a>
-        <a class="button" href="/movies"> More movie recommendations </a>
+      <a class="button" href="/"> Home </a>
+      <a class="button" href="/movies"> More movie recommendations </a>
     </div>
   </section>
 
   <body>
     <section class="section">
-      <div class="tile is-ancestor">
-        <div class="tile is-vertical is-3 is-parent">
-          {% for movie in movieInfo[0] %}
-          <article class="tile is-child notification is-info">
-            <p class="title">{{ movie["name"] }}</p>
-            <a href="{{movie["url"]}}" target="_blank">
+      {% for row in movieInfo %}
+      <div class="level">
+        <div class="level-item tile is-ancestor">
+          {% for movie in row %}
+          <div class="tile is-3 is-parent">
+            <article class="tile is-child notification is-info">
+              <p class="title">{{ movie.name }}</p>
+              <a href="{{ movie.url }}" target="_blank">
                 <figure class="image is-2by3">
-                    <img src="{{movie["posterImage"]}}"/>
+                  <img src="{{ movie.posterImage }}" />
                 </figure>
-            </a>
-          </article>
-          {% endfor %}
-        </div>
-
-        <div class="tile is-vertical is-3 is-parent">
-          {% for movie in movieInfo[1] %}
-          <article class="tile is-child notification is-info">
-            <p class="title">{{ movie["name"] }}</p>
-            <a href="{{movie["url"]}}" target="_blank">
-                <figure class="image is-2by3">
-                    <img src="{{movie["posterImage"]}}"/>
-                </figure>
-            </a>
-          </article>
-          {% endfor %}
-        </div>
-
-        <div class="tile is-vertical is-3 is-parent">
-          {% for movie in movieInfo[2] %}
-          <article class="tile is-child notification is-info">
-            <p class="title">{{ movie["name"] }}</p>
-            <a href="{{movie["url"]}}" target="_blank">
-                <figure class="image is-2by3">
-                    <img src="{{movie["posterImage"]}}"/>
-                </figure>
-            </a>
-          </article>
-          {% endfor %}
-        </div>
-
-        <div class="tile is-vertical is-3 is-parent">
-          {% for movie in movieInfo[3] %}
-          <article class="tile is-child notification is-info">
-            <p class="title">{{ movie["name"] }}</p>
-            <a href="{{movie["url"]}}" target="_blank">
-                <figure class="image is-2by3">
-                    <img src="{{movie["posterImage"]}}"/>
-                </figure>
-            </a>
-          </article>
+              </a>
+              <h3></h3>
+            </article>
+          </div>
           {% endfor %}
         </div>
       </div>
+      {% endfor %}
     </section>
     <div class="content is-large">{{movieInfo}}</div>
   </body>
