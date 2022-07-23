@@ -55,9 +55,8 @@ def generateURLs(type, genres, ratings, platforms):
         return URLs
 
 def scrapeMovies(URLs, tomatometerScore, audienceScore, recommendationsNumber):
-    # array of four lists, one for each column
-    # Each list contains dictionaries, one for each movie
-    movieInfo = [[], [], [], []]
+    # array of row arrays; each row array contains up to 4 dictionaries/movies
+    movieInfo = [[]]
     movieCount = 0
     desiredInfoCategories = [
         "Rating:", "Genre:", "Original Language:", "Release Date (Theaters):",
@@ -130,7 +129,12 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, recommendationsNumber):
                     continue
                 movieInfoDict[info.text[0:-1].lower()] = formattedInfo
             
-            movieInfo[movieCount % len(movieInfo)].append(movieInfoDict)
+            # if the last row is full, create a new row
+            if len(movieInfo[-1]) == 4:
+                movieInfo.append([movieInfoDict])
+            else:
+                movieInfo[-1].append(movieInfoDict)
+
             movieCount += 1
     
     # DEBUGGING: Print total number of movies scraped
