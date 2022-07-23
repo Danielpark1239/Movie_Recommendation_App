@@ -17,10 +17,8 @@
         Need something to watch? Check out these recommendations scraped from
         <strong>Rotten Tomatoes</strong>!
       </p>
-      <div class="container">
         <a class="button" href="/"> Home </a>
         <a class="button" href="/movies"> More movie recommendations </a>
-      </div>
     </div>
   </section>
 
@@ -31,7 +29,7 @@
           {% for movie in movieInfo[0] %}
           <article class="tile is-child notification is-info">
             <p class="title">{{ movie["name"] }}</p>
-            <a href="{{movie["url"]}}">
+            <a href="{{movie["url"]}}" target="_blank">
                 <figure class="image is-2by3">
                     <img src="{{movie["posterImage"]}}"/>
                 </figure>
@@ -44,7 +42,7 @@
           {% for movie in movieInfo[1] %}
           <article class="tile is-child notification is-info">
             <p class="title">{{ movie["name"] }}</p>
-            <a href="{{movie["url"]}}">
+            <a href="{{movie["url"]}}" target="_blank">
                 <figure class="image is-2by3">
                     <img src="{{movie["posterImage"]}}"/>
                 </figure>
@@ -57,7 +55,7 @@
           {% for movie in movieInfo[2] %}
           <article class="tile is-child notification is-info">
             <p class="title">{{ movie["name"] }}</p>
-            <a href="{{movie["url"]}}">
+            <a href="{{movie["url"]}}" target="_blank">
                 <figure class="image is-2by3">
                     <img src="{{movie["posterImage"]}}"/>
                 </figure>
@@ -70,7 +68,7 @@
           {% for movie in movieInfo[3] %}
           <article class="tile is-child notification is-info">
             <p class="title">{{ movie["name"] }}</p>
-            <a href="{{movie["url"]}}">
+            <a href="{{movie["url"]}}" target="_blank">
                 <figure class="image is-2by3">
                     <img src="{{movie["posterImage"]}}"/>
                 </figure>
