@@ -55,7 +55,10 @@ def generateURLs(type, genres, ratings, platforms):
         return URLs
 
 def scrapeMovies(URLs, tomatometerScore, audienceScore, recommendationsNumber):
-    movieInfo = {}
+    # array of four lists, one for each column
+    # Each list contains dictionaries, one for each movie
+    movieInfo = [[], [], [], []]
+    movieCount = 0
     desiredInfoCategories = [
         "Rating:", "Genre:", "Original Language:", "Release Date (Theaters):",
         "Release Date (Streaming):", "Runtime:"
@@ -77,21 +80,30 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, recommendationsNumber):
             scores = data.contents[1]
             name = data.contents[-2].text.strip()
 
-            movieInfo[name] = {
+            movieInfoDict = {
+                "name": name,
                 "audienceScore": scores["audiencescore"],
                 "criticsScore": scores["criticsscore"],
+                "url": url
             }
 
             # Get additional data about the movie by looking at its page
             movie_html_text = requests.get(url).text
             movieSoup = BeautifulSoup(movie_html_text, "lxml")
+            
+            # Movie poster image
+            posterImage = movieSoup.find(
+                "img",
+                attrs={"class": "posterImage js-lazyLoad"}
+            )
+            movieInfoDict["posterImage"] = posterImage["data-src"]
 
             # Available streaming platforms
             availablePlatforms = movieSoup.find_all("where-to-watch-meta")
             platformList = []
             for platform in availablePlatforms:
                 platformList.append(platform["affiliate"])
-            movieInfo[name]["platforms"] = platformList
+            movieInfoDict["platforms"] = platformList
 
             # Additional information (rating, genre, etc.)
             additionalInfo = movieSoup.find_all(
@@ -116,6 +128,12 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, recommendationsNumber):
                     formattedInfo = date[0] + " " + date[1] + " " + date[2]
                 else:
                     continue
-                movieInfo[name][info.text[0:-1].lower()] = formattedInfo
-    print(len(movieInfo))
+                movieInfoDict[info.text[0:-1].lower()] = formattedInfo
+            
+            movieInfo[movieCount % len(movieInfo)].append(movieInfoDict)
+            movieCount += 1
+    
+    # DEBUGGING: Print total number of movies scraped
+    print(f"Movie count: {movieCount}")
+
     return movieInfo
