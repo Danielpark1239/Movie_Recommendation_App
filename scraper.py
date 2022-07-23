@@ -1,3 +1,8 @@
+import requests
+from bs4 import BeautifulSoup
+import json
+import re
+
 def generateURLs(type, genres, ratings, platforms):
     URLs = []
     if type == "MOVIE":
@@ -46,5 +51,71 @@ def generateURLs(type, genres, ratings, platforms):
                 platformString = "affiliates:" + ",".join(platforms) + "~"
 
             URLs.append(homeURL + platformString + genreString + ratingString + "sort:popular?page=1")
-
+        print(URLs)
         return URLs
+
+def scrapeMovies(URLs, tomatometerScore, audienceScore, recommendationsNumber):
+    movieInfo = {}
+    desiredInfoCategories = [
+        "Rating:", "Genre:", "Original Language:", "Release Date (Theaters):",
+        "Release Date (Streaming):", "Runtime:"
+    ]
+    for url in URLs:
+        html_text = requests.get(
+            url=url
+        ).text
+        moviePageSoup = BeautifulSoup(html_text, "lxml")
+        movies = moviePageSoup.find_all(
+            "a", 
+            attrs={"href": re.compile("/m/"), "data-id": True}, 
+            limit=int(recommendationsNumber) // len(URLs)
+        )
+
+        for movie in movies:
+            url = "https://www.rottentomatoes.com" + movie["href"]
+            data = movie.find("div", slot="caption")
+            scores = data.contents[1]
+            name = data.contents[-2].text.strip()
+
+            movieInfo[name] = {
+                "audienceScore": scores["audiencescore"],
+                "criticsScore": scores["criticsscore"],
+            }
+
+            # Get additional data about the movie by looking at its page
+            movie_html_text = requests.get(url).text
+            movieSoup = BeautifulSoup(movie_html_text, "lxml")
+
+            # Available streaming platforms
+            availablePlatforms = movieSoup.find_all("where-to-watch-meta")
+            platformList = []
+            for platform in availablePlatforms:
+                platformList.append(platform["affiliate"])
+            movieInfo[name]["platforms"] = platformList
+
+            # Additional information (rating, genre, etc.)
+            additionalInfo = movieSoup.find_all(
+                "div", 
+                attrs={"data-qa": "movie-info-item-label"}
+            )
+
+            for info in additionalInfo:
+                # Format metadata depending on info category
+                if info.text == desiredInfoCategories[0]:
+                    formattedInfo = info.next_sibling.next_sibling.text.split()[0]
+                elif info.text == desiredInfoCategories[1]:
+                    formattedInfo = info.next_sibling.next_sibling.text.strip()
+                    formattedInfo = formattedInfo.replace(" ", "").replace("\n", "")
+                    formattedInfo = formattedInfo.split(",")
+                elif info.text == desiredInfoCategories[2] or \
+                    info.text == desiredInfoCategories[5]:
+                    formattedInfo = info.next_sibling.next_sibling.text.strip()
+                elif info.text == desiredInfoCategories[3] or \
+                    info.text == desiredInfoCategories[4]:
+                    date = info.next_sibling.next_sibling.text.split()
+                    formattedInfo = date[0] + " " + date[1] + " " + date[2]
+                else:
+                    continue
+                movieInfo[name][info.text[0:-1].lower()] = formattedInfo
+    print(len(movieInfo))
+    return movieInfo
