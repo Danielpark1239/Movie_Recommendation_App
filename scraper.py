@@ -91,11 +91,15 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, recommendationsNumber):
             movieSoup = BeautifulSoup(movie_html_text, "lxml")
             
             # Movie poster image
+            print(name)
             posterImage = movieSoup.find(
                 "img",
-                attrs={"class": "posterImage js-lazyLoad"}
+                attrs={"class": re.compile("posterImage")}
             )
-            movieInfoDict["posterImage"] = posterImage["data-src"]
+            if posterImage.has_attr("data-src"):
+                movieInfoDict["posterImage"] = posterImage["data-src"]
+            else:
+                movieInfoDict["posterImage"] = "../../static/blank_poster.png"
 
             # Available streaming platforms
             availablePlatforms = movieSoup.find_all("where-to-watch-meta")
