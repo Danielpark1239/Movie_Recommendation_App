@@ -9,10 +9,8 @@
       href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
     />
     <link
-      rel="icon"
-      type="image/png"
-      href="tomato-favicon-32x32.png"
-      sizes="32x32"
+      rel="shortcut icon"
+      href="{{ url_for('static', filename='tomato-favicon.ico') }}"
     />
   </head>
 
@@ -23,15 +21,29 @@
         Need something to watch? Check out these recommendations scraped from
         <strong>Rotten Tomatoes</strong>!
       </p>
-
       <button class="button" onClick="window.location.reload()">Refresh</button>
-      <a class="button" href="/movies"> Get movie recommendations! </a>
     </div>
   </section>
 
-  <body></body>
+  <body class="has-background-light">
+    <section class="section">
+      <aside class="menu">
+        <p class="menu-label">Navigation</p>
+        <ul class="menu-list">
+          <li>
+            <a href="/movies">Get movie recommendations</a>
+            <a>Get TV show recommendations</a>
+            <a>Get works by actor</a>
+            <a>Get works by director</a>
+            <a>Get works by producer</a>
+            <a>Get similar movies and shows</a>
+          </li>
+        </ul>
+      </aside>
+    </section>
+  </body>
 
-  <footer class="footer">
+  <footer class="footer has-background-light">
     <div class="content has-text-centered">
       <p>
         <strong>Rotten Tomatoes Recommendation App</strong> by
