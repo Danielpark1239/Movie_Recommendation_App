@@ -101,7 +101,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, recommendationsNumber):
             availablePlatforms = movieSoup.find_all("where-to-watch-meta")
             platformList = []
             for platform in availablePlatforms:
-                platformList.append(platform["affiliate"])
+                    platformList.append(platform["affiliate"])
             movieInfoDict["platforms"] = platformList
 
             # Additional information (rating, genre, etc.)
@@ -136,6 +136,10 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, recommendationsNumber):
                 movieInfo[-1].append(movieInfoDict)
 
             movieCount += 1
+
+            # After filtering, we need to format data so it's human readable
+            # Edits to make:
+            # Change platforms, including changing "showtimes" to "in theaters"
     
     # DEBUGGING: Print total number of movies scraped
     print(f"Movie count: {movieCount}")
