@@ -8,6 +8,10 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
     />
+    <link
+      rel="shortcut icon"
+      href="{{ url_for('static', filename='tomato-favicon.ico') }}"
+    />
   </head>
 
   <section class="hero is-info">
@@ -22,7 +26,7 @@
     </div>
   </section>
 
-  <body>
+  <body class="has-background-light">
     <section class="section">
       {% for row in movieInfo %}
       <div class="level">
@@ -30,13 +34,53 @@
           {% for movie in row %}
           <div class="tile is-3 is-parent">
             <article class="tile is-child notification is-info">
-              <p class="title">{{ movie.name }}</p>
+              <p class="title has-text-centered">{{ movie.name }}</p>
               <a href="{{ movie.url }}" target="_blank">
                 <figure class="image is-2by3">
                   <img src="{{ movie.posterImage }}" />
                 </figure>
               </a>
-              <h3></h3>
+              <nav class="level">
+                <div class="level-left">
+                  <div class="level-item">
+                    <img
+                      src="../../static/tomato-favicon-16x16.png"
+                      alt="tomato"
+                    />
+                    <p class="subtitle">{{ movie.criticsScore }}</p>
+                  </div>
+                </div>
+                <div class="level-right">
+                  <div class="level-item">
+                    <img
+                      src="../../static/popcorn-favicon-16x16.png"
+                      alt="popcorn"
+                    />
+                    <p class="subtitle">{{ movie.audienceScore }}</p>
+                  </div>
+                </div>
+              </nav>
+
+              <ul>
+                <li>Genres: {{ movie.genre }}</li>
+                <li>Rating: {{ movie.rating }}</li>
+                <li>Platforms: {{ movie.platforms }}</li>
+                {% if movie["original language"] %}
+                <li>Original language: {{ movie["original language"] }}</li>
+                {% endif %} {% if movie["release date (theaters)"] %}
+                <li>
+                  Release Date (Theaters): {{ movie["release date (theaters)"]
+                  }}
+                </li>
+                {% endif %} {% if movie["release date (streaming)"] %}
+                <li>
+                  Release Date (Streaming): {{ movie["release date (streaming)"]
+                  }}
+                </li>
+                {% endif %} {% if movie["runtime"] %}
+                <li>Runtime: {{ movie["runtime"] }}</li>
+                {% endif %}
+              </ul>
             </article>
           </div>
           {% endfor %}
