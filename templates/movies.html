@@ -8,6 +8,10 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
     />
+    <link
+      rel="shortcut icon"
+      href="{{ url_for('static', filename='tomato-favicon.ico') }}"
+    />
   </head>
 
   <section class="hero is-info">
@@ -22,7 +26,7 @@
     </div>
   </section>
 
-  <body>
+  <body class="has-background-light">
     <section class="section">
       <div class="container">
         <form action="/movies/recommendations/" method="POST">
@@ -190,14 +194,16 @@
             </div>
           </div>
           <div>
-            <button type="submit">Generate recommendations!</button>
+            <button class="button" type="submit">
+              Generate recommendations!
+            </button>
           </div>
         </form>
       </div>
     </section>
   </body>
 
-  <footer class="footer">
+  <footer class="footer has-background-light">
     <div class="content has-text-centered">
       <p>
         <strong>Rotten Tomatoes Recommendation App</strong> by
