@@ -27,20 +27,20 @@ def movieRecommendations():
     platforms = request.form.getlist("platforms")
     tomatometerScore = request.form["tomatometerSlider"]
     audienceScore = request.form["audienceSlider"]
-    recommendationsNumber = request.form["recommendationsNumber"]
+    limit = request.form["limit"]
 
     print(genres) # accounted for in URL
     print(ratings) # accounted for in URL
     print(platforms) # accounted for in URL
     print(tomatometerScore) 
     print(audienceScore)
-    print(recommendationsNumber) # ^ These three need to be filtered
+    print(limit) # ^ These three need to be filtered in scraping func
 
     URLs = scraper.generateURLs(
-        "MOVIE", genres, ratings, platforms, tomatometerScore, audienceScore, recommendationsNumber
+        "MOVIE", genres, ratings, platforms, tomatometerScore, audienceScore, limit
     )
     movieInfo = scraper.scrapeMovies(
-        URLs, tomatometerScore, audienceScore, recommendationsNumber
+        URLs, tomatometerScore, audienceScore, limit
     )
 
     return render_template("movieRecommendations.html", movieInfo=movieInfo)
