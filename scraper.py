@@ -158,6 +158,22 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, recommendationsNumber):
 
             movieCount += 1
 
+            # TODO:
+
+            # Figure out beforehand how many results we need and how many
+            # pages we need to look through, then add to urls
+            # -> Add this functionality to the URL scraper
+
+            # Filtering must happen before we parse movie data, e.g.
+            # check if the movie fits our paramters, then scrape the rest 
+            # of the data
+
+            # skip some entries for randomness
+
+            # Use a dictionary to avoid duplicates
+
+
+
             # After filtering, we need to format data so it's human readable
             # Edits to make:
             # Change platforms, including changing "showtimes" to "in theaters"
