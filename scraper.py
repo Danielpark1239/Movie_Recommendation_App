@@ -4,7 +4,7 @@ import json
 import re
 
 def generateURLs(
-    type, genres, ratings, platforms, tomatometerScore, audienceScore, recommendationsNumber
+    type, genres, ratings, platforms, tomatometerScore, audienceScore, limit
 ):  
     URLs = []
     # RT shows 30 movies per page max
@@ -12,17 +12,17 @@ def generateURLs(
     if type == "MOVIE":
         theatersURL = "https://www.rottentomatoes.com/browse/movies_in_theaters/"
         homeURL = "https://www.rottentomatoes.com/browse/movies_at_home/"
+        
+        audienceStrings = ["audience:upright~"]
+        if int(audienceScore) < 60:   
+            audienceStrings.append("audience:spilled~")
 
-        if int(audienceScore) >= 60:   
-            audienceString = "audience:upright~"
-        else:
-            audienceString = "audience:spilled~"
+        tomatometerStrings = ["critics:fresh~"]
+        if int(tomatometerScore) < 60:
+            tomatometerStrings.append("critics:rotten~")
 
-        if int(tomatometerScore) >= 60:
-            tomatometerString = "critics:fresh~"
-        else:
-            tomatometerString = "critics:rotten~"
-
+        # number of combinations of score strings
+        scoreCombinations = len(audienceStrings) * len(tomatometerStrings)
 
         if "all" in genres or len(genres) == 0:
             genreString = ""
@@ -46,18 +46,17 @@ def generateURLs(
             # We scrape through double the number of entries we need
             pageString = "sort:popular?page="
 
-            # We're also generating from the homeURL, so # entries we need here
-            # = recommendationsNumber
             if "all" in platforms or len(platforms) > 0:
-                pageString += str(int(recommendationsNumber) // ENTRIES_PER_PAGE + 1)
-            # only url we generate, so # entries we need = recommendationsNumber * 2
+                pageString += str(int(limit) // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
             else:
-                pageString +=  str((2 * int(recommendationsNumber)) // ENTRIES_PER_PAGE + 1)
+                pageString +=  str((2 * int(limit)) // (ENTRIES_PER_PAGE * scoreCombinations)+ 1)
 
-            URLs.append(
-                theatersURL + audienceString + tomatometerString + genreString\
-                + ratingString + pageString
-            )
+            for audienceString in audienceStrings:
+                for tomatometerString in tomatometerStrings:
+                    URLs.append(
+                        theatersURL + audienceString + tomatometerString \
+                        + genreString + ratingString + pageString
+                    )
         
         # Generate from homeURL
         if "all" in platforms or len(platforms) > 0:
@@ -82,19 +81,21 @@ def generateURLs(
                 platformString = "affiliates:" + ",".join(platforms) + "~"
             
             pageString = "sort:popular?page="
-            if len(URLs) == 1:
-                pageString += str(int(recommendationsNumber) // ENTRIES_PER_PAGE + 1)
+            if len(URLs) > 0:
+                pageString += str(int(limit) // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
             else:
-                pageString +=  str((2 * int(recommendationsNumber)) // ENTRIES_PER_PAGE + 1)
+                pageString +=  str((2 * int(limit)) // (ENTRIES_PER_PAGE * scoreCombinations)+ 1)
 
-            URLs.append(
-                homeURL + audienceString + tomatometerString + platformString\
-                + genreString + ratingString + pageString
-            )
+            for audienceString in audienceStrings:
+                for tomatometerString in tomatometerStrings:
+                    URLs.append(
+                        homeURL + audienceString + tomatometerString + platformString\
+                        + genreString + ratingString + pageString
+                    )
         print(URLs)
         return URLs
 
-def scrapeMovies(URLs, tomatometerScore, audienceScore, recommendationsNumber):
+def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     # array of row arrays; each row array contains up to 4 dictionaries/movies
     movieInfo = [[]]
     movieCount = 0
@@ -110,7 +111,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, recommendationsNumber):
         movies = moviePageSoup.find_all(
             "a", 
             attrs={"href": re.compile("/m/"), "data-id": True}, 
-            limit=int(recommendationsNumber) // len(URLs)
+            limit=(2 * int(limit) // len(URLs)) + 1
         )
 
         for movie in movies:
