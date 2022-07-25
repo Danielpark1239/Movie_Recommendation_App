@@ -36,7 +36,9 @@ def movieRecommendations():
     print(audienceScore)
     print(recommendationsNumber) # ^ These three need to be filtered
 
-    URLs = scraper.generateURLs("MOVIE", genres, ratings, platforms)
+    URLs = scraper.generateURLs(
+        "MOVIE", genres, ratings, platforms, tomatometerScore, audienceScore
+    )
     movieInfo = scraper.scrapeMovies(
         URLs, tomatometerScore, audienceScore, recommendationsNumber
     )
