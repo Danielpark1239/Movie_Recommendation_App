@@ -3,11 +3,22 @@ from bs4 import BeautifulSoup
 import json
 import re
 
-def generateURLs(type, genres, ratings, platforms):
+def generateURLs(type, genres, ratings, platforms, tomatometerScore, audienceScore):
     URLs = []
     if type == "MOVIE":
         theatersURL = "https://www.rottentomatoes.com/browse/movies_in_theaters/"
         homeURL = "https://www.rottentomatoes.com/browse/movies_at_home/"
+
+        if int(audienceScore) >= 60:   
+            audienceString = "audience:upright~"
+        else:
+            audienceString = "audience:spilled~"
+
+        if int(tomatometerScore) >= 60:
+            tomatometerString = "critics:fresh~"
+        else:
+            tomatometerString = "critics:rotten~"
+
 
         if "all" in genres or len(genres) == 0:
             genreString = ""
@@ -26,7 +37,10 @@ def generateURLs(type, genres, ratings, platforms):
         if "all" in platforms or "showtimes" in platforms:
             if "showtimes" in platforms:
                 platforms.remove("showtimes")
-            URLs.append(theatersURL + genreString + ratingString + "sort:popular?page=1")
+            URLs.append(
+                theatersURL + audienceString + tomatometerString + genreString\
+                + ratingString + "sort:popular?page=1"
+            )
         
         # Generate from homeURL
         if "all" in platforms or len(platforms) > 0:
@@ -50,7 +64,10 @@ def generateURLs(type, genres, ratings, platforms):
                 platforms = [platformDict[platform] for platform in platforms]
                 platformString = "affiliates:" + ",".join(platforms) + "~"
 
-            URLs.append(homeURL + platformString + genreString + ratingString + "sort:popular?page=1")
+            URLs.append(
+                homeURL + audienceString + tomatometerString + platformString\
+                + genreString + ratingString + "sort:popular?page=1"
+            )
         print(URLs)
         return URLs
 
@@ -144,6 +161,8 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, recommendationsNumber):
             # After filtering, we need to format data so it's human readable
             # Edits to make:
             # Change platforms, including changing "showtimes" to "in theaters"
+
+
     
     # DEBUGGING: Print total number of movies scraped
     print(f"Movie count: {movieCount}")
