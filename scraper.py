@@ -3,8 +3,12 @@ from bs4 import BeautifulSoup
 import json
 import re
 
-def generateURLs(type, genres, ratings, platforms, tomatometerScore, audienceScore):
+def generateURLs(
+    type, genres, ratings, platforms, tomatometerScore, audienceScore, recommendationsNumber
+):  
     URLs = []
+    # RT shows 30 movies per page max
+    ENTRIES_PER_PAGE = 30
     if type == "MOVIE":
         theatersURL = "https://www.rottentomatoes.com/browse/movies_in_theaters/"
         homeURL = "https://www.rottentomatoes.com/browse/movies_at_home/"
@@ -37,9 +41,22 @@ def generateURLs(type, genres, ratings, platforms, tomatometerScore, audienceSco
         if "all" in platforms or "showtimes" in platforms:
             if "showtimes" in platforms:
                 platforms.remove("showtimes")
+
+            # Determine the number of pages we need
+            # We scrape through double the number of entries we need
+            pageString = "sort:popular?page="
+
+            # We're also generating from the homeURL, so # entries we need here
+            # = recommendationsNumber
+            if "all" in platforms or len(platforms) > 0:
+                pageString += str(int(recommendationsNumber) // ENTRIES_PER_PAGE + 1)
+            # only url we generate, so # entries we need = recommendationsNumber * 2
+            else:
+                pageString +=  str((2 * int(recommendationsNumber)) // ENTRIES_PER_PAGE + 1)
+
             URLs.append(
                 theatersURL + audienceString + tomatometerString + genreString\
-                + ratingString + "sort:popular?page=1"
+                + ratingString + pageString
             )
         
         # Generate from homeURL
@@ -63,10 +80,16 @@ def generateURLs(type, genres, ratings, platforms, tomatometerScore, audienceSco
                 }
                 platforms = [platformDict[platform] for platform in platforms]
                 platformString = "affiliates:" + ",".join(platforms) + "~"
+            
+            pageString = "sort:popular?page="
+            if len(URLs) == 1:
+                pageString += str(int(recommendationsNumber) // ENTRIES_PER_PAGE + 1)
+            else:
+                pageString +=  str((2 * int(recommendationsNumber)) // ENTRIES_PER_PAGE + 1)
 
             URLs.append(
                 homeURL + audienceString + tomatometerString + platformString\
-                + genreString + ratingString + "sort:popular?page=1"
+                + genreString + ratingString + pageString
             )
         print(URLs)
         return URLs
