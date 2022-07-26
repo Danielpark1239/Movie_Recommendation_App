@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-import json
+import random
 import re
 
 def generateURLs(
@@ -14,11 +14,11 @@ def generateURLs(
         homeURL = "https://www.rottentomatoes.com/browse/movies_at_home/"
         
         audienceStrings = ["audience:upright~"]
-        if int(audienceScore) < 60:   
+        if audienceScore < 60:   
             audienceStrings.append("audience:spilled~")
 
         tomatometerStrings = ["critics:fresh~"]
-        if int(tomatometerScore) < 60:
+        if tomatometerScore < 60:
             tomatometerStrings.append("critics:rotten~")
 
         # number of combinations of score strings
@@ -47,9 +47,9 @@ def generateURLs(
             pageString = "sort:popular?page="
 
             if "all" in platforms or len(platforms) > 0:
-                pageString += str(int(limit) // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
+                pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
             else:
-                pageString +=  str((2 * int(limit)) // (ENTRIES_PER_PAGE * scoreCombinations)+ 1)
+                pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations)+ 1)
 
             for audienceString in audienceStrings:
                 for tomatometerString in tomatometerStrings:
@@ -82,9 +82,9 @@ def generateURLs(
             
             pageString = "sort:popular?page="
             if len(URLs) > 0:
-                pageString += str(int(limit) // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
+                pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
             else:
-                pageString +=  str((2 * int(limit)) // (ENTRIES_PER_PAGE * scoreCombinations)+ 1)
+                pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations)+ 1)
 
             for audienceString in audienceStrings:
                 for tomatometerString in tomatometerStrings:
@@ -99,26 +99,65 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     # array of row arrays; each row array contains up to 4 dictionaries/movies
     movieInfo = [[]]
     movieCount = 0
+    movieDict = {} # Keys contain movie names; used to avoid duplicates
+    useRandom = True if tomatometerScore <= 80 and audienceScore <= 80 else False
+    maxLimit = 50
     desiredInfoCategories = [
         "Rating:", "Genre:", "Original Language:", "Release Date (Theaters):",
         "Release Date (Streaming):", "Runtime:"
     ]
     for url in URLs:
+        if movieCount == limit:
+            break
+
         html_text = requests.get(
             url=url
         ).text
         moviePageSoup = BeautifulSoup(html_text, "lxml")
-        movies = moviePageSoup.find_all(
-            "a", 
-            attrs={"href": re.compile("/m/"), "data-id": True}, 
-            limit=(2 * int(limit) // len(URLs)) + 1
-        )
+
+        # Specify a limit if we have more than 2 URLs to search
+        if len(URLs) > 2:
+            movies = moviePageSoup.find_all(
+                "a", 
+                attrs={"href": re.compile("/m/"), "data-id": True}, 
+                limit=(limit // len(URLs)) + (maxLimit // 2 * len(URLs))
+            )
+        else:
+            movies = moviePageSoup.find_all(
+                "a", 
+                attrs={"href": re.compile("/m/"), "data-id": True}, 
+            )
+
 
         for movie in movies:
+            if movieCount == limit:
+                break
+            
+            # 60% chance of movie being added to recommendations
+            # if scores are below 80
+            # --> Users get different movies each time for the same inputs
+            if useRandom:
+                randomInt = random.randint(0, 4)
+                if randomInt == 0 or randomInt == 1:
+                    continue
+
             url = "https://www.rottentomatoes.com" + movie["href"]
             data = movie.find("div", slot="caption")
             scores = data.contents[1]
+
+            # Filter based on scores
+            if int(scores["audiencescore"]) < audienceScore:
+                continue
+            if int(scores["criticsscore"]) < tomatometerScore:
+                continue
+
             name = data.contents[-2].text.strip()
+            
+            # Avoid duplicates
+            if name in movieDict:
+                continue
+            else:
+                movieDict[name] = True
 
             movieInfoDict = {
                 "name": name,
@@ -183,26 +222,9 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
             movieCount += 1
 
             # TODO:
-
-            # Figure out beforehand how many results we need and how many
-            # pages we need to look through, then add to urls
-            # -> Add this functionality to the URL scraper
-
-            # Filtering must happen before we parse movie data, e.g.
-            # check if the movie fits our paramters, then scrape the rest 
-            # of the data
-
-            # skip some entries for randomness
-
-            # Use a dictionary to avoid duplicates
-
-
-
             # After filtering, we need to format data so it's human readable
             # Edits to make:
             # Change platforms, including changing "showtimes" to "in theaters"
-
-
     
     # DEBUGGING: Print total number of movies scraped
     print(f"Movie count: {movieCount}")
