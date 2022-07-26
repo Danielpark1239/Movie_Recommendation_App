@@ -9,6 +9,8 @@ def generateURLs(
     URLs = []
     # RT shows 30 movies per page max
     ENTRIES_PER_PAGE = 30
+    # If scores are above a certain threshold, generate more pages to search
+    gourmet = True if tomatometerScore >= 75 or audienceScore >= 75 else False
     if type == "MOVIE":
         theatersURL = "https://www.rottentomatoes.com/browse/movies_in_theaters/"
         homeURL = "https://www.rottentomatoes.com/browse/movies_at_home/"
@@ -47,9 +49,15 @@ def generateURLs(
             pageString = "sort:popular?page="
 
             if "all" in platforms or len(platforms) > 0:
-                pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
+                if gourmet:
+                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 5)
+                else:
+                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
             else:
-                pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations)+ 1)
+                if gourmet:
+                    pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations)+ 5)
+                else:
+                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
 
             for audienceString in audienceStrings:
                 for tomatometerString in tomatometerStrings:
@@ -82,9 +90,15 @@ def generateURLs(
             
             pageString = "sort:popular?page="
             if len(URLs) > 0:
-                pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
+                if gourmet:
+                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 5)
+                else:
+                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
             else:
-                pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations)+ 1)
+                if gourmet:
+                    pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + 5)
+                else:
+                    pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
 
             for audienceString in audienceStrings:
                 for tomatometerString in tomatometerStrings:
