@@ -4,7 +4,7 @@ import random
 import re
 
 def generateURLs(
-    type, genres, ratings, platforms, tomatometerScore, audienceScore, limit
+    type, genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
 ):  
     URLs = []
     # RT shows 30 movies per page max
@@ -93,7 +93,8 @@ def generateURLs(
                         + genreString + ratingString + pageString
                     )
         print(URLs)
-        random.shuffle(URLs)
+        if not popular:
+            random.shuffle(URLs)
         return URLs
 
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):

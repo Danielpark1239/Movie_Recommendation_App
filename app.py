@@ -21,16 +21,17 @@ def movies():
 
 @app.route('/movies/recommendations/', methods=['POST'])
 def movieRecommendations():
-  
-    genres = request.form.getlist("genres")
-    ratings = request.form.getlist("ratings")
-    platforms = request.form.getlist("platforms")
-    tomatometerScore = int(request.form["tomatometerSlider"])
-    audienceScore = int(request.form["audienceSlider"])
-    limit = int(request.form["limit"])
+    formData = request.form
+    genres = formData.getlist("genres")
+    ratings = formData.getlist("ratings")
+    platforms = formData.getlist("platforms")
+    tomatometerScore = int(formData["tomatometerSlider"])
+    audienceScore = int(formData["audienceSlider"])
+    limit = int(formData["limit"])
+    popular = True if "popular" in formData else False
 
     URLs = scraper.generateURLs(
-        "MOVIE", genres, ratings, platforms, tomatometerScore, audienceScore, limit
+        "MOVIE", genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
     movieInfo = scraper.scrapeMovies(
         URLs, tomatometerScore, audienceScore, limit
