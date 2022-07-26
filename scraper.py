@@ -93,6 +93,7 @@ def generateURLs(
                         + genreString + ratingString + pageString
                     )
         print(URLs)
+        random.shuffle(URLs)
         return URLs
 
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
