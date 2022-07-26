@@ -46,7 +46,6 @@ def generateURLs(
                 platforms.remove("showtimes")
 
             # Determine the number of pages we need
-            # We scrape through double the number of entries we need
             pageString = "sort:popular?page="
 
             if "all" in platforms or len(platforms) > 0:
@@ -107,9 +106,9 @@ def generateURLs(
                         homeURL + audienceString + tomatometerString + platformString\
                         + genreString + ratingString + pageString
                     )
-        print(URLs)
         if not popular:
             random.shuffle(URLs)
+        print(URLs)
         return URLs
 
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
@@ -202,6 +201,9 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
             availablePlatforms = movieSoup.find_all("where-to-watch-meta")
             platformList = []
             for platform in availablePlatforms:
+                if platform["affiliate"] == "showtimes":
+                    platformList.append("in-theaters")
+                else:
                     platformList.append(platform["affiliate"])
             movieInfoDict["platforms"] = platformList
 
