@@ -133,12 +133,12 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
             if movieCount == limit:
                 break
             
-            # 60% chance of movie being added to recommendations
+            # 80% chance of movie being added to recommendations
             # if scores are below 80
             # --> Users get different movies each time for the same inputs
             if useRandom:
                 randomInt = random.randint(0, 4)
-                if randomInt == 0 or randomInt == 1:
+                if randomInt == 0:
                     continue
 
             url = "https://www.rottentomatoes.com" + movie["href"]
