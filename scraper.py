@@ -11,6 +11,7 @@ def generateURLs(
     ENTRIES_PER_PAGE = 30
     # If scores are above a certain threshold, generate more pages to search
     gourmet = True if tomatometerScore >= 75 or audienceScore >= 75 else False
+    gourmetPages = tomatometerScore // 10 + audienceScore // 10
     if type == "MOVIE":
         theatersURL = "https://www.rottentomatoes.com/browse/movies_in_theaters/"
         homeURL = "https://www.rottentomatoes.com/browse/movies_at_home/"
@@ -50,12 +51,12 @@ def generateURLs(
 
             if "all" in platforms or len(platforms) > 0:
                 if gourmet:
-                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 5)
+                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
                 else:
                     pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
             else:
                 if gourmet:
-                    pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations)+ 5)
+                    pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations)+ gourmetPages)
                 else:
                     pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
 
@@ -91,12 +92,12 @@ def generateURLs(
             pageString = "sort:popular?page="
             if len(URLs) > 0:
                 if gourmet:
-                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 5)
+                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
                 else:
                     pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
             else:
                 if gourmet:
-                    pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + 5)
+                    pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
                 else:
                     pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
 
@@ -116,7 +117,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     movieInfo = [[]]
     movieCount = 0
     movieDict = {} # Keys contain movie names; used to avoid duplicates
-    useRandom = True if tomatometerScore <= 80 and audienceScore <= 80 else False
+    useRandom = True if tomatometerScore <= 75 and audienceScore <= 75 else False
     maxLimit = 50
     desiredInfoCategories = [
         "Rating:", "Genre:", "Original Language:", "Release Date (Theaters):",
