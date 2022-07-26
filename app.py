@@ -29,13 +29,6 @@ def movieRecommendations():
     audienceScore = int(request.form["audienceSlider"])
     limit = int(request.form["limit"])
 
-    print(genres) # accounted for in URL
-    print(ratings) # accounted for in URL
-    print(platforms) # accounted for in URL
-    print(tomatometerScore) 
-    print(audienceScore)
-    print(limit) # ^ These three need to be filtered in scraping func
-
     URLs = scraper.generateURLs(
         "MOVIE", genres, ratings, platforms, tomatometerScore, audienceScore, limit
     )

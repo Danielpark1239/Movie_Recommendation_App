@@ -220,11 +220,6 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                 movieInfo[-1].append(movieInfoDict)
 
             movieCount += 1
-
-            # TODO:
-            # After filtering, we need to format data so it's human readable
-            # Edits to make:
-            # Change platforms, including changing "showtimes" to "in theaters"
     
     # DEBUGGING: Print total number of movies scraped
     print(f"Movie count: {movieCount}")
