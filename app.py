@@ -25,9 +25,9 @@ def movieRecommendations():
     genres = request.form.getlist("genres")
     ratings = request.form.getlist("ratings")
     platforms = request.form.getlist("platforms")
-    tomatometerScore = request.form["tomatometerSlider"]
-    audienceScore = request.form["audienceSlider"]
-    limit = request.form["limit"]
+    tomatometerScore = int(request.form["tomatometerSlider"])
+    audienceScore = int(request.form["audienceSlider"])
+    limit = int(request.form["limit"])
 
     print(genres) # accounted for in URL
     print(ratings) # accounted for in URL
