@@ -3,8 +3,10 @@ from bs4 import BeautifulSoup
 import random
 import re
 
-def generateURLs(
-    type, genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
+# some repeated code, but hard to modularize since pageString
+# depends on the number of URLs already in the list
+def generateMovieURLs(
+    genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
 ):  
     URLs = []
     # RT shows 30 movies per page max
@@ -12,104 +14,108 @@ def generateURLs(
     # If scores are above a certain threshold, generate more pages to search
     gourmet = True if tomatometerScore >= 75 or audienceScore >= 75 else False
     gourmetPages = tomatometerScore // 10 + audienceScore // 10
-    if type == "MOVIE":
-        theatersURL = "https://www.rottentomatoes.com/browse/movies_in_theaters/"
-        homeURL = "https://www.rottentomatoes.com/browse/movies_at_home/"
+
+    theatersURL = "https://www.rottentomatoes.com/browse/movies_in_theaters/"
+    homeURL = "https://www.rottentomatoes.com/browse/movies_at_home/"
         
-        audienceStrings = ["audience:upright~"]
-        if audienceScore < 60:   
-            audienceStrings.append("audience:spilled~")
+    audienceStrings = ["audience:upright~"]
+    if audienceScore < 60:   
+        audienceStrings.append("audience:spilled~")
 
-        tomatometerStrings = ["critics:fresh~"]
-        if tomatometerScore < 60:
-            tomatometerStrings.append("critics:rotten~")
+    tomatometerStrings = ["critics:fresh~"]
+    if tomatometerScore < 60:
+        tomatometerStrings.append("critics:rotten~")
 
-        # number of combinations of score strings
-        scoreCombinations = len(audienceStrings) * len(tomatometerStrings)
+    # number of combinations of score strings
+    scoreCombinations = len(audienceStrings) * len(tomatometerStrings)
 
-        if "all" in genres or len(genres) == 0:
-            genreString = ""
+    if "all" in genres or len(genres) == 0:
+        genreString = ""
+    else:
+        genreString = "genres:" + ",".join(genres) + "~"
+        
+    if "all" in ratings or len(ratings) == 0:
+        ratingString = ""
+    else:
+        ratingString = "ratings:" + ",".join(ratings) + "~"
+
+    if len(platforms) == 0:
+        platforms.append("all")
+
+    # Generate from theatersURL
+    if "all" in platforms or "showtimes" in platforms:
+        if "showtimes" in platforms:
+            platforms.remove("showtimes")
+
+    # Determine the number of pages we need
+    pageString = "sort:popular?page="
+
+    if "all" in platforms or len(platforms) > 0:
+        if gourmet:
+            pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
         else:
-            genreString = "genres:" + ",".join(genres) + "~"
-        
-        if "all" in ratings or len(ratings) == 0:
-            ratingString = ""
+            pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
+    else:
+        if gourmet:
+            pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations)+ gourmetPages)
         else:
-            ratingString = "ratings:" + ",".join(ratings) + "~"
+            pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
 
-        if len(platforms) == 0:
-            platforms.append("all")
-
-        # Generate from theatersURL
-        if "all" in platforms or "showtimes" in platforms:
-            if "showtimes" in platforms:
-                platforms.remove("showtimes")
-
-            # Determine the number of pages we need
-            pageString = "sort:popular?page="
-
-            if "all" in platforms or len(platforms) > 0:
-                if gourmet:
-                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
-                else:
-                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
-            else:
-                if gourmet:
-                    pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations)+ gourmetPages)
-                else:
-                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
-
-            for audienceString in audienceStrings:
-                for tomatometerString in tomatometerStrings:
-                    URLs.append(
-                        theatersURL + audienceString + tomatometerString \
-                        + genreString + ratingString + pageString
-                    )
+    for audienceString in audienceStrings:
+        for tomatometerString in tomatometerStrings:
+            URLs.append(
+                theatersURL + audienceString + tomatometerString \
+                + genreString + ratingString + pageString
+            )
         
-        # Generate from homeURL
-        if "all" in platforms or len(platforms) > 0:
-            if "all" in platforms:
-                platformString = ""
+    # Generate from homeURL
+    if "all" in platforms or len(platforms) > 0:
+        if "all" in platforms:
+            platformString = ""
 
-            else:
-                # Mapping from platform to correct URL representation
-                platformDict = {
-                    "amazon-prime-video-us": "amazon_prime",
-                    "itunes": "apple_tv",
-                    "apple-tv-plus-us": "apple_tv_plus",
-                    "disney-plus-us": "disney_plus",
-                    "hbo-max": "hbo_max",
-                    "hulu": "hulu",
-                    "netflix": "netflix",
-                    "paramount-plus-us": "paramount_plus",
-                    "peacock": "peacock",
-                    "vudu": "vudu"
-                }
-                platforms = [platformDict[platform] for platform in platforms]
-                platformString = "affiliates:" + ",".join(platforms) + "~"
+        else:
+            # Mapping from platform to correct URL representation
+            platformDict = {
+                "amazon-prime-video-us": "amazon_prime",
+                "itunes": "apple_tv",
+                "apple-tv-plus-us": "apple_tv_plus",
+                "disney-plus-us": "disney_plus",
+                "hbo-max": "hbo_max",
+                "hulu": "hulu",
+                "netflix": "netflix",
+                "paramount-plus-us": "paramount_plus",
+                "peacock": "peacock",
+                "vudu": "vudu"
+            }
+            platforms = [platformDict[platform] for platform in platforms]
+            platformString = "affiliates:" + ",".join(platforms) + "~"
             
-            pageString = "sort:popular?page="
-            if len(URLs) > 0:
-                if gourmet:
-                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
-                else:
-                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
+        pageString = "sort:popular?page="
+        if len(URLs) > 0:
+            if gourmet:
+                pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
             else:
-                if gourmet:
-                    pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
-                else:
-                    pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
+                pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
+        else:
+            if gourmet:
+                pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
+            else:
+                pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
 
-            for audienceString in audienceStrings:
-                for tomatometerString in tomatometerStrings:
-                    URLs.append(
-                        homeURL + audienceString + tomatometerString + platformString\
-                        + genreString + ratingString + pageString
-                    )
+        for audienceString in audienceStrings:
+            for tomatometerString in tomatometerStrings:
+                URLs.append(
+                    homeURL + audienceString + tomatometerString + platformString\
+                    + genreString + ratingString + pageString
+                )
         if not popular:
             random.shuffle(URLs)
         print(URLs)
         return URLs
+
+def generateTVshowURLs():
+    pass
+
 
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     # array of row arrays; each row array contains up to 4 dictionaries/movies

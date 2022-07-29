@@ -34,8 +34,8 @@ def movieRecommendations():
     limit = int(formData["limit"])
     popular = True if "popular" in formData else False
 
-    URLs = scraper.generateURLs(
-        "MOVIE", genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
+    URLs = scraper.generateMovieURLs(
+        genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
     movieInfo = scraper.scrapeMovies(
         URLs, tomatometerScore, audienceScore, limit
@@ -54,8 +54,8 @@ def tvshowRecommendations():
     limit = int(formData["limit"])
     popular = True if "popular" in formData else False
 
-    URLs = scraper.generateURLs(
-        "MOVIE", genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
+    URLs = scraper.generateTVshowURLs(
+        genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
     movieInfo = scraper.scrapeMovies(
         URLs, tomatometerScore, audienceScore, limit
