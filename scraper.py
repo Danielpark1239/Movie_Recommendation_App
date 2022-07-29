@@ -230,9 +230,9 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
             scores = data.contents[1]
 
             # Filter based on scores
-            if int(scores["audiencescore"]) < audienceScore:
+            if scores["audiencescore"] == "" or int(scores["audiencescore"]) < audienceScore:
                 continue
-            if int(scores["criticsscore"]) < tomatometerScore:
+            if scores["criticsscore"] == "" or int(scores["criticsscore"]) < tomatometerScore:
                 continue
 
             name = data.contents[-2].text.strip()
@@ -255,7 +255,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
             movieSoup = BeautifulSoup(movie_html_text, "lxml")
             
             # Movie poster image
-            print(name)
+            print(name) # DEBUGGING: Print name
             posterImage = movieSoup.find(
                 "img",
                 attrs={"class": re.compile("posterImage")}
@@ -312,3 +312,150 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     print(f"Movie count: {movieCount}")
 
     return movieInfo
+
+def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
+    # array of row arrays; each row array contains up to 4 dictionaries/shows
+    tvShowInfo = [[]]
+    tvShowCount = 0
+    tvShowDict = {} # Keys contain tv show names; used to avoid duplicates
+    useRandom = True if tomatometerScore <= 75 and audienceScore <= 75 else False
+    maxLimit = 50
+
+    baseURL = "https://www.rottentomatoes.com"
+
+    for url in URLs:
+        if tvShowCount == limit:
+            break
+
+        html_text = requests.get(
+            url=url
+        ).text
+        tvShowPageSoup = BeautifulSoup(html_text, "lxml")
+
+        # Specify a limit if we have more than 2 URLs to search
+        if len(URLs) > 2:
+            tvShows = tvShowPageSoup.find_all(
+                "a", 
+                attrs={"href": re.compile("/tv/"), "data-id": True}, 
+                limit=(limit // len(URLs)) + (maxLimit // 2 * len(URLs))
+            )
+        else:
+            tvShows = tvShowPageSoup.find_all(
+                "a", 
+                attrs={"href": re.compile("/tv/"), "data-id": True}, 
+            )
+
+
+        for tvShow in tvShows:
+            if tvShowCount == limit:
+                break
+            
+            if useRandom: # 80% chance of show being selected
+                randomInt = random.randint(0, 4)
+                if randomInt == 0:
+                    continue
+
+            url = baseURL + tvShow["href"]
+            data = tvShow.find("div", slot="caption")
+            scores = data.contents[1]
+
+            # Filter based on scores
+            if scores["audiencescore"] == "" or int(scores["audiencescore"]) < audienceScore:
+                continue
+            if scores["criticsscore"] == "" or int(scores["criticsscore"]) < tomatometerScore:
+                continue
+
+            name = data.contents[3].text.strip()
+            
+            # Avoid duplicates
+            if name in tvShowDict:
+                continue
+            else:
+                tvShowDict[name] = True
+
+            tvShowInfoDict = {
+                "name": name,
+                "audienceScore": scores["audiencescore"],
+                "criticsScore": scores["criticsscore"],
+                "url": url
+            }
+
+            # Get additional data about the show by looking at its page
+            tvshow_html_text = requests.get(url).text
+            tvShowSoup = BeautifulSoup(tvshow_html_text, "lxml")
+            
+            # show poster image
+            print(name)
+            posterImage = tvShowSoup.find(
+                "img",
+                attrs={"class": re.compile("posterImage")}
+            )
+            if posterImage.has_attr("data-src"):
+                tvShowInfoDict["posterImage"] = posterImage["data-src"]
+            else:
+                tvShowInfoDict["posterImage"] = "../../static/blank_poster.png"
+
+            # Available streaming platforms
+            availablePlatforms = tvShowSoup.find_all("where-to-watch-meta")
+            platformList = []
+            for platform in availablePlatforms:
+                platformList.append(platform["affiliate"])
+            tvShowInfoDict["platforms"] = platformList
+
+            # Additional information
+            network = tvShowSoup.find(
+                "td", 
+                attrs={"data-qa": "series-details-network"}
+            )
+            if network is not None:
+                tvShowInfoDict["network"] = network.text
+            
+            premiereDate = tvShowSoup.find(
+                "td", 
+                attrs={"data-qa": "series-details-premiere-date"}
+            )
+            if premiereDate is not None:
+                tvShowInfoDict["premiereDate"] = premiereDate.text
+            
+            genre = tvShowSoup.find(
+                "td", 
+                attrs={"data-qa": "series-details-genre"}
+            )
+            if genre is not None:
+                tvShowInfoDict["genre"] = genre.text
+            
+            producersDict = {}
+            producers = tvShowSoup.find_all(
+                "a",
+                attrs={"data-qa": "series-details-producer"}
+            )
+            for producer in producers:
+                producerName = producer.text.strip()
+                producerURL = baseURL + producer["href"]
+                producersDict[producerName] = producerURL
+            tvShowInfoDict["producers"] = producersDict
+
+            castDict = {}
+            cast = tvShowSoup.find_all(
+                "a",
+                attrs={"data-qa": "cast-member"}
+            )
+            for actor in cast:
+                actorName = actor.text.strip()
+                actorURL = baseURL + actor["href"]
+                castDict[actorName] = actorURL
+            tvShowInfoDict["cast"] = castDict
+
+            # if the last row is full, create a new row
+            if len(tvShowInfo[-1]) == 4:
+                tvShowInfo.append([tvShowInfoDict])
+            else:
+                tvShowInfo[-1].append(tvShowInfoDict)
+
+            tvShowCount += 1
+    
+    # DEBUGGING: Print total number of TV shows scraped
+    print(f"TV show count: {tvShowCount}")
+
+    return tvShowInfo
+
