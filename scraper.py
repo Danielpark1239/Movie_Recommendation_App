@@ -113,9 +113,71 @@ def generateMovieURLs(
         print(URLs)
         return URLs
 
-def generateTVshowURLs():
-    pass
+def generateTVshowURLs(
+    genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
+):
+    URLs = []
+    ENTRIES_PER_PAGE = 30
+    gourmet = True if tomatometerScore >= 75 or audienceScore >= 75 else False
+    gourmetPages = tomatometerScore // 10 + audienceScore // 10
 
+    baseURL = "https://www.rottentomatoes.com/browse/tv_series_browse/"
+
+    audienceStrings = ["audience:upright~"]
+    if audienceScore < 60:   
+        audienceStrings.append("audience:spilled~")
+
+    tomatometerStrings = ["critics:fresh~"]
+    if tomatometerScore < 60:
+        tomatometerStrings.append("critics:rotten~")
+    scoreCombinations = len(audienceStrings) * len(tomatometerStrings)
+    
+    if "all" in genres or len(genres) == 0:
+        genreString = ""
+    else:
+        genreString = "genres:" + ",".join(genres) + "~"
+        
+    if "all" in ratings or len(ratings) == 0:
+        ratingString = ""
+    else:
+        ratingString = "ratings:" + ",".join(ratings) + "~"
+
+    if len(platforms) == 0:
+        platforms.append("all")
+    if "all" in platforms:
+        platformString = ""
+    else:
+        platformDict = {
+                "amazon-prime-video-us": "amazon_prime",
+                "itunes": "apple_tv",
+                "apple-tv-plus-us": "apple_tv_plus",
+                "disney-plus-us": "disney_plus",
+                "hbo-max": "hbo_max",
+                "hulu": "hulu",
+                "netflix": "netflix",
+                "paramount-plus-us": "paramount_plus",
+                "peacock": "peacock",
+                "vudu": "vudu"
+            }
+        platforms = [platformDict[platform] for platform in platforms]
+        platformString = "affiliates:" + ",".join(platforms) + "~"
+    
+    pageString = "sort:popular?page="
+    if gourmet:
+        pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
+    else:
+        pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
+
+    for audienceString in audienceStrings:
+        for tomatometerString in tomatometerStrings:
+            URLs.append(
+                baseURL + audienceString + tomatometerString + platformString\
+                + genreString + ratingString + pageString
+            )
+    if not popular:
+        random.shuffle(URLs)
+    print(URLs)
+    return URLs
 
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     # array of row arrays; each row array contains up to 4 dictionaries/movies
