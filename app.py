@@ -19,6 +19,10 @@ def test():
 def movies():
     return render_template('movies.html')
 
+@app.route('/tvshows/', methods=['GET'])
+def tvshows():
+    return render_template('tvshows.html')
+
 @app.route('/movies/recommendations/', methods=['POST'])
 def movieRecommendations():
     formData = request.form
@@ -38,3 +42,23 @@ def movieRecommendations():
     )
 
     return render_template("movieRecommendations.html", movieInfo=movieInfo)
+
+@app.route('/tvshows/recommendations/', methods=['POST'])
+def tvshowRecommendations():
+    formData = request.form
+    genres = formData.getlist("genres")
+    ratings = formData.getlist("ratings")
+    platforms = formData.getlist("platforms")
+    tomatometerScore = int(formData["tomatometerSlider"])
+    audienceScore = int(formData["audienceSlider"])
+    limit = int(formData["limit"])
+    popular = True if "popular" in formData else False
+
+    URLs = scraper.generateURLs(
+        "MOVIE", genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
+    )
+    movieInfo = scraper.scrapeMovies(
+        URLs, tomatometerScore, audienceScore, limit
+    )
+
+    return render_template("tvshowRecommendations.html", movieInfo=movieInfo)
