@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rotten Tomatoes Recommendation App</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+    />
+    <link
+      rel="shortcut icon"
+      href="{{ url_for('static', filename='tomato-favicon.ico') }}"
+    />
+  </head>
+
+  <section class="hero is-info">
+    <div class="hero-body">
+      <p class="title">Rotten Tomatoes Recommendation App</p>
+      <p class="subtitle">
+        <strong>TV Show Recommendations</strong>
+      </p>
+      <a class="button" href="/"> Home </a>
+      <a class="button" href="/tvshows"> More TV Show recommendations </a>
+    </div>
+  </section>
+
+  <body class="has-background-light">
+    <section class="section">
+      {% for row in movieInfo %}
+      <div class="level">
+        <div class="level-item tile is-ancestor">
+          {% for movie in row %}
+          <div class="tile is-3 is-parent">
+            <article class="tile is-child notification is-info">
+              <p class="title has-text-centered">{{ movie.name }}</p>
+              <a href="{{ movie.url }}" target="_blank">
+                <figure class="image is-2by3">
+                  <img src="{{ movie.posterImage }}" />
+                </figure>
+              </a>
+              <nav class="level">
+                <div class="level-left">
+                  <div class="level-item">
+                    <img
+                      src="../../static/tomato-favicon-16x16.png"
+                      alt="tomato"
+                    />
+                    <p class="subtitle">{{ movie.criticsScore }}</p>
+                  </div>
+                </div>
+                <div class="level-right">
+                  <div class="level-item">
+                    <img
+                      src="../../static/popcorn-favicon-16x16.png"
+                      alt="popcorn"
+                    />
+                    <p class="subtitle">{{ movie.audienceScore }}</p>
+                  </div>
+                </div>
+              </nav>
+
+              <ul>
+                <li>Genres: {{ movie.genre }}</li>
+                <li>Rating: {{ movie.rating }}</li>
+                <li>Platforms: {{ movie.platforms }}</li>
+                {% if movie["original language"] %}
+                <li>Original language: {{ movie["original language"] }}</li>
+                {% endif %} {% if movie["release date (theaters)"] %}
+                <li>
+                  Release Date (Theaters): {{ movie["release date (theaters)"]
+                  }}
+                </li>
+                {% endif %} {% if movie["release date (streaming)"] %}
+                <li>
+                  Release Date (Streaming): {{ movie["release date (streaming)"]
+                  }}
+                </li>
+                {% endif %} {% if movie["runtime"] %}
+                <li>Runtime: {{ movie["runtime"] }}</li>
+                {% endif %}
+              </ul>
+            </article>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+  </body>
+
+  <footer class="footer">
+    <div class="content has-text-centered">
+      <p>
+        <strong>Rotten Tomatoes Recommendation App</strong> by
+        <a href="https://github.com/Danielpark1239">Daniel Park</a>.
+      </p>
+    </div>
+  </footer>
+</html>
