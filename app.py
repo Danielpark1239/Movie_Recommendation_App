@@ -57,8 +57,8 @@ def tvshowRecommendations():
     URLs = scraper.generateTVshowURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
-    movieInfo = scraper.scrapeMovies(
+    tvShowInfo = scraper.scrapeTVshows(
         URLs, tomatometerScore, audienceScore, limit
     )
 
-    return render_template("tvshowRecommendations.html", movieInfo=movieInfo)
+    return render_template("tvshowRecommendations.html", tvShowInfo=tvShowInfo)
