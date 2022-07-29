@@ -27,16 +27,16 @@
 
   <body class="has-background-light">
     <section class="section">
-      {% for row in movieInfo %}
+      {% for row in tvShowInfo %}
       <div class="level">
         <div class="level-item tile is-ancestor">
-          {% for movie in row %}
+          {% for tvShow in row %}
           <div class="tile is-3 is-parent">
             <article class="tile is-child notification is-info">
-              <p class="title has-text-centered">{{ movie.name }}</p>
-              <a href="{{ movie.url }}" target="_blank">
+              <p class="title has-text-centered">{{ tvShow.name }}</p>
+              <a href="{{ tvShow.url }}" target="_blank">
                 <figure class="image is-2by3">
-                  <img src="{{ movie.posterImage }}" />
+                  <img src="{{ tvShow.posterImage }}" />
                 </figure>
               </a>
               <nav class="level">
@@ -46,7 +46,7 @@
                       src="../../static/tomato-favicon-16x16.png"
                       alt="tomato"
                     />
-                    <p class="subtitle">{{ movie.criticsScore }}</p>
+                    <p class="subtitle">{{ tvShow.criticsScore }}</p>
                   </div>
                 </div>
                 <div class="level-right">
@@ -55,29 +55,29 @@
                       src="../../static/popcorn-favicon-16x16.png"
                       alt="popcorn"
                     />
-                    <p class="subtitle">{{ movie.audienceScore }}</p>
+                    <p class="subtitle">{{ tvShow.audienceScore }}</p>
                   </div>
                 </div>
               </nav>
 
               <ul>
-                <li>Genres: {{ movie.genre }}</li>
-                <li>Rating: {{ movie.rating }}</li>
-                <li>Platforms: {{ movie.platforms }}</li>
-                {% if movie["original language"] %}
-                <li>Original language: {{ movie["original language"] }}</li>
-                {% endif %} {% if movie["release date (theaters)"] %}
+                <li>Genres: {{ tvShow.genre }}</li>
+                <li>Rating: {{ tvShow.rating }}</li>
+                <li>Platforms: {{ tvShow.platforms }}</li>
+                {% if tvShow["original language"] %}
+                <li>Original language: {{ tvShow["original language"] }}</li>
+                {% endif %} {% if tvShow["release date (theaters)"] %}
                 <li>
-                  Release Date (Theaters): {{ movie["release date (theaters)"]
+                  Release Date (Theaters): {{ tvShow["release date (theaters)"]
                   }}
                 </li>
-                {% endif %} {% if movie["release date (streaming)"] %}
+                {% endif %} {% if tvShow["release date (streaming)"] %}
                 <li>
-                  Release Date (Streaming): {{ movie["release date (streaming)"]
-                  }}
+                  Release Date (Streaming): {{ tvShow["release date
+                  (streaming)"] }}
                 </li>
-                {% endif %} {% if movie["runtime"] %}
-                <li>Runtime: {{ movie["runtime"] }}</li>
+                {% endif %} {% if tvShow["runtime"] %}
+                <li>Runtime: {{ tvShow["runtime"] }}</li>
                 {% endif %}
               </ul>
             </article>
