@@ -27,6 +27,53 @@
 
   <body class="has-background-light">
     <section class="section">
+      {% for row in tvShowInfo %}
+      <div class="level">
+        <div class="level-item tile is-ancestor">
+          {% for tvShow in row %}
+          <div class="tile is-3 is-parent">
+            <article class="tile is-child notification is-info">
+              <p class="title has-text-centered">{{ tvShow.name }}</p>
+              <a href="{{ tvShow.url }}" target="_blank">
+                <figure class="image is-2by3">
+                  <img src="{{ tvShow.posterImage }}" />
+                </figure>
+              </a>
+              <nav class="level">
+                <div class="level-left">
+                  <div class="level-item">
+                    <img
+                      src="../../static/tomato-favicon-16x16.png"
+                      alt="tomato"
+                    />
+                    <p class="subtitle">{{ tvShow.criticsScore }}</p>
+                  </div>
+                </div>
+                <div class="level-right">
+                  <div class="level-item">
+                    <img
+                      src="../../static/popcorn-favicon-16x16.png"
+                      alt="popcorn"
+                    />
+                    <p class="subtitle">{{ tvShow.audienceScore }}</p>
+                  </div>
+                </div>
+              </nav>
+
+              <ul>
+                <li>TV Network: {{ tvShow.network }}</li>
+                <li>Premiere Date: {{ tvShow.premiereDate }}</li>
+                <li>Genre: {{ tvShow.genre }}</li>
+                <li>Platforms: {{ tvShow.platforms }}</li>
+                <!--<li>Executive Producers: {{ tvShow.producers }}</li>
+                <li>Cast: {{ tvShow.cast }}</li>-->
+              </ul>
+            </article>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
       <div>{{ tvShowInfo }}</div>
     </section>
   </body>
