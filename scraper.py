@@ -275,6 +275,22 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                     platformList.append(platform["affiliate"])
             movieInfoDict["platforms"] = platformList
 
+            # Cast # EDITTTTTTT!!!!!
+            castDict = {}
+            cast = movieSoup.find_all(
+                "a",
+                attrs={"data-qa": "cast-crew-item-link"},
+                limit=6
+            )
+            for actor in cast:
+                actorURL = actor["href"]
+                actorName = actor.contents[0].text
+                castDict[actorName] = actorURL
+            movieInfoDict["cast"] = castDict
+
+
+            # Director, producer, writer
+
             # Additional information (rating, genre, etc.)
             additionalInfo = movieSoup.find_all(
                 "div", 
