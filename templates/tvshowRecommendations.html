@@ -65,8 +65,23 @@
                 <li>Premiere Date: {{ tvShow.premiereDate }}</li>
                 <li>Genre: {{ tvShow.genre }}</li>
                 <li>Platforms: {{ tvShow.platforms }}</li>
-                <!--<li>Executive Producers: {{ tvShow.producers }}</li>
-                <li>Cast: {{ tvShow.cast }}</li>-->
+                {% if tvShow.cast %}
+                <li>
+                  Cast: {% for actor in tvShow.cast %}
+                  <a href="{{tvShow.cast[actor]}}" target="_blank"
+                    >{{actor + ", " if not loop.last else actor}}</a
+                  >
+                  {% endfor %}
+                </li>
+                {% endif %} {% if tvShow.producers %}
+                <li>
+                  Executive Producers: {% for producer in tvShow.producers %}
+                  <a href="{{tvShow.producers[producer]}}" target="_blank"
+                    >{{producer + ", " if not loop.last else producer}}</a
+                  >
+                  {% endfor %}
+                </li>
+                {% endif %}
               </ul>
             </article>
           </div>
