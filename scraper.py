@@ -423,6 +423,17 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
             )
             if genre is not None:
                 tvShowInfoDict["genre"] = genre.text
+
+            creatorsDict = {}
+            creators = tvShowSoup.find_all(
+                "a",
+                attrs={"data-qa": "creator"}
+            )
+            for creator in creators:
+                creatorName = creator.text.strip()
+                creatorURL = baseURL + creator["href"]
+                creatorsDict[creatorName] = creatorURL
+            tvShowInfoDict["creators"] = creatorsDict
             
             producersDict = {}
             producers = tvShowSoup.find_all(
