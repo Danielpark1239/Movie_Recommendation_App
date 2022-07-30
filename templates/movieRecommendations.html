@@ -61,23 +61,26 @@
               </nav>
 
               <ul>
-                <li>Genres: {{ movie.genre }}</li>
-                <li>Rating: {{ movie.rating }}</li>
-                <li>Platforms: {{ movie.platforms }}</li>
+                <li><strong>Genres:</strong> {{ movie.genre }}</li>
+                <li><strong>Rating:</strong> {{ movie.rating }}</li>
+                <li><strong>Platforms:</strong> {{ movie.platforms }}</li>
                 {% if movie["original language"] %}
-                <li>Original language: {{ movie["original language"] }}</li>
+                <li>
+                  <strong>Original language:</strong>
+                  {{ movie["original language"] }}
+                </li>
                 {% endif %} {% if movie["release date (theaters)"] %}
                 <li>
-                  Release Date (Theaters): {{ movie["release date (theaters)"]
-                  }}
+                  <strong>Release Date (Theaters):</strong>
+                  {{ movie["release date (theaters)"] }}
                 </li>
                 {% endif %} {% if movie["release date (streaming)"] %}
                 <li>
-                  Release Date (Streaming): {{ movie["release date (streaming)"]
-                  }}
+                  <strong>Release Date (Streaming):</strong>
+                  {{ movie["release date (streaming)"] }}
                 </li>
                 {% endif %} {% if movie["runtime"] %}
-                <li>Runtime: {{ movie["runtime"] }}</li>
+                <li><strong>Runtime:</strong> {{ movie["runtime"] }}</li>
                 {% endif %}
               </ul>
             </article>
