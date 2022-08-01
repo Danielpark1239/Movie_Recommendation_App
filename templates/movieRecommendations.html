@@ -64,7 +64,42 @@
                 <li><strong>Genres:</strong> {{ movie.genre }}</li>
                 <li><strong>Rating:</strong> {{ movie.rating }}</li>
                 <li><strong>Platforms:</strong> {{ movie.platforms }}</li>
-                {% if movie["original language"] %}
+
+                {% if movie.cast %}
+                <li>
+                  <strong>Cast:</strong> {% for actor in movie.cast %}
+                  <a href="{{movie.cast[actor]}}" target="_blank"
+                    >{{actor + ", " if not loop.last else actor}}</a
+                  >
+                  {% endfor %}
+                </li>
+                {% endif %} {% if movie.director %}
+                <li>
+                  <strong>Director:</strong> {% for director in movie.director
+                  %}
+                  <a href="{{movie.director[director]}}" target="_blank"
+                    >{{director + ", " if not loop.last else director}}</a
+                  >
+                  {% endfor %}
+                </li>
+                {% endif %} {% if movie.producer %}
+                <li>
+                  <strong>Producer:</strong> {% for producer in movie.producer
+                  %}
+                  <a href="{{movie.producer[producer]}}" target="_blank"
+                    >{{producer + ", " if not loop.last else producer}}</a
+                  >
+                  {% endfor %}
+                </li>
+                {% endif %} {% if movie.writer %}
+                <li>
+                  <strong>Writer:</strong> {% for writer in movie.writer %}
+                  <a href="{{movie.writer[writer]}}" target="_blank"
+                    >{{writer + ", " if not loop.last else writer}}</a
+                  >
+                  {% endfor %}
+                </li>
+                {% endif %} {% if movie["original language"] %}
                 <li>
                   <strong>Original language:</strong>
                   {{ movie["original language"] }}
