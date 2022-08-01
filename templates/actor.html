@@ -19,26 +19,27 @@
       <p class="title">Rotten Tomatoes Recommendation App</p>
       <p class="subtitle"><strong>Recommendations by Actor</strong></p>
       <button class="button" onClick="window.location.reload()">Refresh</button>
-      <a class="button" href="/"> Home </a>
+      <a class="button" href="/">Home</a>
     </div>
   </section>
 
   <body class="has-background-light">
     <section class="section">
       <div class="container">
-        <form action="/movies/recommendations/" method="POST">
+        <form action="/actor/recommendations/" method="POST">
           <nav class="level">
             <div class="level-item has-text-centered">
               <div class="field">
                 <div class="control">
-                  <label class="label" for="url"
+                  <label class="label" for="actorURL"
                     >Actor's Rotten Tomatoes Page</label
                   >
                   <input
                     class="input"
                     type="url"
-                    id="url"
-                    name="url"
+                    id="actorURL"
+                    name="actorURL"
+                    value="https://www.rottentomatoes.com/celebrity/"
                     placeholder="https://www.rottentomatoes.com/celebrity/example"
                     pattern="https://www.rottentomatoes.com/celebrity/.*"
                     required
@@ -55,12 +56,10 @@
                 <div class="control">
                   <label class="label">Categories</label>
                   <label class="checkbox">
-                    <input type="checkbox" />
-                    Movies
+                    <input type="checkbox" checked /> Movies
                   </label>
                   <label class="checkbox">
-                    <input type="checkbox" />
-                    TV Shows
+                    <input type="checkbox" checked /> TV Shows
                   </label>
                 </div>
                 <div class="control mt-2">
@@ -89,11 +88,19 @@
                   />
                   <output name="year" for="yearSlider">1900</output>
                 </div>
-                <div class="control">
+                <div class="control mt-2">
                   <label class="label" for="boxOffice"
                     >Minimum Box Office (Millions)</label
                   >
-                  <input type="number" id="boxOffice" name="boxOffice" />
+                  <input
+                    type="number"
+                    id="boxOffice"
+                    name="boxOffice"
+                    value="0"
+                    min="0"
+                    oninput="this.value = 
+                    !!this.value && Math.abs(this.value) >= 0 ? Math.abs(this.value) : null"
+                  />
                 </div>
               </div>
             </div>
@@ -242,7 +249,7 @@
                   />
                   <output name="audience" for="audienceSlider">50</output>
 
-                  <label class="label" for="limit">Limit</label>
+                  <label class="label mt-1" for="limit">Limit</label>
                   <input
                     name="limit"
                     id="limit"
@@ -263,6 +270,8 @@
                 class="button js-modal-trigger is-info"
                 type="submit"
                 data-target="success-modal"
+                id="submitButton"
+                disabled
               >
                 Generate recommendations!
               </button>
@@ -273,9 +282,21 @@
     </section>
 
     <script>
+      const actorURLField = document.getElementById("actorURL");
+      const submitButton = document.getElementById("submitButton");
+      const expression = /https:\/\/www.rottentomatoes.com\/celebrity\/.*/;
+      const regEx = new RegExp(expression);
+      actorURL.addEventListener("keyup", () => {
+        if (regEx.test(actorURLField.value)) {
+          submitButton.disabled = false;
+        } else {
+          submitButton.disabled = true;
+        }
+      });
+
       document.addEventListener("DOMContentLoaded", () => {
         // Functions to open and close a modal
-        function openModal($el) {
+        function openModal($el, $url) {
           $el.classList.add("is-active");
         }
 
@@ -294,9 +315,10 @@
           ($trigger) => {
             const modal = $trigger.dataset.target;
             const $target = document.getElementById(modal);
+            const $url = document.getElementById("actorURL");
 
             $trigger.addEventListener("click", () => {
-              openModal($target);
+              openModal($target, $url);
             });
           }
         );
