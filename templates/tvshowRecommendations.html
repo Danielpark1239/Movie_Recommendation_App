@@ -77,8 +77,7 @@
                 </li>
                 {% endfor %} {% endif %} {% if tvShow.creators %}
                 <li>
-                  <strong>Creators:</strong> {% for creator in tvShow.creators
-                  %}
+                  <strong>Creator:</strong> {% for creator in tvShow.creators %}
                   <a href="{{tvShow.creators[creator]}}" target="_blank"
                     >{{creator + ", " if not loop.last else creator}}</a
                   >
