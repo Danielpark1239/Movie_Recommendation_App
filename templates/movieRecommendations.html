@@ -61,11 +61,13 @@
               </nav>
 
               <ul>
+                {% if movie.genre %}
                 <li><strong>Genres:</strong> {{ movie.genre }}</li>
+                {% endif %} {% if movie.rating %}
                 <li><strong>Rating:</strong> {{ movie.rating }}</li>
+                {% endif %} {% if movie.platforms %}
                 <li><strong>Platforms:</strong> {{ movie.platforms }}</li>
-
-                {% if movie.cast %}
+                {% endif %} {% if movie.cast %}
                 <li>
                   <strong>Cast:</strong> {% for actor in movie.cast %}
                   <a href="{{movie.cast[actor]}}" target="_blank"
@@ -84,7 +86,7 @@
                 </li>
                 {% endif %} {% if movie.producer %}
                 <li>
-                  <strong>Producer:</strong> {% for producer in movie.producer
+                  <strong>Producers:</strong> {% for producer in movie.producer
                   %}
                   <a href="{{movie.producer[producer]}}" target="_blank"
                     >{{producer + ", " if not loop.last else producer}}</a
@@ -93,7 +95,7 @@
                 </li>
                 {% endif %} {% if movie.writer %}
                 <li>
-                  <strong>Writer:</strong> {% for writer in movie.writer %}
+                  <strong>Writers:</strong> {% for writer in movie.writer %}
                   <a href="{{movie.writer[writer]}}" target="_blank"
                     >{{writer + ", " if not loop.last else writer}}</a
                   >
@@ -125,6 +127,7 @@
       </div>
       {% endfor %}
     </section>
+    <div>{{movieInfo}}</div>
   </body>
 
   <footer class="footer">

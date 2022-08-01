@@ -70,12 +70,8 @@
                 {% endif %} {% if tvShow.genre %}
                 <li><strong>Genre:</strong> {{ tvShow.genre }}</li>
                 {% endif %} {% if tvShow.platforms %}
-                <li>
-                  <strong>Platforms:</strong> {% for platform in
-                  tvShow.platforms %}{{platform + ", " if not loop.last else
-                  platform}}
-                </li>
-                {% endfor %} {% endif %} {% if tvShow.creators %}
+                <li><strong>Platforms:</strong> {{ tvShow.platforms }}</li>
+                {% endif %} {% if tvShow.creators %}
                 <li>
                   <strong>Creator:</strong> {% for creator in tvShow.creators %}
                   <a href="{{tvShow.creators[creator]}}" target="_blank"
