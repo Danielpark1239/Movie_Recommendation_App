@@ -61,13 +61,21 @@
               </nav>
 
               <ul>
+                {% if tvShow.network %}
                 <li><strong>TV Network:</strong> {{ tvShow.network }}</li>
+                {% endif %} {% if tvShow.premiereDate %}
                 <li>
                   <strong>Premiere Date:</strong> {{ tvShow.premiereDate }}
                 </li>
+                {% endif %} {% if tvShow.genre %}
                 <li><strong>Genre:</strong> {{ tvShow.genre }}</li>
-                <li><strong>Platforms:</strong> {{ tvShow.platforms }}</li>
-                {% if tvShow.creators %}
+                {% endif %} {% if tvShow.platforms %}
+                <li>
+                  <strong>Platforms:</strong> {% for platform in
+                  tvShow.platforms %}{{platform + ", " if not loop.last else
+                  platform}}
+                </li>
+                {% endfor %} {% endif %} {% if tvShow.creators %}
                 <li>
                   <strong>Creators:</strong> {% for creator in tvShow.creators
                   %}
