@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rotten Tomatoes Recommendation App</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+    />
+    <link
+      rel="shortcut icon"
+      href="{{ url_for('static', filename='tomato-favicon.ico') }}"
+    />
+  </head>
+
+  <section class="hero is-info">
+    <div class="hero-body">
+      <p class="title">Rotten Tomatoes Recommendation App</p>
+      <p class="subtitle"><strong>Recommendations by Producer</strong></p>
+      <a class="button" href="/"> Home </a>
+    </div>
+  </section>
+
+  <body class="has-background-light">
+    <section class="section">
+      <div class="container">
+        <form action="/movies/recommendations/" method="POST">
+          <div class="columns">
+            <div class="column">
+              <div class="field">
+                <div class="control">
+                  <label class="label" for="genres">Genres</label>
+                  <div class="select is-multiple">
+                    <select multiple size="5" name="genres" id="genres">
+                      <option value="all">All</option>
+                      <option value="action">Action</option>
+                      <option value="adventure">Adventure</option>
+                      <option value="animation">Animation</option>
+                      <option value="anime">Anime</option>
+                      <option value="biography">Biography</option>
+                      <option value="comedy">Comedy</option>
+                      <option value="crime">Crime</option>
+                      <option value="documentary">Documentary</option>
+                      <option value="drama">Drama</option>
+                      <option value="faith_and_spirituality">
+                        Faith and Spirituality
+                      </option>
+                      <option value="fantasy">Fantasy</option>
+                      <option value="foreign">Foreign</option>
+                      <option value="game_show">Game Show</option>
+                      <option value="health_and_wellness">
+                        Health and Wellness
+                      </option>
+                      <option value="history">History</option>
+                      <option value="horror">Horror</option>
+                      <option value="house_and_garden">House and Garden</option>
+                      <option value="independent">Independent</option>
+                      <option value="kids_and_family">Kids and Family</option>
+                      <option value="lgbtq">LGBTQ</option>
+                      <option value="music">Music</option>
+                      <option value="musical">Musical</option>
+                      <option value="mystery_and_thriller">
+                        Mystery and Thriller
+                      </option>
+                      <option value="nature">Nature</option>
+                      <option value="news">News</option>
+                      <option value="other">Other</option>
+                      <option value="reality">Reality</option>
+                      <option value="romance">Romance</option>
+                      <option value="sci_fi">Sci-Fi</option>
+                      <option value="short">Short</option>
+                      <option value="soap">Soap</option>
+                      <option value="special_interest">Special Interest</option>
+                      <option value="sports_and_fitness">
+                        Sports and Fitness
+                      </option>
+                      <option value="stand_up">Stand Up</option>
+                      <option value="talk_show">Talk Show</option>
+                      <option value="travel">Travel</option>
+                      <option value="variety">Variety</option>
+                      <option value="war">War</option>
+                      <option value="western">Western</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="column">
+              <div class="field">
+                <div class="control">
+                  <label class="label" for="ratings">Ratings</label>
+                  <div class="select is-multiple">
+                    <select multiple size="5" name="ratings" id="ratings">
+                      <option value="all">All</option>
+                      <option value="g">G</option>
+                      <option value="pg">PG</option>
+                      <option value="pg_13">PG-13</option>
+                      <option value="r">R</option>
+                      <option value="nc_17">NC-17</option>
+                      <option value="nr">Not Rated</option>
+                      <option value="ur">Unrated</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="column">
+              <div class="field">
+                <div class="control">
+                  <label class="label" for="platforms"
+                    >Available Platforms</label
+                  >
+                  <div class="select is-multiple">
+                    <select multiple size="5" name="platforms" id="platforms">
+                      <option value="all">All</option>
+                      <option value="showtimes">In Theaters</option>
+                      <option value="amazon-prime-video-us">
+                        Amazon Prime Video US
+                      </option>
+                      <option value="itunes">Itunes</option>
+                      <option value="apple-tv-plus-us">Apple TV Plus US</option>
+                      <option value="disney-plus-us">Disney Plus US</option>
+                      <option value="hbo-max">HBO Max</option>
+                      <option value="hulu">Hulu</option>
+                      <option value="netflix">Netflix</option>
+                      <option value="paramount-plus-us">
+                        Paramount Plus US
+                      </option>
+                      <option value="peacock">Peacock</option>
+                      <option value="vudu">Vudu</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="column">
+              <div class="field">
+                <div class="control">
+                  <label class="label" for="tomatometerSlider"
+                    >Minimum Tomatometer Score</label
+                  >
+                  <input
+                    oninput="tomato.value=parseInt(tomatometerSlider.value)"
+                    name="tomatometerSlider"
+                    id="tomatometerSlider"
+                    class="slider has-output is-fullwidth"
+                    min="0"
+                    max="100"
+                    value="50"
+                    step="1"
+                    type="range"
+                  />
+                  <output name="tomato" for="tomatometerSlider">50</output>
+
+                  <label class="label" for="audienceSlider"
+                    >Minimum Audience Score</label
+                  >
+                  <input
+                    oninput="audience.value=parseInt(audienceSlider.value)"
+                    name="audienceSlider"
+                    id="audienceSlider"
+                    class="slider has-output is-fullwidth"
+                    min="0"
+                    max="100"
+                    value="50"
+                    step="1"
+                    type="range"
+                  />
+                  <output name="audience" for="audienceSlider">50</output>
+
+                  <label class="label" for="limit">Limit</label>
+                  <input
+                    name="limit"
+                    id="limit"
+                    class="input"
+                    type="number"
+                    min="1"
+                    max="50"
+                    step="1"
+                    value="10"
+                  />
+
+                  <label class="checkbox">
+                    <input name="popular" id="popular" type="checkbox" />
+                    Prioritize popular movies
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <button
+              class="button js-modal-trigger"
+              type="submit"
+              data-target="success-modal"
+            >
+              Generate recommendations!
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // Functions to open and close a modal
+        function openModal($el) {
+          $el.classList.add("is-active");
+        }
+
+        function closeModal($el) {
+          $el.classList.remove("is-active");
+        }
+
+        function closeAllModals() {
+          (document.querySelectorAll(".modal") || []).forEach(($modal) => {
+            closeModal($modal);
+          });
+        }
+
+        // Add a click event on buttons to open a specific modal
+        (document.querySelectorAll(".js-modal-trigger") || []).forEach(
+          ($trigger) => {
+            const modal = $trigger.dataset.target;
+            const $target = document.getElementById(modal);
+
+            $trigger.addEventListener("click", () => {
+              openModal($target);
+            });
+          }
+        );
+
+        // Add a click event on various child elements to close the parent modal
+        (
+          document.querySelectorAll(
+            ".modal-background, .modal-close, .modal-card-head .delete, .modal-card-foot .button"
+          ) || []
+        ).forEach(($close) => {
+          const $target = $close.closest(".modal");
+
+          $close.addEventListener("click", () => {
+            closeModal($target);
+          });
+        });
+
+        // Add a keyboard event to close all modals
+        document.addEventListener("keydown", (event) => {
+          const e = event || window.event;
+
+          if (e.keyCode === 27) {
+            // Escape key
+            closeAllModals();
+          }
+        });
+      });
+    </script>
+
+    <div id="success-modal" class="modal">
+      <div class="modal-background"></div>
+
+      <div class="modal-content">
+        <div class="box">
+          <p>
+            Success! Please wait for your recommendations to be generated...
+          </p>
+          <progress class="progress is-medium is-info" max="100">45%</progress>
+        </div>
+      </div>
+
+      <button class="modal-close is-large" aria-label="close"></button>
+    </div>
+  </body>
+
+  <footer class="footer has-background-light">
+    <div class="content has-text-centered">
+      <p>
+        <strong>Rotten Tomatoes Recommendation App</strong> by
+        <a href="https://github.com/Danielpark1239">Daniel Park</a>.
+      </p>
+    </div>
+  </footer>
+</html>
