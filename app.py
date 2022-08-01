@@ -19,10 +19,6 @@ def test():
 def movies():
     return render_template('movies.html')
 
-@app.route('/tvshows/', methods=['GET'])
-def tvshows():
-    return render_template('tvshows.html')
-
 @app.route('/movies/recommendations/', methods=['POST'])
 def movieRecommendations():
     formData = request.form
@@ -43,6 +39,10 @@ def movieRecommendations():
 
     return render_template("movieRecommendations.html", movieInfo=movieInfo)
 
+@app.route('/tvshows/', methods=['GET'])
+def tvshows():
+    return render_template('tvshows.html')
+
 @app.route('/tvshows/recommendations/', methods=['POST'])
 def tvshowRecommendations():
     formData = request.form
@@ -62,3 +62,15 @@ def tvshowRecommendations():
     )
 
     return render_template("tvshowRecommendations.html", tvShowInfo=tvShowInfo)
+
+@app.route('/actor/', methods=['GET'])
+def actor():
+    return render_template('actor.html')
+
+@app.route('/director/', methods=['GET'])
+def director():
+    return render_template('director.html')
+
+@app.route('/producer/', methods=['GET'])
+def producer():
+    return render_template('producer.html')
