@@ -18,6 +18,7 @@
     <div class="hero-body">
       <p class="title">Rotten Tomatoes Recommendation App</p>
       <p class="subtitle"><strong>Recommendations by Actor</strong></p>
+      <button class="button" onClick="window.location.reload()">Refresh</button>
       <a class="button" href="/"> Home </a>
     </div>
   </section>
@@ -26,13 +27,82 @@
     <section class="section">
       <div class="container">
         <form action="/movies/recommendations/" method="POST">
+          <nav class="level">
+            <div class="level-item has-text-centered">
+              <div class="field">
+                <div class="control">
+                  <label class="label" for="url"
+                    >Actor's Rotten Tomatoes Page</label
+                  >
+                  <input
+                    class="input"
+                    type="url"
+                    id="url"
+                    name="url"
+                    placeholder="https://www.rottentomatoes.com/celebrity/example"
+                    pattern="https://www.rottentomatoes.com/celebrity/.*"
+                    required
+                    size="60"
+                  />
+                </div>
+              </div>
+            </div>
+          </nav>
+
           <div class="columns">
+            <div class="column is-one-fifth">
+              <div class="field">
+                <div class="control">
+                  <label class="label">Categories</label>
+                  <label class="checkbox">
+                    <input type="checkbox" />
+                    Movies
+                  </label>
+                  <label class="checkbox">
+                    <input type="checkbox" />
+                    TV Shows
+                  </label>
+                </div>
+                <div class="control mt-2">
+                  <div class="select is-multiple">
+                    <label class="label" for="role">Role</label>
+                    <select multiple size="3" name="role" id="role">
+                      <option value="all">All</option>
+                      <option value="character">Character</option>
+                      <option value="voice">Voice</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="control mt-2">
+                  <label class="label" for="yearSlider">Oldest Year</label>
+                  <input
+                    oninput="year.value=parseInt(yearSlider.value)"
+                    name="yearSlider"
+                    id="yearSlider"
+                    class="slider has-output is-fullwidth"
+                    min="1900"
+                    max="2022"
+                    value="1900"
+                    step="1"
+                    type="range"
+                  />
+                  <output name="year" for="yearSlider">1900</output>
+                </div>
+                <div class="control">
+                  <label class="label" for="boxOffice"
+                    >Minimum Box Office (Millions)</label
+                  >
+                  <input type="number" id="boxOffice" name="boxOffice" />
+                </div>
+              </div>
+            </div>
             <div class="column">
               <div class="field">
                 <div class="control">
                   <label class="label" for="genres">Genres</label>
                   <div class="select is-multiple">
-                    <select multiple size="5" name="genres" id="genres">
+                    <select multiple size="8" name="genres" id="genres">
                       <option value="all">All</option>
                       <option value="action">Action</option>
                       <option value="adventure">Adventure</option>
@@ -92,7 +162,7 @@
                 <div class="control">
                   <label class="label" for="ratings">Ratings</label>
                   <div class="select is-multiple">
-                    <select multiple size="5" name="ratings" id="ratings">
+                    <select multiple size="8" name="ratings" id="ratings">
                       <option value="all">All</option>
                       <option value="g">G</option>
                       <option value="pg">PG</option>
@@ -114,7 +184,7 @@
                     >Available Platforms</label
                   >
                   <div class="select is-multiple">
-                    <select multiple size="5" name="platforms" id="platforms">
+                    <select multiple size="8" name="platforms" id="platforms">
                       <option value="all">All</option>
                       <option value="showtimes">In Theaters</option>
                       <option value="amazon-prime-video-us">
@@ -183,24 +253,21 @@
                     step="1"
                     value="10"
                   />
-
-                  <label class="checkbox">
-                    <input name="popular" id="popular" type="checkbox" />
-                    Prioritize popular movies
-                  </label>
                 </div>
               </div>
             </div>
           </div>
-          <div>
-            <button
-              class="button js-modal-trigger"
-              type="submit"
-              data-target="success-modal"
-            >
-              Generate recommendations!
-            </button>
-          </div>
+          <nav class="level">
+            <div class="level-item has-text-centered">
+              <button
+                class="button js-modal-trigger is-info"
+                type="submit"
+                data-target="success-modal"
+              >
+                Generate recommendations!
+              </button>
+            </div>
+          </nav>
         </form>
       </div>
     </section>
