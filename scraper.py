@@ -288,7 +288,8 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                     platformList.append("In Theaters")
                 else:
                     platformList.append(platformDict[platform["affiliate"]])
-            movieInfoDict["platforms"] = platformList
+            platformString = ", ".join(platformList)
+            movieInfoDict["platforms"] = platformString
 
             # Cast
             castDict = {}
@@ -316,9 +317,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                 elif info.text == desiredInfoCategories[1]:
                     formattedInfo = info.next_sibling.next_sibling.text.strip()
                     formattedInfo = formattedInfo.replace(" ", "").replace("\n", "")
-                    formattedInfo = formattedInfo.split(",")
-
-                    # 
+                    formattedInfo = formattedInfo.replace(",", ", ")
                 elif info.text == desiredInfoCategories[2] or \
                     info.text == desiredInfoCategories[5]:
                     formattedInfo = info.next_sibling.next_sibling.text.strip()
@@ -478,7 +477,8 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
             platformList = []
             for platform in availablePlatforms:
                 platformList.append(platformDict[platform["affiliate"]])
-            tvShowInfoDict["platforms"] = platformList
+            platformString = ", ".join(platformList)
+            tvShowInfoDict["platforms"] = platformString
 
             # Additional information
             network = tvShowSoup.find(
