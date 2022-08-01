@@ -56,10 +56,22 @@
                 <div class="control">
                   <label class="label">Categories</label>
                   <label class="checkbox">
-                    <input type="checkbox" checked /> Movies
+                    <input
+                      type="checkbox"
+                      name="movieCheckbox"
+                      id="movieCheckbox"
+                      checked
+                    />
+                    Movies
                   </label>
                   <label class="checkbox">
-                    <input type="checkbox" checked /> TV Shows
+                    <input
+                      type="checkbox"
+                      name="tvCheckbox"
+                      id="tvCheckbox"
+                      checked
+                    />
+                    TV Shows
                   </label>
                 </div>
                 <div class="control mt-2">
@@ -284,7 +296,7 @@
     <script>
       const actorURLField = document.getElementById("actorURL");
       const submitButton = document.getElementById("submitButton");
-      const expression = /https:\/\/www.rottentomatoes.com\/celebrity\/.*/;
+      const expression = /^https:\/\/www.rottentomatoes.com\/celebrity\/.*/;
       const regEx = new RegExp(expression);
       actorURL.addEventListener("keyup", () => {
         if (regEx.test(actorURLField.value)) {
