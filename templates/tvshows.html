@@ -32,7 +32,7 @@
                 <div class="control">
                   <label class="label" for="genres">Genres</label>
                   <div class="select is-multiple">
-                    <select multiple size="5" name="genres" id="genres">
+                    <select multiple size="7" name="genres" id="genres">
                       <option value="all">All</option>
                       <option value="action">Action</option>
                       <option value="adventure">Adventure</option>
@@ -92,7 +92,7 @@
                 <div class="control">
                   <label class="label" for="ratings">Ratings</label>
                   <div class="select is-multiple">
-                    <select multiple size="5" name="ratings" id="ratings">
+                    <select multiple size="7" name="ratings" id="ratings">
                       <option value="all">All</option>
                       <option value="tvy">TV-Y</option>
                       <option value="tvy7">TV-Y7</option>
@@ -113,7 +113,7 @@
                     >Available Platforms</label
                   >
                   <div class="select is-multiple">
-                    <select multiple size="5" name="platforms" id="platforms">
+                    <select multiple size="7" name="platforms" id="platforms">
                       <option value="all">All</option>
                       <option value="amazon-prime-video-us">
                         Amazon Prime Video US
@@ -182,7 +182,7 @@
                     value="10"
                   />
 
-                  <label class="checkbox">
+                  <label class="checkbox mt-3">
                     <input name="popular" id="popular" type="checkbox" />
                     Prioritize popular shows
                   </label>
@@ -190,15 +190,17 @@
               </div>
             </div>
           </div>
-          <div>
-            <button
-              class="button js-modal-trigger"
-              type="submit"
-              data-target="success-modal"
-            >
-              Generate recommendations!
-            </button>
-          </div>
+          <nav class="level">
+            <div class="level-item has-text-centered">
+              <button
+                class="button js-modal-trigger is-info"
+                type="submit"
+                data-target="success-modal"
+              >
+                Generate recommendations!
+              </button>
+            </div>
+          </nav>
         </form>
       </div>
     </section>
