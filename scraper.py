@@ -186,10 +186,25 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     movieDict = {} # Keys contain movie names; used to avoid duplicates
     useRandom = True if tomatometerScore <= 75 and audienceScore <= 75 else False
     maxLimit = 50
+    baseURL = "https://www.rottentomatoes.com"
     desiredInfoCategories = [
         "Rating:", "Genre:", "Original Language:", "Release Date (Theaters):",
-        "Release Date (Streaming):", "Runtime:"
+        "Release Date (Streaming):", "Runtime:", "Director:", "Producer:", "Writer:"
     ]
+    # Format platforms for frontend
+    platformDict = {
+        "amazon-prime-video-us": "Amazon Prime Video",
+        "itunes": "iTunes",
+        "apple-tv-plus-us": "Apple TV+",
+        "disney-plus-us": "Disney+",
+        "hbo-max": "HBO Max",
+        "hulu": "Hulu",
+        "netflix": "Netflix",
+        "paramount-plus-us": "Paramount+",
+        "peacock": "Peacock",
+        "vudu": "Vudu"
+    }
+
     for url in URLs:
         if movieCount == limit:
             break
@@ -225,7 +240,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                 if randomInt == 0:
                     continue
 
-            url = "https://www.rottentomatoes.com" + movie["href"]
+            url = baseURL + movie["href"]
             data = movie.find("div", slot="caption")
             scores = data.contents[1]
 
@@ -270,12 +285,12 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
             platformList = []
             for platform in availablePlatforms:
                 if platform["affiliate"] == "showtimes":
-                    platformList.append("in-theaters")
+                    platformList.append("In Theaters")
                 else:
-                    platformList.append(platform["affiliate"])
+                    platformList.append(platformDict[platform["affiliate"]])
             movieInfoDict["platforms"] = platformList
 
-            # Cast # EDITTTTTTT!!!!!
+            # Cast
             castDict = {}
             cast = movieSoup.find_all(
                 "a",
@@ -283,13 +298,10 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                 limit=6
             )
             for actor in cast:
-                actorURL = actor["href"]
-                actorName = actor.contents[0].text
+                actorURL = baseURL + actor["href"].strip()
+                actorName = actor.contents[1].text.strip()
                 castDict[actorName] = actorURL
             movieInfoDict["cast"] = castDict
-
-
-            # Director, producer, writer
 
             # Additional information (rating, genre, etc.)
             additionalInfo = movieSoup.find_all(
@@ -305,6 +317,8 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                     formattedInfo = info.next_sibling.next_sibling.text.strip()
                     formattedInfo = formattedInfo.replace(" ", "").replace("\n", "")
                     formattedInfo = formattedInfo.split(",")
+
+                    # 
                 elif info.text == desiredInfoCategories[2] or \
                     info.text == desiredInfoCategories[5]:
                     formattedInfo = info.next_sibling.next_sibling.text.strip()
@@ -312,10 +326,44 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                     info.text == desiredInfoCategories[4]:
                     date = info.next_sibling.next_sibling.text.split()
                     formattedInfo = date[0] + " " + date[1] + " " + date[2]
+                elif info.text == desiredInfoCategories[6]:
+                    directorDict = {}
+                    sibling = info.next_sibling.next_sibling
+                    for director in sibling.contents:
+                        if director.name != "a":
+                            continue
+                        directorName = director.text.strip()
+                        directorURL = baseURL + director["href"]
+                        directorDict[directorName] = directorURL
+                    movieInfoDict["director"] = directorDict
+                elif info.text == desiredInfoCategories[7]:
+                    producerDict = {}
+                    sibling = info.next_sibling.next_sibling
+                    for producer in sibling.contents:
+                        if producer.name != "a":
+                            continue
+                        producerName = producer.text.strip()
+                        producerURL = baseURL + producer["href"]
+                        producerDict[producerName] = producerURL
+                    movieInfoDict["producer"] = producerDict
+                elif info.text == desiredInfoCategories[8]:
+                    writerDict = {}
+                    sibling = info.next_sibling.next_sibling
+                    for writer in sibling.contents:
+                        if writer.name != "a":
+                            continue
+                        writerName = writer.text.strip()
+                        writerURL = baseURL + writer["href"]
+                        writerDict[writerName] = writerURL
+                    movieInfoDict["writer"] = writerDict
                 else:
                     continue
-                movieInfoDict[info.text[0:-1].lower()] = formattedInfo
-            
+                
+                if info.text != desiredInfoCategories[6] and \
+                    info.text != desiredInfoCategories[7] and \
+                    info.text != desiredInfoCategories[8]:
+                    movieInfoDict[info.text[0:-1].lower()] = formattedInfo
+
             # if the last row is full, create a new row
             if len(movieInfo[-1]) == 4:
                 movieInfo.append([movieInfoDict])
@@ -338,6 +386,20 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
     maxLimit = 50
 
     baseURL = "https://www.rottentomatoes.com"
+
+    # Format platforms for frontend
+    platformDict = {
+        "amazon-prime-video-us": "Amazon Prime Video",
+        "itunes": "iTunes",
+        "apple-tv-plus-us": "Apple TV+",
+        "disney-plus-us": "Disney+",
+        "hbo-max": "HBO Max",
+        "hulu": "Hulu",
+        "netflix": "Netflix",
+        "paramount-plus-us": "Paramount+",
+        "peacock": "Peacock",
+        "vudu": "Vudu"
+    }
 
     for url in URLs:
         if tvShowCount == limit:
@@ -415,7 +477,7 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
             availablePlatforms = tvShowSoup.find_all("where-to-watch-meta")
             platformList = []
             for platform in availablePlatforms:
-                platformList.append(platform["affiliate"])
+                platformList.append(platformDict[platform["affiliate"]])
             tvShowInfoDict["platforms"] = platformList
 
             # Additional information
