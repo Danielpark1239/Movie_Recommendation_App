@@ -516,7 +516,8 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
             producersDict = {}
             producers = tvShowSoup.find_all(
                 "a",
-                attrs={"data-qa": "series-details-producer"}
+                attrs={"data-qa": "series-details-producer"},
+                limit=6
             )
             for producer in producers:
                 producerName = producer.text.strip()
