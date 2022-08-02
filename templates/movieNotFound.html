@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rotten Tomatoes Recommendation App</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+    />
+    <link
+      rel="shortcut icon"
+      href="{{ url_for('static', filename='tomato-favicon.ico') }}"
+    />
+  </head>
+
+  <section class="hero is-info">
+    <div class="hero-body">
+      <p class="title">Rotten Tomatoes Recommendation App</p>
+      <p class="subtitle"><strong>No Recommendations Found</strong></p>
+      <a class="button" href="/">Home</a>
+    </div>
+  </section>
+
+  <body class="has-background-light">
+    <section class="section">
+      <nav class="level">
+        <div class="level-item has-text-centered">
+          <div class="subtitle">
+            No recommendations could be found for the given filters. Please try
+            again with different parameters.
+          </div>
+        </div>
+      </nav>
+      <nav class="level">
+        <div class="level-item has-text-centered">
+          <a class="button is-info is-medium" href="/movies"
+            >Back to Movies Page</a
+          >
+        </div>
+      </nav>
+    </section>
+  </body>
+  <footer class="footer has-background-light">
+    <div class="content has-text-centered">
+      <p>
+        <strong>Rotten Tomatoes Recommendation App</strong> by
+        <a href="https://github.com/Danielpark1239">Daniel Park</a>.
+      </p>
+    </div>
+  </footer>
+</html>
