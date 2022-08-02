@@ -272,6 +272,7 @@
                     max="50"
                     step="1"
                     value="10"
+                    oninput="this.value = Math.abs(this.value) > 0 ? Math.abs(this.value) : null"
                   />
                 </div>
               </div>
@@ -296,6 +297,7 @@
 
     <script>
       const actorURLField = document.getElementById("actorURL");
+      const limitField = document.getElementById("limit");
       const submitButton = document.getElementById("submitButton");
       const expression = /^https:\/\/www.rottentomatoes.com\/celebrity\/.*/;
       const regEx = new RegExp(expression);
@@ -304,6 +306,14 @@
           submitButton.disabled = false;
         } else {
           submitButton.disabled = true;
+        }
+      });
+
+      limit.addEventListener("keyup", () => {
+        if (parseInt(limitField.value) > 50) {
+          submitButton.disabled = true;
+        } else {
+          submitButton.disabled = false;
         }
       });
 
