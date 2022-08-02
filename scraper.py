@@ -549,3 +549,15 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
 
     return tvShowInfo
 
+def scrapeActor(filterData):
+    print(filterData)
+    return [[]]
+
+    # check movies and/or tv shows depending on the checkboxes
+    # turn movies/tv shows into radio buttons
+
+    # For each, 
+
+
+
+
