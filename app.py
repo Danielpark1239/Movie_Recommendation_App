@@ -37,6 +37,9 @@ def movieRecommendations():
         URLs, tomatometerScore, audienceScore, limit
     )
 
+    if len(movieInfo[0]) == 0:
+        return render_template("movieNotFound.html")
+
     return render_template("movieRecommendations.html", movieInfo=movieInfo)
 
 @app.route('/tvshows/', methods=['GET'])
@@ -61,11 +64,55 @@ def tvshowRecommendations():
         URLs, tomatometerScore, audienceScore, limit
     )
 
+    if len(tvShowInfo[0]) == 0:
+        return render_template("tvshowNotFound.html")
+
     return render_template("tvshowRecommendations.html", tvShowInfo=tvShowInfo)
 
 @app.route('/actor/', methods=['GET'])
 def actor():
     return render_template('actor.html')
+
+@app.route('/actor/recommendations/', methods=['POST'])
+def actorRecommendations():
+    formData = request.form
+
+    roles = formData.getlist("role")
+    if len(roles) == 0 or "all" in roles:
+        roles = ["all"]
+    genres = formData.getlist("genres")
+    if len(genres) == 0 or "all" in genres:
+        genres = ["all"]
+    ratings = formData.getlist("ratings")
+    if len(ratings) == 0 or "all" in ratings:
+        ratings = ["all"]
+    platforms = formData.getlist("platforms")
+    if len(platforms) == 0 or "all" in platforms:
+        platforms = ["all"]
+
+    filterData = {
+        "actorURL": formData["actorURL"],
+        "category": formData["category"],
+        "roles": roles,
+        "oldestYear": int(formData["yearSlider"]),
+        "boxOffice": int(formData["boxOffice"]),
+        "genres": genres,
+        "ratings": ratings,
+        "platforms": platforms,
+        "tomatometerScore": int(formData["tomatometerSlider"]),
+        "audienceScore": int(formData["audienceSlider"]),
+        "limit": int(formData["limit"])
+    }
+
+    actorInfo = scraper.scrapeActor(filterData)
+
+    if actorInfo is None:
+        return render_template("actorInvalid.html")
+    
+    if len(actorInfo[0]) == 0:
+        return render_template("actorNotFound.html")
+
+    return render_template("actorRecommendations.html", actorInfo=actorInfo)
 
 @app.route('/director/', methods=['GET'])
 def director():
