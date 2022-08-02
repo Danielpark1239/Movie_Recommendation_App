@@ -550,13 +550,58 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
     return tvShowInfo
 
 def scrapeActor(filterData):
-    print(filterData)
-    return [[]]
+    baseURL = "https://www.rottentomatoes.com"
+    count = 0
 
-    # check movies and/or tv shows depending on the checkboxes
-    # turn movies/tv shows into radio buttons
+    html_text = requests.get(url=filterData["actorURL"]).text
+    soup = BeautifulSoup(html_text, "lxml")
 
-    # For each, 
+    # If URL is invalid, return None
+    main_page_content = soup.find("div", attrs={"id": "main-page-content"})
+    if main_page_content.contents[1].contents[1].text.strip() == "404 - Not Found":
+        return None
+
+    # Scrape movies
+    if filterData["category"] == "movie":
+        movies = soup.find_all("tr", attrs={
+            "data-qa": "celebrity-filmography-movies-trow"
+        })
+        for movie in movies:
+            if count == filterData["limit"]:
+                break
+            boxOffice = movie["data-boxoffice"]
+            year = movie["data-year"]
+            tomatoMeter = movie["data-tomatometer"]
+            AudienceScore = movie["data-audiencescore"]
+
+            # Filter by role if specified
+            roles = filterData["roles"]
+            if "all" not in roles:
+                role = movie.contents[7].text.strip()
+                if ("(Character)" in role or "Self" in role) and "character" not in roles:
+                    continue
+                elif "(Voice)" in role and "voice" not in roles:
+                    continue
+                elif "(Character)" not in role and "Self" not in role and \
+                "(Voice)" not in role and "other" not in roles:
+                    continue
+            print(movie.contents[7].text.strip())
+
+            # Get url
+            url = baseURL + movie.contents[5].contents[1]["href"]
+
+            count += 1
+
+    # Scrape TV shows
+    elif filterData["category"] == "tv":
+        tvShows = soup.find_all("tr", attrs={
+            "data-qa": "celebrity-filmography-tv-trow"
+        })
+        print(tvShows)
+
+
+    print(f"Total count: {count}")
+    return [filterData]
 
 
 
