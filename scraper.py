@@ -698,8 +698,8 @@ def scrapeDirectorProducer(filterData, type):
             if not ratingFlag or not genreFlag:
                 continue
         
-            movieScraper.setCast(info, movieInfoDict)
-            movieScraper.setPosterImage(info, movieInfoDict)
+            movieScraper.setCast(movieSoup, movieInfoDict)
+            movieScraper.setPosterImage(movieSoup, movieInfoDict)
 
             # if the last row is full, create a new row
             if len(filmographyInfo[-1]) == 4:
