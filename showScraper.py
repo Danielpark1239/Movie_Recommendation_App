@@ -17,11 +17,24 @@ def setPosterImage(showSoup, showInfoDict):
 
 def setPlatforms(showSoup, showInfoDict):
     availablePlatforms = showSoup.find_all("where-to-watch-meta")
+    if availablePlatforms is not None:
+        platformList = []
+        for platform in availablePlatforms:
+            platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
+        platformString = ", ".join(platformList)
+        showInfoDict["platforms"] = platformString
+
+def setPlatformsWithFilter(showSoup, showInfoDict, filterList):
+    flag = True if "all" in filterList else False
+    availablePlatforms = showSoup.find_all("where-to-watch-meta")
     platformList = []
     for platform in availablePlatforms:
+        if platform["affiliate"] in filterList:
+            flag = True
         platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
     platformString = ", ".join(platformList)
     showInfoDict["platforms"] = platformString
+    return flag
 
 def setNetwork(showSoup, showInfoDict):
     network = showSoup.find(
@@ -47,17 +60,32 @@ def setGenre(showSoup, showInfoDict):
     if genre is not None:
         showInfoDict["genre"] = genre.text
 
+# Returns True if the show's genre matches the filter, False otherwise
+def setGenreWithFilter(showSoup, showInfoDict, filterList):
+    flag = True if "all" in filterList else False
+    genreTag = showSoup.find(
+        "td", 
+        attrs={"data-qa": "series-details-genre"}
+    )
+    if genreTag is not None:
+        genre = genreTag.text
+        if genre in filterList:
+            flag = True
+        showInfoDict["genre"] = genre
+    return flag
+
 def setCreators(showSoup, showInfoDict):
     creatorsDict = {}
     creators = showSoup.find_all(
         "a",
         attrs={"data-qa": "creator"}
     )
-    for creator in creators:
-        creatorName = creator.text.strip()
-        creatorURL = BASE_URL + creator["href"]
-        creatorsDict[creatorName] = creatorURL
-    showInfoDict["creators"] = creatorsDict
+    if creators is not None:
+        for creator in creators:
+            creatorName = creator.text.strip()
+            creatorURL = BASE_URL + creator["href"]
+            creatorsDict[creatorName] = creatorURL
+        showInfoDict["creators"] = creatorsDict
 
 def setProducers(showSoup, showInfoDict):
     producersDict = {}
@@ -66,11 +94,12 @@ def setProducers(showSoup, showInfoDict):
         attrs={"data-qa": "series-details-producer"},
         limit=6
     )
-    for producer in producers:
-        producerName = producer.text.strip()
-        producerURL = BASE_URL + producer["href"]
-        producersDict[producerName] = producerURL
-    showInfoDict["producers"] = producersDict
+    if producers is not None:
+        for producer in producers:
+            producerName = producer.text.strip()
+            producerURL = BASE_URL + producer["href"]
+            producersDict[producerName] = producerURL
+        showInfoDict["producers"] = producersDict
 
 def setCast(showSoup, showInfoDict):
     castDict = {}
@@ -78,8 +107,9 @@ def setCast(showSoup, showInfoDict):
         "a",
         attrs={"data-qa": "cast-member"}
     )
-    for actor in cast:
-        actorName = actor.text.strip()
-        actorURL = BASE_URL + actor["href"]
-        castDict[actorName] = actorURL
-    showInfoDict["cast"] = castDict
+    if cast is not None:
+        for actor in cast:
+            actorName = actor.text.strip()
+            actorURL = BASE_URL + actor["href"]
+            castDict[actorName] = actorURL
+        showInfoDict["cast"] = castDict
