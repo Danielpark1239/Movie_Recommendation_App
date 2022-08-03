@@ -188,7 +188,6 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                 attrs={"href": re.compile("/m/"), "data-id": True}, 
             )
 
-
         for movie in movies:
             if movieCount == limit:
                 break
@@ -439,17 +438,11 @@ def scrapeActor(filterData):
 
             # Available streaming platforms
             # If none of the movie's platforms match the filter, skip
-            platformFlag = True if "all" in filterData["platforms"] else False
-            availablePlatforms = movieSoup.find_all("where-to-watch-meta")
-            platformList = []
-            for platform in availablePlatforms:
-                if platform["affiliate"] in filterData["platforms"]:
-                    platformFlag = True
-                platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
+            platformFlag = movieScraper.setPlatformsWithFilter(
+                movieSoup, movieInfoDict, filterData["platforms"]
+            )
             if not platformFlag:
                 continue
-            platformString = ", ".join(platformList)
-            movieInfoDict["platforms"] = platformString
 
             # Additional information (rating, genre, original language, runtime)
             additionalInfo = movieSoup.find_all(
@@ -459,32 +452,24 @@ def scrapeActor(filterData):
 
             # If a movie doesn't pass the rating filter, skip it
             ratingFlag = False
-
             # If a movie doesn't pass the genre filter, skip it
             genreFlag = False
 
+            # Filter and format data depending on category
             for info in additionalInfo:
-                # Filter and format data depending on category
                 if info.text == "Rating:":
-                    rating = info.next_sibling.next_sibling.text.split()[0]
-                    if "all" in filterData["ratings"] or rating in filterData["ratings"]:
-                        ratingFlag = True
-                    movieInfoDict["rating"] = rating
+                    ratingFlag = movieScraper.setRatingWithFilter(
+                        info, movieInfoDict, filterData["ratings"]
+                    )
+                    if not ratingFlag:
+                        break
 
                 elif info.text == "Genre:":
-                    genreString = info.next_sibling.next_sibling.text.strip()
-                    genreString = genreString.replace("\n", "").replace(" ", "")
-                    if "all" in filterData["genres"]:
-                        genreFlag = True
-                        genreString = genreString.replace(",", ", ").replace("&", " & ")
-                        movieInfoDict["genres"] = genreString
-                    else:
-                        genreList = genreString.split(",")
-                        for genre in genreList:
-                            if genre in filterData["genres"]:
-                                genreFlag = True
-                        genreString = genreString.replace(",", ", ").replace("&", " & ")
-                        movieInfoDict["genres"] = genreString
+                    genreFlag = movieScraper.setGenresWithFilter(
+                        info, movieInfoDict, filterData["genres"]
+                    )
+                    if not genreFlag:
+                        break
 
                 elif info.text == "Original Language:":
                     movieScraper.setLanguage(info, movieInfoDict)
@@ -510,7 +495,12 @@ def scrapeActor(filterData):
 
     # Scrape TV shows
     elif filterData["category"] == "tv":
-        filterData["genres"] = list(map(lambda x: x.replace("&", " ").replace("-F", " f"), filterData["genres"]))
+        filterData["genres"] = list(
+            map(
+                lambda x: x.replace("&", " ").replace("-F", " f"), 
+                filterData["genres"]
+            )
+        )
         tvShows = soup.find_all("tr", attrs={
             "data-qa": "celebrity-filmography-tv-trow"
         })
@@ -561,30 +551,19 @@ def scrapeActor(filterData):
             }
             
             # Genre
-            genre = showSoup.find(
-                "td", 
-                attrs={"data-qa": "series-details-genre"}
+            genreFlag = showScraper.setGenreWithFilter(
+                showSoup, showInfoDict, filterData["genres"]
             )
-            if genre is not None:
-                genre = genre.text
-                if "all" not in filterData["genres"] and genre not in filterData["genres"]:
-                    continue
-                showInfoDict["genre"] = genre
+            if not genreFlag:
+                continue
 
             # Available streaming platforms
             # If none of the show's platforms match the filter, skip
-            platformFlag = True if "all" in filterData["platforms"] else False
-            availablePlatforms = showSoup.find_all("where-to-watch-meta")
-            platformList = []
-            for platform in availablePlatforms:
-                if platform["affiliate"] in filterData["platforms"]:
-                    platformFlag = True
-                
-                platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
+            platformFlag = showScraper.setPlatformsWithFilter(
+                showSoup, showInfoDict, filterData["platforms"]
+            )
             if not platformFlag:
                 continue
-            platformString = ", ".join(platformList)
-            showInfoDict["platforms"] = platformString
 
             showScraper.setNetwork(showSoup, showInfoDict)
             showScraper.setPosterImage(showSoup, showInfoDict)
@@ -668,17 +647,11 @@ def scrapeDirectorProducer(filterData, type):
 
             # Available streaming platforms
             # If none of the movie's platforms match the filter, skip
-            platformFlag = True if "all" in filterData["platforms"] else False
-            availablePlatforms = movieSoup.find_all("where-to-watch-meta")
-            platformList = []
-            for platform in availablePlatforms:
-                if platform["affiliate"] in filterData["platforms"]:
-                    platformFlag = True
-                platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
+            platformFlag = movieScraper.setPlatformsWithFilter(
+                movieSoup, movieInfoDict, filterData["platforms"]
+            )
             if not platformFlag:
                 continue
-            platformString = ", ".join(platformList)
-            movieInfoDict["platforms"] = platformString
 
             # Additional information
             additionalInfo = movieSoup.find_all(
@@ -694,24 +667,17 @@ def scrapeDirectorProducer(filterData, type):
             for info in additionalInfo:
                 # Filter and format data depending on category
                 if info.text == "Rating:":
-                    rating = info.next_sibling.next_sibling.text.split()[0]
-                    if "all" in filterData["ratings"] or rating in filterData["ratings"]:
-                        ratingFlag = True
-                    movieInfoDict["rating"] = rating
+                    ratingFlag = movieScraper.setRatingWithFilter(
+                        info, movieInfoDict, filterData["ratings"]
+                    )
+                    if not ratingFlag:
+                        break
                 elif info.text == "Genre:":
-                    genreString = info.next_sibling.next_sibling.text.strip()
-                    genreString = genreString.replace("\n", "").replace(" ", "")
-                    if "all" in filterData["genres"]:
-                        genreFlag = True
-                        genreString = genreString.replace(",", ", ").replace("&", " & ")
-                        movieInfoDict["genres"] = genreString
-                    else:
-                        genreList = genreString.split(",")
-                        for genre in genreList:
-                            if genre in filterData["genres"]:
-                                genreFlag = True
-                        genreString = genreString.replace(",", ", ").replace("&", " & ")
-                        movieInfoDict["genres"] = genreString
+                    genreFlag = movieScraper.setGenresWithFilter(
+                        info, movieInfoDict, filterData["genres"]
+                    )
+                    if not genreFlag:
+                        break
                 elif info.text == "Original Language:":
                     movieScraper.setLanguage(info, movieInfoDict)
                 elif info.text == "Runtime:":
@@ -795,29 +761,19 @@ def scrapeDirectorProducer(filterData, type):
             }
             
             # Genre
-            genre = showSoup.find(
-                "td", 
-                attrs={"data-qa": "series-details-genre"}
+            genreFlag = showScraper.setGenreWithFilter(
+                showSoup, showInfoDict, filterData["genres"]
             )
-            if genre is not None:
-                genre = genre.text
-                if "all" not in filterData["genres"] and genre not in filterData["genres"]:
-                    continue
-                showInfoDict["genre"] = genre
+            if not genreFlag:
+                continue
 
             # Available streaming platforms
             # If none of the show's platforms match the filter, skip
-            platformFlag = True if "all" in filterData["platforms"] else False
-            availablePlatforms = showSoup.find_all("where-to-watch-meta")
-            platformList = []
-            for platform in availablePlatforms:
-                if platform["affiliate"] in filterData["platforms"]:
-                    platformFlag = True
-                platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
+            platformFlag = showScraper.setPlatformsWithFilter(
+                showSoup, showInfoDict, filterData["platforms"]
+            )
             if not platformFlag:
                 continue
-            platformString = ", ".join(platformList)
-            showInfoDict["platforms"] = platformString
 
             showScraper.setNetwork(showSoup, showInfoDict)
             showScraper.setPremiereDate(showSoup, showInfoDict)
