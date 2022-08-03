@@ -1,7 +1,11 @@
+from tkinter.messagebox import showinfo
 import requests
 from bs4 import BeautifulSoup
 import random
 import re
+from constants import *
+import movieScraper
+import showScraper
 
 # some repeated code, but hard to modularize since pageString
 # depends on the number of URLs already in the list
@@ -9,21 +13,20 @@ def generateMovieURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
 ):  
     URLs = []
-    # RT shows 30 movies per page max
-    ENTRIES_PER_PAGE = 30
     # If scores are above a certain threshold, generate more pages to search
-    gourmet = True if tomatometerScore >= 75 or audienceScore >= 75 else False
+    gourmet = True if tomatometerScore >= GOURMET_THRESHOLD or\
+    audienceScore >= GOURMET_THRESHOLD else False
     gourmetPages = tomatometerScore // 10 + audienceScore // 10
 
-    theatersURL = "https://www.rottentomatoes.com/browse/movies_in_theaters/"
-    homeURL = "https://www.rottentomatoes.com/browse/movies_at_home/"
+    theatersURL = BASE_MOVIE_THEATERS_URL
+    homeURL = BASE_MOVIE_HOME_URL
         
     audienceStrings = ["audience:upright~"]
-    if audienceScore < 60:   
+    if audienceScore < FRESH_THRESHOLD:   
         audienceStrings.append("audience:spilled~")
 
     tomatometerStrings = ["critics:fresh~"]
-    if tomatometerScore < 60:
+    if tomatometerScore < FRESH_THRESHOLD:
         tomatometerStrings.append("critics:rotten~")
 
     # number of combinations of score strings
@@ -74,20 +77,7 @@ def generateMovieURLs(
             platformString = ""
 
         else:
-            # Mapping from platform to correct URL representation
-            platformDict = {
-                "amazon-prime-video-us": "amazon_prime",
-                "itunes": "apple_tv",
-                "apple-tv-plus-us": "apple_tv_plus",
-                "disney-plus-us": "disney_plus",
-                "hbo-max": "hbo_max",
-                "hulu": "hulu",
-                "netflix": "netflix",
-                "paramount-plus-us": "paramount_plus",
-                "peacock": "peacock",
-                "vudu": "vudu"
-            }
-            platforms = [platformDict[platform] for platform in platforms]
+            platforms = [URL_PLATFORM_DICT[platform] for platform in platforms]
             platformString = "affiliates:" + ",".join(platforms) + "~"
             
         pageString = "sort:popular?page="
@@ -117,18 +107,16 @@ def generateTVshowURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
 ):
     URLs = []
-    ENTRIES_PER_PAGE = 30
-    gourmet = True if tomatometerScore >= 75 or audienceScore >= 75 else False
+    gourmet = True if tomatometerScore >= GOURMET_THRESHOLD or\
+    audienceScore >= GOURMET_THRESHOLD else False
     gourmetPages = tomatometerScore // 10 + audienceScore // 10
 
-    baseURL = "https://www.rottentomatoes.com/browse/tv_series_browse/"
-
     audienceStrings = ["audience:upright~"]
-    if audienceScore < 60:   
+    if audienceScore < FRESH_THRESHOLD:   
         audienceStrings.append("audience:spilled~")
 
     tomatometerStrings = ["critics:fresh~"]
-    if tomatometerScore < 60:
+    if tomatometerScore < FRESH_THRESHOLD:
         tomatometerStrings.append("critics:rotten~")
     scoreCombinations = len(audienceStrings) * len(tomatometerStrings)
     
@@ -147,19 +135,7 @@ def generateTVshowURLs(
     if "all" in platforms:
         platformString = ""
     else:
-        platformDict = {
-                "amazon-prime-video-us": "amazon_prime",
-                "itunes": "apple_tv",
-                "apple-tv-plus-us": "apple_tv_plus",
-                "disney-plus-us": "disney_plus",
-                "hbo-max": "hbo_max",
-                "hulu": "hulu",
-                "netflix": "netflix",
-                "paramount-plus-us": "paramount_plus",
-                "peacock": "peacock",
-                "vudu": "vudu"
-            }
-        platforms = [platformDict[platform] for platform in platforms]
+        platforms = [URL_PLATFORM_DICT[platform] for platform in platforms]
         platformString = "affiliates:" + ",".join(platforms) + "~"
     
     pageString = "sort:popular?page="
@@ -171,12 +147,12 @@ def generateTVshowURLs(
     for audienceString in audienceStrings:
         for tomatometerString in tomatometerStrings:
             URLs.append(
-                baseURL + audienceString + tomatometerString + platformString\
-                + genreString + ratingString + pageString
+                BASE_TV_URL + audienceString + tomatometerString\
+                + platformString + genreString + ratingString + pageString
             )
     if not popular:
         random.shuffle(URLs)
-    print(URLs)
+    print(URLs) # DEBUGGING
     return URLs
 
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
@@ -184,26 +160,12 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     movieInfo = [[]]
     movieCount = 0
     movieDict = {} # Keys contain movie names; used to avoid duplicates
-    useRandom = True if tomatometerScore <= 75 and audienceScore <= 75 else False
-    maxLimit = 50
-    baseURL = "https://www.rottentomatoes.com"
+    useRandom = True if tomatometerScore <= RANDOM_THRESHOLD and \
+    audienceScore <= RANDOM_THRESHOLD else False
     desiredInfoCategories = [
         "Rating:", "Genre:", "Original Language:", "Release Date (Theaters):",
         "Release Date (Streaming):", "Runtime:", "Director:", "Producer:", "Writer:"
     ]
-    # Format platforms for frontend
-    platformDict = {
-        "amazon-prime-video-us": "Amazon Prime Video",
-        "itunes": "iTunes",
-        "apple-tv-plus-us": "Apple TV+",
-        "disney-plus-us": "Disney+",
-        "hbo-max": "HBO Max",
-        "hulu": "Hulu",
-        "netflix": "Netflix",
-        "paramount-plus-us": "Paramount+",
-        "peacock": "Peacock",
-        "vudu": "Vudu"
-    }
 
     for url in URLs:
         if movieCount == limit:
@@ -219,7 +181,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
             movies = moviePageSoup.find_all(
                 "a", 
                 attrs={"href": re.compile("/m/"), "data-id": True}, 
-                limit=(limit // len(URLs)) + (maxLimit // 2 * len(URLs))
+                limit=(limit // len(URLs)) + (MAX_LIMIT // 2 * len(URLs))
             )
         else:
             movies = moviePageSoup.find_all(
@@ -240,7 +202,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                 if randomInt == 0:
                     continue
 
-            url = baseURL + movie["href"]
+            url = BASE_URL + movie["href"]
             data = movie.find("div", slot="caption")
             scores = data.contents[1]
 
@@ -269,40 +231,9 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
             movie_html_text = requests.get(url).text
             movieSoup = BeautifulSoup(movie_html_text, "lxml")
             
-            # Movie poster image
-            print(name) # DEBUGGING: Print name
-            posterImage = movieSoup.find(
-                "img",
-                attrs={"class": re.compile("posterImage")}
-            )
-            if posterImage.has_attr("data-src"):
-                movieInfoDict["posterImage"] = posterImage["data-src"]
-            else:
-                movieInfoDict["posterImage"] = "../../static/blank_poster.png"
-
-            # Available streaming platforms
-            availablePlatforms = movieSoup.find_all("where-to-watch-meta")
-            platformList = []
-            for platform in availablePlatforms:
-                if platform["affiliate"] == "showtimes":
-                    platformList.append("In Theaters")
-                else:
-                    platformList.append(platformDict[platform["affiliate"]])
-            platformString = ", ".join(platformList)
-            movieInfoDict["platforms"] = platformString
-
-            # Cast
-            castDict = {}
-            cast = movieSoup.find_all(
-                "a",
-                attrs={"data-qa": "cast-crew-item-link"},
-                limit=6
-            )
-            for actor in cast:
-                actorURL = baseURL + actor["href"].strip()
-                actorName = actor.contents[1].text.strip()
-                castDict[actorName] = actorURL
-            movieInfoDict["cast"] = castDict
+            movieScraper.setPosterImage(movieSoup, movieInfoDict)
+            movieScraper.setPlatforms(movieSoup, movieInfoDict)
+            movieScraper.setCast(movieSoup, movieInfoDict)
 
             # Additional information (rating, genre, etc.)
             additionalInfo = movieSoup.find_all(
@@ -311,57 +242,27 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
             )
 
             for info in additionalInfo:
-                # Format metadata depending on info category
+                # Set info depending on category
                 if info.text == desiredInfoCategories[0]:
-                    formattedInfo = info.next_sibling.next_sibling.text.split()[0]
+                    movieScraper.setRating(info, movieInfoDict)
                 elif info.text == desiredInfoCategories[1]:
-                    formattedInfo = info.next_sibling.next_sibling.text.strip()
-                    formattedInfo = formattedInfo.replace(" ", "").replace("\n", "")
-                    formattedInfo = formattedInfo.replace(",", ", ")
-                elif info.text == desiredInfoCategories[2] or \
-                    info.text == desiredInfoCategories[5]:
-                    formattedInfo = info.next_sibling.next_sibling.text.strip()
-                elif info.text == desiredInfoCategories[3] or \
-                    info.text == desiredInfoCategories[4]:
-                    date = info.next_sibling.next_sibling.text.split()
-                    formattedInfo = date[0] + " " + date[1] + " " + date[2]
+                    movieScraper.setGenres(info, movieInfoDict)
+                elif info.text == desiredInfoCategories[2]:
+                    movieScraper.setLanguage(info, movieInfoDict)
+                elif info.text == desiredInfoCategories[3]:
+                    movieScraper.setDate(info, movieInfoDict, "theaters")
+                elif info.text == desiredInfoCategories[4]:
+                    movieScraper.setDate(info, movieInfoDict, "streaming")
+                elif info.text == desiredInfoCategories[5]:
+                    movieScraper.setRuntime(info, movieInfoDict)
                 elif info.text == desiredInfoCategories[6]:
-                    directorDict = {}
-                    sibling = info.next_sibling.next_sibling
-                    for director in sibling.contents:
-                        if director.name != "a":
-                            continue
-                        directorName = director.text.strip()
-                        directorURL = baseURL + director["href"]
-                        directorDict[directorName] = directorURL
-                    movieInfoDict["director"] = directorDict
+                    movieScraper.setDirectors(info, movieInfoDict)
                 elif info.text == desiredInfoCategories[7]:
-                    producerDict = {}
-                    sibling = info.next_sibling.next_sibling
-                    for producer in sibling.contents:
-                        if producer.name != "a":
-                            continue
-                        producerName = producer.text.strip()
-                        producerURL = baseURL + producer["href"]
-                        producerDict[producerName] = producerURL
-                    movieInfoDict["producer"] = producerDict
+                    movieScraper.setProducers(info, movieInfoDict)
                 elif info.text == desiredInfoCategories[8]:
-                    writerDict = {}
-                    sibling = info.next_sibling.next_sibling
-                    for writer in sibling.contents:
-                        if writer.name != "a":
-                            continue
-                        writerName = writer.text.strip()
-                        writerURL = baseURL + writer["href"]
-                        writerDict[writerName] = writerURL
-                    movieInfoDict["writer"] = writerDict
+                    movieScraper.setWriters(info, movieInfoDict)
                 else:
                     continue
-                
-                if info.text != desiredInfoCategories[6] and \
-                    info.text != desiredInfoCategories[7] and \
-                    info.text != desiredInfoCategories[8]:
-                    movieInfoDict[info.text[0:-1].lower()] = formattedInfo
 
             # if the last row is full, create a new row
             if len(movieInfo[-1]) == 4:
@@ -369,6 +270,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
             else:
                 movieInfo[-1].append(movieInfoDict)
 
+            print(name) # DEBUGGING: Print name
             movieCount += 1
     
     # DEBUGGING: Print total number of movies scraped
@@ -381,24 +283,8 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
     tvShowInfo = [[]]
     tvShowCount = 0
     tvShowDict = {} # Keys contain tv show names; used to avoid duplicates
-    useRandom = True if tomatometerScore <= 75 and audienceScore <= 75 else False
-    maxLimit = 50
-
-    baseURL = "https://www.rottentomatoes.com"
-
-    # Format platforms for frontend
-    platformDict = {
-        "amazon-prime-video-us": "Amazon Prime Video",
-        "itunes": "iTunes",
-        "apple-tv-plus-us": "Apple TV+",
-        "disney-plus-us": "Disney+",
-        "hbo-max": "HBO Max",
-        "hulu": "Hulu",
-        "netflix": "Netflix",
-        "paramount-plus-us": "Paramount+",
-        "peacock": "Peacock",
-        "vudu": "Vudu"
-    }
+    useRandom = True if tomatometerScore <= RANDOM_THRESHOLD and \
+    audienceScore <= RANDOM_THRESHOLD else False
 
     for url in URLs:
         if tvShowCount == limit:
@@ -414,7 +300,7 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
             tvShows = tvShowPageSoup.find_all(
                 "a", 
                 attrs={"href": re.compile("/tv/"), "data-id": True}, 
-                limit=(limit // len(URLs)) + (maxLimit // 2 * len(URLs))
+                limit=(limit // len(URLs)) + (MAX_LIMIT // 2 * len(URLs))
             )
         else:
             tvShows = tvShowPageSoup.find_all(
@@ -432,7 +318,7 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
                 if randomInt == 0:
                     continue
 
-            url = baseURL + tvShow["href"]
+            url = BASE_URL + tvShow["href"]
             data = tvShow.find("div", slot="caption")
             scores = data.contents[1]
 
@@ -461,80 +347,14 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
             tvshow_html_text = requests.get(url).text
             tvShowSoup = BeautifulSoup(tvshow_html_text, "lxml")
             
-            # show poster image
-            print(name)
-            posterImage = tvShowSoup.find(
-                "img",
-                attrs={"class": re.compile("posterImage")}
-            )
-            if posterImage.has_attr("data-src"):
-                tvShowInfoDict["posterImage"] = posterImage["data-src"]
-            else:
-                tvShowInfoDict["posterImage"] = "../../static/blank_poster.png"
-
-            # Available streaming platforms
-            availablePlatforms = tvShowSoup.find_all("where-to-watch-meta")
-            platformList = []
-            for platform in availablePlatforms:
-                platformList.append(platformDict[platform["affiliate"]])
-            platformString = ", ".join(platformList)
-            tvShowInfoDict["platforms"] = platformString
-
-            # Additional information
-            network = tvShowSoup.find(
-                "td", 
-                attrs={"data-qa": "series-details-network"}
-            )
-            if network is not None:
-                tvShowInfoDict["network"] = network.text
-            
-            premiereDate = tvShowSoup.find(
-                "td", 
-                attrs={"data-qa": "series-details-premiere-date"}
-            )
-            if premiereDate is not None:
-                tvShowInfoDict["premiereDate"] = premiereDate.text
-            
-            genre = tvShowSoup.find(
-                "td", 
-                attrs={"data-qa": "series-details-genre"}
-            )
-            if genre is not None:
-                tvShowInfoDict["genre"] = genre.text
-
-            creatorsDict = {}
-            creators = tvShowSoup.find_all(
-                "a",
-                attrs={"data-qa": "creator"}
-            )
-            for creator in creators:
-                creatorName = creator.text.strip()
-                creatorURL = baseURL + creator["href"]
-                creatorsDict[creatorName] = creatorURL
-            tvShowInfoDict["creators"] = creatorsDict
-            
-            producersDict = {}
-            producers = tvShowSoup.find_all(
-                "a",
-                attrs={"data-qa": "series-details-producer"},
-                limit=6
-            )
-            for producer in producers:
-                producerName = producer.text.strip()
-                producerURL = baseURL + producer["href"]
-                producersDict[producerName] = producerURL
-            tvShowInfoDict["producers"] = producersDict
-
-            castDict = {}
-            cast = tvShowSoup.find_all(
-                "a",
-                attrs={"data-qa": "cast-member"}
-            )
-            for actor in cast:
-                actorName = actor.text.strip()
-                actorURL = baseURL + actor["href"]
-                castDict[actorName] = actorURL
-            tvShowInfoDict["cast"] = castDict
+            showScraper.setPosterImage(tvShowSoup, tvShowInfoDict)
+            showScraper.setPlatforms(tvShowSoup, tvShowInfoDict)
+            showScraper.setNetwork(tvShowSoup, tvShowInfoDict)
+            showScraper.setPremiereDate(tvShowSoup, tvShowInfoDict)
+            showScraper.setGenre(tvShowSoup, tvShowInfoDict)
+            showScraper.setCreators(tvShowSoup, tvShowInfoDict)
+            showScraper.setProducers(tvShowSoup, tvShowInfoDict)
+            showScraper.setCast(tvShowSoup, tvShowInfoDict)
 
             # if the last row is full, create a new row
             if len(tvShowInfo[-1]) == 4:
@@ -542,6 +362,7 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
             else:
                 tvShowInfo[-1].append(tvShowInfoDict)
 
+            print(name) # Debugging
             tvShowCount += 1
     
     # DEBUGGING: Print total number of TV shows scraped
@@ -550,23 +371,8 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
     return tvShowInfo
 
 def scrapeActor(filterData):
-    baseURL = "https://www.rottentomatoes.com"
     count = 0
     filmographyInfo = [[]]
-
-    # Format platforms for frontend
-    platformDict = {
-        "amazon-prime-video-us": "Amazon Prime Video",
-        "itunes": "iTunes",
-        "apple-tv-plus-us": "Apple TV+",
-        "disney-plus-us": "Disney+",
-        "hbo-max": "HBO Max",
-        "hulu": "Hulu",
-        "netflix": "Netflix",
-        "paramount-plus-us": "Paramount+",
-        "peacock": "Peacock",
-        "vudu": "Vudu"
-    }
 
     html_text = requests.get(url=filterData["actorURL"]).text
     soup = BeautifulSoup(html_text, "lxml")
@@ -617,7 +423,7 @@ def scrapeActor(filterData):
                 continue
 
             # Search movie page
-            moviePageURL = baseURL + movie.contents[5].contents[1]["href"]
+            moviePageURL = BASE_URL + movie.contents[5].contents[1]["href"]
             movie_html_text = requests.get(url=moviePageURL).text
             movieSoup = BeautifulSoup(movie_html_text, "lxml")
 
@@ -633,24 +439,16 @@ def scrapeActor(filterData):
             }
 
             # Available streaming platforms
-            availablePlatforms = movieSoup.find_all("where-to-watch-meta")
-            platformList = []
-
             # If none of the movie's platforms match the filter, skip
             platformFlag = True if "all" in filterData["platforms"] else False
-
+            availablePlatforms = movieSoup.find_all("where-to-watch-meta")
+            platformList = []
             for platform in availablePlatforms:
                 if platform["affiliate"] in filterData["platforms"]:
                     platformFlag = True
-
-                if platform["affiliate"] == "showtimes":
-                    platformList.append("In Theaters")
-                else:
-                    platformList.append(platformDict[platform["affiliate"]])
-
+                platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
             if not platformFlag:
                 continue
-                
             platformString = ", ".join(platformList)
             movieInfoDict["platforms"] = platformString
 
@@ -690,32 +488,24 @@ def scrapeActor(filterData):
                         movieInfoDict["genres"] = genreString
 
                 elif info.text == "Original Language:":
-                    movieInfoDict["language"] = info.next_sibling.next_sibling.text.strip()
+                    movieScraper.setLanguage(info, movieInfoDict)
                 elif info.text == "Runtime:":
-                    movieInfoDict["runtime"] = info.next_sibling.next_sibling.text.strip()   
+                    movieScraper.setRuntime(info, movieInfoDict)
                 else:
                     continue
             
             if not ratingFlag or not genreFlag:
                 continue
 
-            # Movie poster image
-            posterImage = movieSoup.find(
-                "img",
-                attrs={"class": re.compile("posterImage")}
-            )
-            if posterImage.has_attr("data-src"):
-                movieInfoDict["posterImage"] = posterImage["data-src"]
-            else:
-                movieInfoDict["posterImage"] = "../../static/blank_poster.png"
-
-            print(name) # DEBUGGING: Print name
+            movieScraper.setPosterImage(movieSoup, movieInfoDict)
 
             # if the last row is full, create a new row
             if len(filmographyInfo[-1]) == 4:
                 filmographyInfo.append([movieInfoDict])
             else:
                 filmographyInfo[-1].append(movieInfoDict)
+
+            print(name) # DEBUGGING: Print name
             count += 1
 
 
@@ -757,7 +547,7 @@ def scrapeActor(filterData):
                 continue
 
             # Search tv show page
-            showPageURL = baseURL + tvShow.contents[5].contents[1]["href"]
+            showPageURL = BASE_URL + tvShow.contents[5].contents[1]["href"]
             show_html_text = requests.get(url=showPageURL).text
             showSoup = BeautifulSoup(show_html_text, "lxml")
 
@@ -783,75 +573,39 @@ def scrapeActor(filterData):
                 showInfoDict["genre"] = genre
 
             # Available streaming platforms
-            availablePlatforms = showSoup.find_all("where-to-watch-meta")
-            platformList = []
-
             # If none of the show's platforms match the filter, skip
             platformFlag = True if "all" in filterData["platforms"] else False
-
+            availablePlatforms = showSoup.find_all("where-to-watch-meta")
+            platformList = []
             for platform in availablePlatforms:
                 if platform["affiliate"] in filterData["platforms"]:
                     platformFlag = True
                 
-                platformList.append(platformDict[platform["affiliate"]])
-
+                platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
             if not platformFlag:
                 continue
-                
             platformString = ", ".join(platformList)
             showInfoDict["platforms"] = platformString
 
-            # TV network
-            network = showSoup.find(
-                "td", 
-                attrs={"data-qa": "series-details-network"}
-            )
-            if network is not None:
-                showInfoDict["network"] = network.text
-            
-            # show poster image
-            posterImage = showSoup.find(
-                "img",
-                attrs={"class": re.compile("posterImage")}
-            )
-            if posterImage is None:
-                showInfoDict["posterImage"] = "../../static/blank_poster.png"
-            elif posterImage.has_attr("data-src"):
-                showInfoDict["posterImage"] = posterImage["data-src"]
-            else:
-                showInfoDict["posterImage"] = "../../static/blank_poster.png"
-
-            print(name) # DEBUGGING: Print name
+            showScraper.setNetwork(showSoup, showInfoDict)
+            showScraper.setPosterImage(showSoup, showInfoDict)
 
             # if the last row is full, create a new row
             if len(filmographyInfo[-1]) == 4:
                 filmographyInfo.append([showInfoDict])
             else:
                 filmographyInfo[-1].append(showInfoDict)
+
+            print(name) # DEBUGGING: Print name
             count += 1
 
-
+    # Debugging: print count
     print(f"Total count: {count}")
     return filmographyInfo
 
 def scrapeDirectorProducer(filterData, type):
-    baseURL = "https://www.rottentomatoes.com"
     count = 0
     filmographyInfo = [[]]
-
-    # Format platforms for frontend
-    platformDict = {
-        "amazon-prime-video-us": "Amazon Prime Video",
-        "itunes": "iTunes",
-        "apple-tv-plus-us": "Apple TV+",
-        "disney-plus-us": "Disney+",
-        "hbo-max": "HBO Max",
-        "hulu": "Hulu",
-        "netflix": "Netflix",
-        "paramount-plus-us": "Paramount+",
-        "peacock": "Peacock",
-        "vudu": "Vudu"
-    }
 
     html_text = requests.get(url=filterData["url"]).text
     soup = BeautifulSoup(html_text, "lxml")
@@ -900,7 +654,7 @@ def scrapeDirectorProducer(filterData, type):
                 continue
 
             # Search movie page
-            moviePageURL = baseURL + movie.contents[5].contents[1]["href"]
+            moviePageURL = BASE_URL + movie.contents[5].contents[1]["href"]
             movie_html_text = requests.get(url=moviePageURL).text
             movieSoup = BeautifulSoup(movie_html_text, "lxml")
 
@@ -914,24 +668,16 @@ def scrapeDirectorProducer(filterData, type):
             }
 
             # Available streaming platforms
-            availablePlatforms = movieSoup.find_all("where-to-watch-meta")
-            platformList = []
-
             # If none of the movie's platforms match the filter, skip
             platformFlag = True if "all" in filterData["platforms"] else False
-
+            availablePlatforms = movieSoup.find_all("where-to-watch-meta")
+            platformList = []
             for platform in availablePlatforms:
                 if platform["affiliate"] in filterData["platforms"]:
                     platformFlag = True
-
-                if platform["affiliate"] == "showtimes":
-                    platformList.append("In Theaters")
-                else:
-                    platformList.append(platformDict[platform["affiliate"]])
-
+                platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
             if not platformFlag:
                 continue
-                
             platformString = ", ".join(platformList)
             movieInfoDict["platforms"] = platformString
 
@@ -968,81 +714,35 @@ def scrapeDirectorProducer(filterData, type):
                         genreString = genreString.replace(",", ", ").replace("&", " & ")
                         movieInfoDict["genres"] = genreString
                 elif info.text == "Original Language:":
-                    movieInfoDict["language"] = info.next_sibling.next_sibling.text.strip()
+                    movieScraper.setLanguage(info, movieInfoDict)
                 elif info.text == "Runtime:":
-                    movieInfoDict["runtime"] = info.next_sibling.next_sibling.text.strip() 
+                    movieScraper.setRuntime(info, movieInfoDict)
                 elif info.text == "Release Date (Theaters):":
-                    date = info.next_sibling.next_sibling.text.split()
-                    movieInfoDict["theaters"] = date[0] + " " + date[1] + " " + date[2]
+                    movieScraper.setDate(info, movieInfoDict, "theaters")
                 elif info.text == "Release Date (Streaming):":  
-                    date = info.next_sibling.next_sibling.text.split()
-                    movieInfoDict["streaming"] = date[0] + " " + date[1] + " " + date[2]
+                    movieScraper.setDate(info, movieInfoDict, "streaming")
                 elif info.text == "Director:":
-                    directorDict = {}
-                    sibling = info.next_sibling.next_sibling
-                    for director in sibling.contents:
-                        if director.name != "a":
-                            continue
-                        directorName = director.text.strip()
-                        directorURL = baseURL + director["href"]
-                        directorDict[directorName] = directorURL
-                    movieInfoDict["directors"] = directorDict
+                    movieScraper.setDirectors(info, movieInfoDict)
                 elif info.text == "Producer:":
-                    producerDict = {}
-                    sibling = info.next_sibling.next_sibling
-                    for producer in sibling.contents:
-                        if producer.name != "a":
-                            continue
-                        producerName = producer.text.strip()
-                        producerURL = baseURL + producer["href"]
-                        producerDict[producerName] = producerURL
-                    movieInfoDict["producers"] = producerDict
+                    movieScraper.setProducers(info, movieInfoDict)
                 elif info.text == "Writer:":
-                    writerDict = {}
-                    sibling = info.next_sibling.next_sibling
-                    for writer in sibling.contents:
-                        if writer.name != "a":
-                            continue
-                        writerName = writer.text.strip()
-                        writerURL = baseURL + writer["href"]
-                        writerDict[writerName] = writerURL
-                    movieInfoDict["writers"] = writerDict
+                    movieScraper.setWriters(info, movieInfoDict)
                 else:
                     continue
             
             if not ratingFlag or not genreFlag:
                 continue
         
-            # Cast
-            castDict = {}
-            cast = movieSoup.find_all(
-                "a",
-                attrs={"data-qa": "cast-crew-item-link"},
-                limit=6
-            )
-            for actor in cast:
-                actorURL = baseURL + actor["href"].strip()
-                actorName = actor.contents[1].text.strip()
-                castDict[actorName] = actorURL
-            movieInfoDict["cast"] = castDict
-
-            # Movie poster image
-            posterImage = movieSoup.find(
-                "img",
-                attrs={"class": re.compile("posterImage")}
-            )
-            if posterImage.has_attr("data-src"):
-                movieInfoDict["posterImage"] = posterImage["data-src"]
-            else:
-                movieInfoDict["posterImage"] = "../../static/blank_poster.png"
-
-            print(name) # DEBUGGING: Print name
+            movieScraper.setCast(info, movieInfoDict)
+            movieScraper.setPosterImage(info, movieInfoDict)
 
             # if the last row is full, create a new row
             if len(filmographyInfo[-1]) == 4:
                 filmographyInfo.append([movieInfoDict])
             else:
                 filmographyInfo[-1].append(movieInfoDict)
+
+            print(name) # DEBUGGING: Print name
             count += 1
 
 
@@ -1073,7 +773,7 @@ def scrapeDirectorProducer(filterData, type):
                 desiredRole = "Director"
             elif type == "producer":
                 desiredRole = "Producer"
-            
+
             if desiredRole not in role:
                 continue
                 
@@ -1082,7 +782,7 @@ def scrapeDirectorProducer(filterData, type):
                 continue
 
             # Search tv show page
-            showPageURL = baseURL + tvShow.contents[5].contents[1]["href"]
+            showPageURL = BASE_URL + tvShow.contents[5].contents[1]["href"]
             show_html_text = requests.get(url=showPageURL).text
             showSoup = BeautifulSoup(show_html_text, "lxml")
 
@@ -1107,96 +807,33 @@ def scrapeDirectorProducer(filterData, type):
                 showInfoDict["genre"] = genre
 
             # Available streaming platforms
-            availablePlatforms = showSoup.find_all("where-to-watch-meta")
-            platformList = []
-
             # If none of the show's platforms match the filter, skip
             platformFlag = True if "all" in filterData["platforms"] else False
-
+            availablePlatforms = showSoup.find_all("where-to-watch-meta")
+            platformList = []
             for platform in availablePlatforms:
                 if platform["affiliate"] in filterData["platforms"]:
                     platformFlag = True
-                
-                platformList.append(platformDict[platform["affiliate"]])
-
+                platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
             if not platformFlag:
                 continue
-                
             platformString = ", ".join(platformList)
             showInfoDict["platforms"] = platformString
 
-            # TV network
-            network = showSoup.find(
-                "td", 
-                attrs={"data-qa": "series-details-network"}
-            )
-            if network is not None:
-                showInfoDict["network"] = network.text
-
-            # Premiere date
-            premiereDate = showSoup.find(
-                "td", 
-                attrs={"data-qa": "series-details-premiere-date"}
-            )
-            if premiereDate is not None:
-                showInfoDict["premiereDate"] = premiereDate.text
-
-            # Creators
-            creatorsDict = {}
-            creators = showSoup.find_all(
-                "a",
-                attrs={"data-qa": "creator"}
-            )
-            for creator in creators:
-                creatorName = creator.text.strip()
-                creatorURL = baseURL + creator["href"]
-                creatorsDict[creatorName] = creatorURL
-            showInfoDict["creators"] = creatorsDict
-
-            # Producers
-            producersDict = {}
-            producers = showSoup.find_all(
-                "a",
-                attrs={"data-qa": "series-details-producer"},
-                limit=6
-            )
-            for producer in producers:
-                producerName = producer.text.strip()
-                producerURL = baseURL + producer["href"]
-                producersDict[producerName] = producerURL
-            showInfoDict["producers"] = producersDict
-
-            # Cast
-            castDict = {}
-            cast = showSoup.find_all(
-                "a",
-                attrs={"data-qa": "cast-member"}
-            )
-            for actor in cast:
-                actorName = actor.text.strip()
-                actorURL = baseURL + actor["href"]
-                castDict[actorName] = actorURL
-            showInfoDict["cast"] = castDict
-            
-            # show poster image
-            posterImage = showSoup.find(
-                "img",
-                attrs={"class": re.compile("posterImage")}
-            )
-            if posterImage is None:
-                showInfoDict["posterImage"] = "../../static/blank_poster.png"
-            elif posterImage.has_attr("data-src"):
-                showInfoDict["posterImage"] = posterImage["data-src"]
-            else:
-                showInfoDict["posterImage"] = "../../static/blank_poster.png"
-
-            print(name) # DEBUGGING: Print name
+            showScraper.setNetwork(showSoup, showInfoDict)
+            showScraper.setPremiereDate(showSoup, showInfoDict)
+            showScraper.setCreators(showSoup, showInfoDict)
+            showScraper.setProducers(showSoup, showInfoDict)
+            showScraper.setCast(showSoup, showInfoDict)
+            showScraper.setPosterImage(showSoup, showInfoDict)
 
             # if the last row is full, create a new row
             if len(filmographyInfo[-1]) == 4:
                 filmographyInfo.append([showInfoDict])
             else:
                 filmographyInfo[-1].append(showInfoDict)
+            
+            print(name) # DEBUGGING: Print name
             count += 1
 
     # Debugging
