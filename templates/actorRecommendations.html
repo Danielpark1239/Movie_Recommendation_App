@@ -27,7 +27,112 @@
 
   <body class="has-background-light">
     <section class="section">
-      <div>{{actorInfo}}</div>
+      {% for row in actorInfo %}
+      <div class="level">
+        <div class="level-item tile is-ancestor">
+          {% for item in row %} {% if item.type == "movie" %}
+          <div class="tile is-3 is-parent">
+            <article class="tile is-child notification is-info">
+              <p class="title has-text-centered">{{ item.name }}</p>
+              <a href="{{ item.url }}" target="_blank">
+                <figure class="image is-2by3">
+                  <img src="{{ item.posterImage }}" />
+                </figure>
+              </a>
+              <nav class="level">
+                <div class="level-left">
+                  <div class="level-item">
+                    <img
+                      src="../../static/tomato-favicon-16x16.png"
+                      alt="tomato"
+                    />
+                    <p class="subtitle">{{ item.criticsScore }}</p>
+                  </div>
+                </div>
+                <div class="level-right">
+                  <div class="level-item">
+                    <img
+                      src="../../static/popcorn-favicon-16x16.png"
+                      alt="popcorn"
+                    />
+                    <p class="subtitle">{{ item.audienceScore }}</p>
+                  </div>
+                </div>
+              </nav>
+
+              <ul>
+                {% if item.genres %}
+                <li><strong>Genres:</strong> {{ item.genres }}</li>
+                {% endif %} {% if item.rating %}
+                <li><strong>Rating:</strong> {{ item.rating }}</li>
+                {% endif %} {% if item.platforms %}
+                <li><strong>Platforms:</strong> {{ item.platforms }}</li>
+                {% endif %} {% if item.role %}
+                <li><strong>Role:</strong> {{ item.role }}</li>
+                {% endif %} {% if item["language"] %}
+                <li>
+                  <strong>Language:</strong>
+                  {{ item["language"] }}
+                </li>
+                {% endif %} {% if item.boxOffice %}
+                <li><strong>Box Office:</strong> {{ item.boxOffice }}</li>
+                {% endif %} {% if item.year %}
+                <li><strong>Year:</strong> {{ item.year }}</li>
+                {% endif %} {% if item["runtime"] %}
+                <li><strong>Runtime:</strong> {{ item["runtime"] }}</li>
+                {% endif %}
+              </ul>
+            </article>
+          </div>
+          {% endif %} {% if item.type == "tv" %}
+          <div class="tile is-3 is-parent">
+            <article class="tile is-child notification is-info">
+              <p class="title has-text-centered">{{ item.name }}</p>
+              <a href="{{ item.url }}" target="_blank">
+                <figure class="image is-2by3">
+                  <img src="{{ item.posterImage }}" />
+                </figure>
+              </a>
+              <nav class="level">
+                <div class="level-left">
+                  <div class="level-item">
+                    <img
+                      src="../../static/tomato-favicon-16x16.png"
+                      alt="tomato"
+                    />
+                    <p class="subtitle">{{ item.criticsScore }}</p>
+                  </div>
+                </div>
+                <div class="level-right">
+                  <div class="level-item">
+                    <img
+                      src="../../static/popcorn-favicon-16x16.png"
+                      alt="popcorn"
+                    />
+                    <p class="subtitle">{{ item.audienceScore }}</p>
+                  </div>
+                </div>
+              </nav>
+
+              <ul>
+                {% if item.network %}
+                <li><strong>TV Network:</strong> {{ item.network }}</li>
+                {% endif %} {% if item.genre %}
+                <li><strong>Genre:</strong> {{ item.genre }}</li>
+                {% endif %} {% if item.platforms %}
+                <li><strong>Platforms:</strong> {{ item.platforms }}</li>
+                {% endif %} {% if item.role %}
+                <li><strong>Role:</strong> {{ item.role }}</li>
+                {% endif %} {% if item.years %}
+                <li><strong>Years:</strong> {{ item.years }}</li>
+                {% endif %}
+              </ul>
+            </article>
+          </div>
+          {% endif %} {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
     </section>
   </body>
 
