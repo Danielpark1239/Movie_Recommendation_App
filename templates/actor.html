@@ -305,7 +305,7 @@
         }
       });
 
-      limit.addEventListener("keyup", () => {
+      limit.addEventListener("input", () => {
         if (parseInt(limitField.value) > 50) {
           submitButton.disabled = true;
         } else {

@@ -213,7 +213,7 @@
       const limitField = document.getElementById("limit");
       const submitButton = document.getElementById("submitButton");
 
-      limit.addEventListener("keyup", () => {
+      limit.addEventListener("input", () => {
         if (parseInt(limitField.value) > 50) {
           submitButton.disabled = true;
         } else {
