@@ -495,12 +495,6 @@ def scrapeActor(filterData):
 
     # Scrape TV shows
     elif filterData["category"] == "tv":
-        filterData["genres"] = list(
-            map(
-                lambda x: x.replace("&", " ").replace("-F", " f"), 
-                filterData["genres"]
-            )
-        )
         tvShows = soup.find_all("tr", attrs={
             "data-qa": "celebrity-filmography-tv-trow"
         })
@@ -713,7 +707,6 @@ def scrapeDirectorProducer(filterData, type):
 
     # Scrape TV shows
     elif filterData["category"] == "tv":
-        filterData["genres"] = list(map(lambda x: x.replace("&", " ").replace("-F", " f"), filterData["genres"]))
         tvShows = soup.find_all("tr", attrs={
             "data-qa": "celebrity-filmography-tv-trow"
         })

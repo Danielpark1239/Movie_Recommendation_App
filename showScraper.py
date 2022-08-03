@@ -62,16 +62,25 @@ def setGenre(showSoup, showInfoDict):
 
 # Returns True if the show's genre matches the filter, False otherwise
 def setGenreWithFilter(showSoup, showInfoDict, filterList):
+    filterList = list(
+        map(
+            lambda x: MOVIE_TO_TV_GENRE_DICT[x], filterList
+        )
+    )
+
     flag = True if "all" in filterList else False
     genreTag = showSoup.find(
         "td", 
         attrs={"data-qa": "series-details-genre"}
     )
     if genreTag is not None:
-        genre = genreTag.text
+        genre = genreTag.text.strip()
         if genre in filterList:
             flag = True
-        showInfoDict["genre"] = genre
+        if TV_TO_FRONTEND_GENRE_DICT[genre]:
+            showInfoDict["genre"] = TV_TO_FRONTEND_GENRE_DICT[genre]
+        else:
+            showInfoDict["genre"] = genre
     return flag
 
 def setCreators(showSoup, showInfoDict):
