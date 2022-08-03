@@ -1,4 +1,3 @@
-from tkinter.messagebox import showinfo
 import requests
 from bs4 import BeautifulSoup
 import random
