@@ -1,3 +1,4 @@
+from tkinter.messagebox import showinfo
 import requests
 from bs4 import BeautifulSoup
 import random
@@ -552,6 +553,21 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
 def scrapeActor(filterData):
     baseURL = "https://www.rottentomatoes.com"
     count = 0
+    filmographyInfo = [[]]
+
+    # Format platforms for frontend
+    platformDict = {
+        "amazon-prime-video-us": "Amazon Prime Video",
+        "itunes": "iTunes",
+        "apple-tv-plus-us": "Apple TV+",
+        "disney-plus-us": "Disney+",
+        "hbo-max": "HBO Max",
+        "hulu": "Hulu",
+        "netflix": "Netflix",
+        "paramount-plus-us": "Paramount+",
+        "peacock": "Peacock",
+        "vudu": "Vudu"
+    }
 
     html_text = requests.get(url=filterData["actorURL"]).text
     soup = BeautifulSoup(html_text, "lxml")
@@ -569,15 +585,22 @@ def scrapeActor(filterData):
         for movie in movies:
             if count == filterData["limit"]:
                 break
-            boxOffice = movie["data-boxoffice"]
-            year = movie["data-year"]
-            tomatoMeter = movie["data-tomatometer"]
-            AudienceScore = movie["data-audiencescore"]
+            name = movie["data-title"]
+            boxOffice = int(movie["data-boxoffice"]) if movie["data-boxoffice"] else 0
+            year = int(movie["data-year"])
+            tomatometerScore = int(movie["data-tomatometer"])
+            audienceScore = int(movie["data-audiencescore"])
+            role = movie.contents[7].text.strip()
+
+            # Filter by scores
+            if tomatometerScore < filterData["tomatometerScore"]:
+                continue
+            if audienceScore < filterData["audienceScore"]:
+                continue
 
             # Filter by role if specified
             roles = filterData["roles"]
             if "all" not in roles:
-                role = movie.contents[7].text.strip()
                 if ("(Character)" in role or "Self" in role) and "character" not in roles:
                     continue
                 elif "(Voice)" in role and "voice" not in roles:
@@ -585,23 +608,229 @@ def scrapeActor(filterData):
                 elif "(Character)" not in role and "Self" not in role and \
                 "(Voice)" not in role and "other" not in roles:
                     continue
-            print(movie.contents[7].text.strip())
+            
+            # Filter by box office
+            if boxOffice // 1000000 < filterData["boxOffice"]:
+                continue
+                
+            # Filter by year
+            if year < filterData["oldestYear"]:
+                continue
 
-            # Get url
-            url = baseURL + movie.contents[5].contents[1]["href"]
+            # Search movie page
+            moviePageURL = baseURL + movie.contents[5].contents[1]["href"]
+            movie_html_text = requests.get(url=moviePageURL).text
+            movieSoup = BeautifulSoup(movie_html_text, "lxml")
 
-            count += 1
+            movieInfoDict = {
+                "type": "movie",
+                "name": name,
+                "audienceScore": audienceScore,
+                "criticsScore": tomatometerScore,
+                "url": moviePageURL,
+                "role": role,
+                "boxOffice": "$" + str(boxOffice // 1000000) + "M",
+                "year": year
+            }
+            
+            # Movie poster image
+            print(name) # DEBUGGING: Print name
+            posterImage = movieSoup.find(
+                "img",
+                attrs={"class": re.compile("posterImage")}
+            )
+            if posterImage.has_attr("data-src"):
+                movieInfoDict["posterImage"] = posterImage["data-src"]
+            else:
+                movieInfoDict["posterImage"] = "../../static/blank_poster.png"
+
+
+            # Available streaming platforms
+            availablePlatforms = movieSoup.find_all("where-to-watch-meta")
+            platformList = []
+
+            # If none of the movie's platforms match the filter, skip
+            platformFlag = True if "all" in filterData["platforms"] else False
+
+            for platform in availablePlatforms:
+                if platform["affiliate"] in filterData["platforms"]:
+                    platformFlag = True
+
+                if platform["affiliate"] == "showtimes":
+                    platformList.append("In Theaters")
+                else:
+                    platformList.append(platformDict[platform["affiliate"]])
+
+            if not platformFlag:
+                continue
+                
+            platformString = ", ".join(platformList)
+            movieInfoDict["platforms"] = platformString
+
+            # Additional information (rating, genre, original language, runtime)
+            additionalInfo = movieSoup.find_all(
+                "div", 
+                attrs={"data-qa": "movie-info-item-label"}
+            )
+
+            # If a movie doesn't pass the rating filter, skip it
+            ratingFlag = False
+
+            # If a movie doesn't pass the genre filter, skip it
+            genreFlag = False
+
+            for info in additionalInfo:
+                # Filter and format data depending on category
+                if info.text == "Rating:":
+                    rating = info.next_sibling.next_sibling.text.split()[0]
+                    if "all" in filterData["ratings"] or rating in filterData["ratings"]:
+                        ratingFlag = True
+                    movieInfoDict["rating"] = rating
+
+                elif info.text == "Genre:":
+                    genreString = info.next_sibling.next_sibling.text.strip()
+                    genreString = genreString.replace("\n", "").replace(" ", "")
+                    if "all" in filterData["genres"]:
+                        genreFlag = True
+                        genreString = genreString.replace(",", ", ").replace("&", " & ")
+                        movieInfoDict["genres"] = genreString
+                    else:
+                        genreList = genreString.split(",")
+                        for genre in genreList:
+                            if genre in filterData["genres"]:
+                                genreFlag = True
+                        genreString = genreString.replace(",", ", ").replace("&", " & ")
+                        movieInfoDict["genres"] = genreString
+
+                elif info.text == "Original Language:":
+                    movieInfoDict["language"] = info.next_sibling.next_sibling.text.strip()
+                elif info.text == "Runtime:":
+                    movieInfoDict["runtime"] = info.next_sibling.next_sibling.text.strip()   
+                else:
+                    continue
+
+            if ratingFlag and genreFlag:
+                # if the last row is full, create a new row
+                if len(filmographyInfo[-1]) == 4:
+                    filmographyInfo.append([movieInfoDict])
+                else:
+                    filmographyInfo[-1].append(movieInfoDict)
+                count += 1
+
 
     # Scrape TV shows
     elif filterData["category"] == "tv":
+        filterData["genres"] = list(map(lambda x: x.replace("&", " ").replace("-F", " f"), filterData["genres"]))
         tvShows = soup.find_all("tr", attrs={
             "data-qa": "celebrity-filmography-tv-trow"
         })
-        print(tvShows)
+        for tvShow in tvShows:
+            if count == filterData["limit"]:
+                break
+            name = tvShow["data-title"]
+            print(name) # DEBUGGING: Print name
+            year = int(tvShow["data-appearance-year"][1:5])
+            yearString = tvShow["data-appearance-year"][1:-1].replace(",", ", ")
+            tomatometerScore = int(tvShow["data-tomatometer"])
+            audienceScore = int(tvShow["data-audiencescore"])
+            role = tvShow.contents[7].text.strip()
+
+            # Filter by scores
+            if tomatometerScore < filterData["tomatometerScore"]:
+                continue
+            if audienceScore < filterData["audienceScore"]:
+                continue
+
+            # Filter by role if specified
+            roles = filterData["roles"]
+            if "all" not in roles:
+                if ("(Character)" in role or "Self" in role) and "character" not in roles:
+                    continue
+                elif "(Voice)" in role and "voice" not in roles:
+                    continue
+                elif "(Character)" not in role and "Self" not in role and \
+                "(Voice)" not in role and "other" not in roles:
+                    continue
+                
+            # Filter by year
+            if year < filterData["oldestYear"]:
+                continue
+
+            # Search tv show page
+            showPageURL = baseURL + tvShow.contents[5].contents[1]["href"]
+            show_html_text = requests.get(url=showPageURL).text
+            showSoup = BeautifulSoup(show_html_text, "lxml")
+
+            showInfoDict = {
+                "type": "tv",
+                "name": name,
+                "audienceScore": audienceScore,
+                "criticsScore": tomatometerScore,
+                "url": showPageURL,
+                "role": role,
+                "years": yearString
+            }
+            
+            # Genre
+            genre = showSoup.find(
+                "td", 
+                attrs={"data-qa": "series-details-genre"}
+            )
+            if genre is not None:
+                genre = genre.text
+                if "all" not in filterData["genres"] and genre not in filterData["genres"]:
+                    continue
+                showInfoDict["genre"] = genre
+
+            # Available streaming platforms
+            availablePlatforms = showSoup.find_all("where-to-watch-meta")
+            platformList = []
+
+            # If none of the show's platforms match the filter, skip
+            platformFlag = True if "all" in filterData["platforms"] else False
+
+            for platform in availablePlatforms:
+                if platform["affiliate"] in filterData["platforms"]:
+                    platformFlag = True
+                
+                platformList.append(platformDict[platform["affiliate"]])
+
+            if not platformFlag:
+                continue
+                
+            platformString = ", ".join(platformList)
+            showInfoDict["platforms"] = platformString
+
+            # TV network
+            network = showSoup.find(
+                "td", 
+                attrs={"data-qa": "series-details-network"}
+            )
+            if network is not None:
+                showInfoDict["network"] = network.text
+            
+            # show poster image
+            posterImage = showSoup.find(
+                "img",
+                attrs={"class": re.compile("posterImage")}
+            )
+            if posterImage is None:
+                showInfoDict["posterImage"] = "../../static/blank_poster.png"
+            elif posterImage.has_attr("data-src"):
+                showInfoDict["posterImage"] = posterImage["data-src"]
+            else:
+                showInfoDict["posterImage"] = "../../static/blank_poster.png"
+
+            # if the last row is full, create a new row
+            if len(filmographyInfo[-1]) == 4:
+                filmographyInfo.append([showInfoDict])
+            else:
+                filmographyInfo[-1].append(showInfoDict)
+            count += 1
 
 
     print(f"Total count: {count}")
-    return [filterData]
+    return filmographyInfo
 
 
 
