@@ -118,6 +118,45 @@ def actorRecommendations():
 def director():
     return render_template('director.html')
 
+@app.route('/director/recommendations/', methods=['POST'])
+def directorRecommendations():
+    formData = request.form
+
+    genres = formData.getlist("genres")
+    if len(genres) == 0 or "all" in genres:
+        genres = ["all"]
+    ratings = formData.getlist("ratings")
+    if len(ratings) == 0 or "all" in ratings:
+        ratings = ["all"]
+    platforms = formData.getlist("platforms")
+    if len(platforms) == 0 or "all" in platforms:
+        platforms = ["all"]
+
+    filterData = {
+        "directorURL": formData["directorURL"],
+        "category": formData["category"],
+        "oldestYear": int(formData["yearSlider"]),
+        "boxOffice": int(formData["boxOffice"]),
+        "genres": genres,
+        "ratings": ratings,
+        "platforms": platforms,
+        "tomatometerScore": int(formData["tomatometerSlider"]),
+        "audienceScore": int(formData["audienceSlider"]),
+        "limit": int(formData["limit"])
+    }
+
+    directorInfo = scraper.scrapeDirector(filterData)
+
+    if directorInfo is None:
+        return render_template("directorInvalid.html")
+    
+    if len(directorInfo[0]) == 0:
+        return render_template("directorNotFound.html")
+
+    return render_template("actorRecommendations.html", directorInfo=directorInfo)
+
+
+
 @app.route('/producer/', methods=['GET'])
 def producer():
     return render_template('producer.html')
