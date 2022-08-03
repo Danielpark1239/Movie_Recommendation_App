@@ -1,4 +1,3 @@
-from tkinter.messagebox import showinfo
 import requests
 from bs4 import BeautifulSoup
 import random
@@ -628,22 +627,10 @@ def scrapeActor(filterData):
                 "audienceScore": audienceScore,
                 "criticsScore": tomatometerScore,
                 "url": moviePageURL,
-                "role": role,
+                "role": role.replace(",", ", "),
                 "boxOffice": "$" + str(boxOffice // 1000000) + "M",
                 "year": year
             }
-            
-            # Movie poster image
-            print(name) # DEBUGGING: Print name
-            posterImage = movieSoup.find(
-                "img",
-                attrs={"class": re.compile("posterImage")}
-            )
-            if posterImage.has_attr("data-src"):
-                movieInfoDict["posterImage"] = posterImage["data-src"]
-            else:
-                movieInfoDict["posterImage"] = "../../static/blank_poster.png"
-
 
             # Available streaming platforms
             availablePlatforms = movieSoup.find_all("where-to-watch-meta")
@@ -708,14 +695,28 @@ def scrapeActor(filterData):
                     movieInfoDict["runtime"] = info.next_sibling.next_sibling.text.strip()   
                 else:
                     continue
+            
+            if not ratingFlag or not genreFlag:
+                continue
 
-            if ratingFlag and genreFlag:
-                # if the last row is full, create a new row
-                if len(filmographyInfo[-1]) == 4:
-                    filmographyInfo.append([movieInfoDict])
-                else:
-                    filmographyInfo[-1].append(movieInfoDict)
-                count += 1
+            # Movie poster image
+            posterImage = movieSoup.find(
+                "img",
+                attrs={"class": re.compile("posterImage")}
+            )
+            if posterImage.has_attr("data-src"):
+                movieInfoDict["posterImage"] = posterImage["data-src"]
+            else:
+                movieInfoDict["posterImage"] = "../../static/blank_poster.png"
+
+            print(name) # DEBUGGING: Print name
+
+            # if the last row is full, create a new row
+            if len(filmographyInfo[-1]) == 4:
+                filmographyInfo.append([movieInfoDict])
+            else:
+                filmographyInfo[-1].append(movieInfoDict)
+            count += 1
 
 
     # Scrape TV shows
@@ -728,7 +729,6 @@ def scrapeActor(filterData):
             if count == filterData["limit"]:
                 break
             name = tvShow["data-title"]
-            print(name) # DEBUGGING: Print name
             year = int(tvShow["data-appearance-year"][1:5])
             yearString = tvShow["data-appearance-year"][1:-1].replace(",", ", ")
             tomatometerScore = int(tvShow["data-tomatometer"])
@@ -767,7 +767,7 @@ def scrapeActor(filterData):
                 "audienceScore": audienceScore,
                 "criticsScore": tomatometerScore,
                 "url": showPageURL,
-                "role": role,
+                "role": role.replace(",", ", "),
                 "years": yearString
             }
             
@@ -821,6 +821,8 @@ def scrapeActor(filterData):
             else:
                 showInfoDict["posterImage"] = "../../static/blank_poster.png"
 
+            print(name) # DEBUGGING: Print name
+
             # if the last row is full, create a new row
             if len(filmographyInfo[-1]) == 4:
                 filmographyInfo.append([showInfoDict])
@@ -832,6 +834,373 @@ def scrapeActor(filterData):
     print(f"Total count: {count}")
     return filmographyInfo
 
+def scrapeDirectorProducer(filterData, type):
+    baseURL = "https://www.rottentomatoes.com"
+    count = 0
+    filmographyInfo = [[]]
 
+    # Format platforms for frontend
+    platformDict = {
+        "amazon-prime-video-us": "Amazon Prime Video",
+        "itunes": "iTunes",
+        "apple-tv-plus-us": "Apple TV+",
+        "disney-plus-us": "Disney+",
+        "hbo-max": "HBO Max",
+        "hulu": "Hulu",
+        "netflix": "Netflix",
+        "paramount-plus-us": "Paramount+",
+        "peacock": "Peacock",
+        "vudu": "Vudu"
+    }
+
+    html_text = requests.get(url=filterData["url"]).text
+    soup = BeautifulSoup(html_text, "lxml")
+
+    # If URL is invalid, return None
+    main_page_content = soup.find("div", attrs={"id": "main-page-content"})
+    if main_page_content.contents[1].contents[1].text.strip() == "404 - Not Found":
+        return None
+
+    # Scrape movies
+    if filterData["category"] == "movie":
+        movies = soup.find_all("tr", attrs={
+            "data-qa": "celebrity-filmography-movies-trow"
+        })
+        for movie in movies:
+            if count == filterData["limit"]:
+                break
+            name = movie["data-title"]
+            boxOffice = int(movie["data-boxoffice"]) if movie["data-boxoffice"] else 0
+            year = int(movie["data-year"])
+            tomatometerScore = int(movie["data-tomatometer"])
+            audienceScore = int(movie["data-audiencescore"])
+            role = movie.contents[7].text.strip()
+
+            # Filter by scores
+            if tomatometerScore < filterData["tomatometerScore"]:
+                continue
+            if audienceScore < filterData["audienceScore"]:
+                continue
+
+            # Filter by role
+            if type == "director":
+                desiredRole = "Director"
+            elif type == "producer":
+                desiredRole = "Producer"
+            
+            if desiredRole not in role:
+                continue
+            
+            # Filter by box office
+            if boxOffice // 1000000 < filterData["boxOffice"]:
+                continue
+                
+            # Filter by year
+            if year < filterData["oldestYear"]:
+                continue
+
+            # Search movie page
+            moviePageURL = baseURL + movie.contents[5].contents[1]["href"]
+            movie_html_text = requests.get(url=moviePageURL).text
+            movieSoup = BeautifulSoup(movie_html_text, "lxml")
+
+            movieInfoDict = {
+                "type": "movie",
+                "name": name,
+                "audienceScore": audienceScore,
+                "criticsScore": tomatometerScore,
+                "url": moviePageURL,
+                "boxOffice": "$" + str(boxOffice // 1000000) + "M",
+            }
+
+            # Available streaming platforms
+            availablePlatforms = movieSoup.find_all("where-to-watch-meta")
+            platformList = []
+
+            # If none of the movie's platforms match the filter, skip
+            platformFlag = True if "all" in filterData["platforms"] else False
+
+            for platform in availablePlatforms:
+                if platform["affiliate"] in filterData["platforms"]:
+                    platformFlag = True
+
+                if platform["affiliate"] == "showtimes":
+                    platformList.append("In Theaters")
+                else:
+                    platformList.append(platformDict[platform["affiliate"]])
+
+            if not platformFlag:
+                continue
+                
+            platformString = ", ".join(platformList)
+            movieInfoDict["platforms"] = platformString
+
+            # Additional information
+            additionalInfo = movieSoup.find_all(
+                "div", 
+                attrs={"data-qa": "movie-info-item-label"}
+            )
+
+            # If a movie doesn't pass the rating filter, skip it
+            ratingFlag = False
+            # If a movie doesn't pass the genre filter, skip it
+            genreFlag = False
+
+            for info in additionalInfo:
+                # Filter and format data depending on category
+                if info.text == "Rating:":
+                    rating = info.next_sibling.next_sibling.text.split()[0]
+                    if "all" in filterData["ratings"] or rating in filterData["ratings"]:
+                        ratingFlag = True
+                    movieInfoDict["rating"] = rating
+                elif info.text == "Genre:":
+                    genreString = info.next_sibling.next_sibling.text.strip()
+                    genreString = genreString.replace("\n", "").replace(" ", "")
+                    if "all" in filterData["genres"]:
+                        genreFlag = True
+                        genreString = genreString.replace(",", ", ").replace("&", " & ")
+                        movieInfoDict["genres"] = genreString
+                    else:
+                        genreList = genreString.split(",")
+                        for genre in genreList:
+                            if genre in filterData["genres"]:
+                                genreFlag = True
+                        genreString = genreString.replace(",", ", ").replace("&", " & ")
+                        movieInfoDict["genres"] = genreString
+                elif info.text == "Original Language:":
+                    movieInfoDict["language"] = info.next_sibling.next_sibling.text.strip()
+                elif info.text == "Runtime:":
+                    movieInfoDict["runtime"] = info.next_sibling.next_sibling.text.strip() 
+                elif info.text == "Release Date (Theaters):":
+                    date = info.next_sibling.next_sibling.text.split()
+                    movieInfoDict["theaters"] = date[0] + " " + date[1] + " " + date[2]
+                elif info.text == "Release Date (Streaming):":  
+                    date = info.next_sibling.next_sibling.text.split()
+                    movieInfoDict["streaming"] = date[0] + " " + date[1] + " " + date[2]
+                elif info.text == "Director:":
+                    directorDict = {}
+                    sibling = info.next_sibling.next_sibling
+                    for director in sibling.contents:
+                        if director.name != "a":
+                            continue
+                        directorName = director.text.strip()
+                        directorURL = baseURL + director["href"]
+                        directorDict[directorName] = directorURL
+                    movieInfoDict["directors"] = directorDict
+                elif info.text == "Producer:":
+                    producerDict = {}
+                    sibling = info.next_sibling.next_sibling
+                    for producer in sibling.contents:
+                        if producer.name != "a":
+                            continue
+                        producerName = producer.text.strip()
+                        producerURL = baseURL + producer["href"]
+                        producerDict[producerName] = producerURL
+                    movieInfoDict["producers"] = producerDict
+                elif info.text == "Writer:":
+                    writerDict = {}
+                    sibling = info.next_sibling.next_sibling
+                    for writer in sibling.contents:
+                        if writer.name != "a":
+                            continue
+                        writerName = writer.text.strip()
+                        writerURL = baseURL + writer["href"]
+                        writerDict[writerName] = writerURL
+                    movieInfoDict["writers"] = writerDict
+                else:
+                    continue
+            
+            if not ratingFlag or not genreFlag:
+                continue
+        
+            # Cast
+            castDict = {}
+            cast = movieSoup.find_all(
+                "a",
+                attrs={"data-qa": "cast-crew-item-link"},
+                limit=6
+            )
+            for actor in cast:
+                actorURL = baseURL + actor["href"].strip()
+                actorName = actor.contents[1].text.strip()
+                castDict[actorName] = actorURL
+            movieInfoDict["cast"] = castDict
+
+            # Movie poster image
+            posterImage = movieSoup.find(
+                "img",
+                attrs={"class": re.compile("posterImage")}
+            )
+            if posterImage.has_attr("data-src"):
+                movieInfoDict["posterImage"] = posterImage["data-src"]
+            else:
+                movieInfoDict["posterImage"] = "../../static/blank_poster.png"
+
+            print(name) # DEBUGGING: Print name
+
+            # if the last row is full, create a new row
+            if len(filmographyInfo[-1]) == 4:
+                filmographyInfo.append([movieInfoDict])
+            else:
+                filmographyInfo[-1].append(movieInfoDict)
+            count += 1
+
+
+    # Scrape TV shows
+    elif filterData["category"] == "tv":
+        filterData["genres"] = list(map(lambda x: x.replace("&", " ").replace("-F", " f"), filterData["genres"]))
+        tvShows = soup.find_all("tr", attrs={
+            "data-qa": "celebrity-filmography-tv-trow"
+        })
+        for tvShow in tvShows:
+            if count == filterData["limit"]:
+                break
+            name = tvShow["data-title"]
+            year = int(tvShow["data-appearance-year"][1:5])
+            yearString = tvShow["data-appearance-year"][1:-1].replace(",", ", ")
+            tomatometerScore = int(tvShow["data-tomatometer"])
+            audienceScore = int(tvShow["data-audiencescore"])
+            role = tvShow.contents[7].text.strip()
+
+            # Filter by scores
+            if tomatometerScore < filterData["tomatometerScore"]:
+                continue
+            if audienceScore < filterData["audienceScore"]:
+                continue
+
+            # Filter by role
+            if type == "director":
+                desiredRole = "Director"
+            elif type == "producer":
+                desiredRole = "Producer"
+            
+            if desiredRole not in role:
+                continue
+                
+            # Filter by year
+            if year < filterData["oldestYear"]:
+                continue
+
+            # Search tv show page
+            showPageURL = baseURL + tvShow.contents[5].contents[1]["href"]
+            show_html_text = requests.get(url=showPageURL).text
+            showSoup = BeautifulSoup(show_html_text, "lxml")
+
+            showInfoDict = {
+                "type": "tv",
+                "name": name,
+                "audienceScore": audienceScore,
+                "criticsScore": tomatometerScore,
+                "url": showPageURL,
+                "years": yearString
+            }
+            
+            # Genre
+            genre = showSoup.find(
+                "td", 
+                attrs={"data-qa": "series-details-genre"}
+            )
+            if genre is not None:
+                genre = genre.text
+                if "all" not in filterData["genres"] and genre not in filterData["genres"]:
+                    continue
+                showInfoDict["genre"] = genre
+
+            # Available streaming platforms
+            availablePlatforms = showSoup.find_all("where-to-watch-meta")
+            platformList = []
+
+            # If none of the show's platforms match the filter, skip
+            platformFlag = True if "all" in filterData["platforms"] else False
+
+            for platform in availablePlatforms:
+                if platform["affiliate"] in filterData["platforms"]:
+                    platformFlag = True
+                
+                platformList.append(platformDict[platform["affiliate"]])
+
+            if not platformFlag:
+                continue
+                
+            platformString = ", ".join(platformList)
+            showInfoDict["platforms"] = platformString
+
+            # TV network
+            network = showSoup.find(
+                "td", 
+                attrs={"data-qa": "series-details-network"}
+            )
+            if network is not None:
+                showInfoDict["network"] = network.text
+
+            # Premiere date
+            premiereDate = showSoup.find(
+                "td", 
+                attrs={"data-qa": "series-details-premiere-date"}
+            )
+            if premiereDate is not None:
+                showInfoDict["premiereDate"] = premiereDate.text
+
+            # Creators
+            creatorsDict = {}
+            creators = showSoup.find_all(
+                "a",
+                attrs={"data-qa": "creator"}
+            )
+            for creator in creators:
+                creatorName = creator.text.strip()
+                creatorURL = baseURL + creator["href"]
+                creatorsDict[creatorName] = creatorURL
+            showInfoDict["creators"] = creatorsDict
+
+            # Producers
+            producersDict = {}
+            producers = showSoup.find_all(
+                "a",
+                attrs={"data-qa": "series-details-producer"},
+                limit=6
+            )
+            for producer in producers:
+                producerName = producer.text.strip()
+                producerURL = baseURL + producer["href"]
+                producersDict[producerName] = producerURL
+            showInfoDict["producers"] = producersDict
+
+            # Cast
+            castDict = {}
+            cast = showSoup.find_all(
+                "a",
+                attrs={"data-qa": "cast-member"}
+            )
+            for actor in cast:
+                actorName = actor.text.strip()
+                actorURL = baseURL + actor["href"]
+                castDict[actorName] = actorURL
+            showInfoDict["cast"] = castDict
+            
+            # show poster image
+            posterImage = showSoup.find(
+                "img",
+                attrs={"class": re.compile("posterImage")}
+            )
+            if posterImage is None:
+                showInfoDict["posterImage"] = "../../static/blank_poster.png"
+            elif posterImage.has_attr("data-src"):
+                showInfoDict["posterImage"] = posterImage["data-src"]
+            else:
+                showInfoDict["posterImage"] = "../../static/blank_poster.png"
+
+            print(name) # DEBUGGING: Print name
+
+            # if the last row is full, create a new row
+            if len(filmographyInfo[-1]) == 4:
+                filmographyInfo.append([showInfoDict])
+            else:
+                filmographyInfo[-1].append(showInfoDict)
+            count += 1
+
+    # Debugging
+    print(f"Total count: {count}")
+    return filmographyInfo
 
 
