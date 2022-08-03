@@ -61,8 +61,8 @@
               </nav>
 
               <ul>
-                {% if movie.genre %}
-                <li><strong>Genres:</strong> {{ movie.genre }}</li>
+                {% if movie.genres %}
+                <li><strong>Genres:</strong> {{ movie.genres }}</li>
                 {% endif %} {% if movie.rating %}
                 <li><strong>Rating:</strong> {{ movie.rating }}</li>
                 {% endif %} {% if movie.platforms %}
@@ -84,37 +84,37 @@
                   >
                   {% endfor %}
                 </li>
-                {% endif %} {% if movie.producer %}
+                {% endif %} {% if movie.producers %}
                 <li>
-                  <strong>Producers:</strong> {% for producer in movie.producer
+                  <strong>Producers:</strong> {% for producer in movie.producers
                   %}
-                  <a href="{{movie.producer[producer]}}" target="_blank"
+                  <a href="{{movie.producers[producer]}}" target="_blank"
                     >{{producer + ", " if not loop.last else producer}}</a
                   >
                   {% endfor %}
                 </li>
-                {% endif %} {% if movie.writer %}
+                {% endif %} {% if movie.writers %}
                 <li>
-                  <strong>Writers:</strong> {% for writer in movie.writer %}
-                  <a href="{{movie.writer[writer]}}" target="_blank"
+                  <strong>Writers:</strong> {% for writer in movie.writers %}
+                  <a href="{{movie.writers[writer]}}" target="_blank"
                     >{{writer + ", " if not loop.last else writer}}</a
                   >
                   {% endfor %}
                 </li>
-                {% endif %} {% if movie["original language"] %}
+                {% endif %} {% if movie["language"] %}
                 <li>
                   <strong>Original language:</strong>
-                  {{ movie["original language"] }}
+                  {{ movie["language"] }}
                 </li>
-                {% endif %} {% if movie["release date (theaters)"] %}
+                {% endif %} {% if movie["theaters"] %}
                 <li>
                   <strong>Release Date (Theaters):</strong>
-                  {{ movie["release date (theaters)"] }}
+                  {{ movie["theaters"] }}
                 </li>
-                {% endif %} {% if movie["release date (streaming)"] %}
+                {% endif %} {% if movie["streaming"] %}
                 <li>
                   <strong>Release Date (Streaming):</strong>
-                  {{ movie["release date (streaming)"] }}
+                  {{ movie["streaming"] }}
                 </li>
                 {% endif %} {% if movie["runtime"] %}
                 <li><strong>Runtime:</strong> {{ movie["runtime"] }}</li>

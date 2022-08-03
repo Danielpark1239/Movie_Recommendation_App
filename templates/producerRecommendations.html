@@ -69,7 +69,7 @@
                 <li><strong>Platforms:</strong> {{ item.platforms }}</li>
                 {% endif %} {% if item.directors %}
                 <li>
-                  <strong>Director:</strong> {% for director in item.directors
+                  <strong>Directors:</strong> {% for director in item.directors
                   %}
                   <a href="{{item.directors[director]}}" target="_blank"
                     >{{director + ", " if not loop.last else director}}</a
@@ -166,7 +166,7 @@
                 <li><strong>Platforms:</strong> {{ item.platforms }}</li>
                 {% endif %} {% if item.creators %}
                 <li>
-                  <strong>Creator:</strong> {% for creator in item.creators %}
+                  <strong>Creators:</strong> {% for creator in item.creators %}
                   <a href="{{item.creators[creator]}}" target="_blank"
                     >{{creator + ", " if not loop.last else creator}}</a
                   >
