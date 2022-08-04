@@ -5,6 +5,7 @@ import re
 from constants import *
 import movieScraper
 import showScraper
+from collections import deque
 
 # some repeated code, but hard to modularize since pageString
 # depends on the number of URLs already in the list
@@ -377,8 +378,9 @@ def scrapeActor(filterData):
 
     # If URL is invalid, return None
     main_page_content = soup.find("div", attrs={"id": "main-page-content"})
-    if main_page_content.contents[1].contents[1].text.strip() == "404 - Not Found":
-        return None
+    if main_page_content is not None:
+        if main_page_content.contents[1].contents[1].text.strip() == "404 - Not Found":
+            return None
 
     # Scrape movies
     if filterData["category"] == "movie":
@@ -584,8 +586,9 @@ def scrapeDirectorProducer(filterData, type):
 
     # If URL is invalid, return None
     main_page_content = soup.find("div", attrs={"id": "main-page-content"})
-    if main_page_content.contents[1].contents[1].text.strip() == "404 - Not Found":
-        return None
+    if main_page_content is not None:
+        if main_page_content.contents[1].contents[1].text.strip() == "404 - Not Found":
+            return None
 
     # Scrape movies
     if filterData["category"] == "movie":
@@ -788,4 +791,211 @@ def scrapeDirectorProducer(filterData, type):
     print(f"Total count: {count}")
     return filmographyInfo
 
+def scrapeSimilar(filterData):
+    addedCount = 0
+    totalCount = 0
+    limit = filterData["limit"]
+    maxLimit = (max(filterData["tomatometerScore"], filterData["audienceScore"])\
+    // 10 + 2) * limit
+    similarInfo = [[]]
 
+    html_text = requests.get(url=filterData["url"]).text
+    soup = BeautifulSoup(html_text, "lxml")
+
+    # If URL is invalid, return None
+    main_page_content = soup.find("div", attrs={"id": "main-page-content"})
+    if main_page_content is not None:
+        if main_page_content.contents[1].contents[1].text.strip() == "404 - Not Found":
+            return None
+
+    # Breadth-First-search
+    queue = deque()
+    marked = {
+        filterData["url"]: True
+    }
+    similarItems = soup.find_all(
+        "tiles-carousel-responsive-item", attrs={"slot": "tile"}
+    )
+    if similarItems is None or len(similarItems) == 0:
+        return similarInfo
+
+    for item in similarItems:
+        # get URL
+        href = item.contents[1]["href"]
+        if href is None or href == "":
+            continue
+        itemURL = BASE_URL + href
+        marked[itemURL] = True
+        queue.append(itemURL)
+
+    while len(queue) > 0 and totalCount < maxLimit:
+        if addedCount == limit:
+            break
+
+        url = queue.popleft()
+        totalCount += 1
+        html_text = requests.get(url).text
+        itemSoup = BeautifulSoup(html_text, "lxml")
+
+        # Add similar items to BFS queue
+        similarItems = itemSoup.find_all(
+            "tiles-carousel-responsive-item", attrs={"slot": "tile"}
+        )
+        if similarItems is not None and len(similarItems) != 0:
+            for item in similarItems:
+                # get URL
+                href = item.contents[1]["href"]
+                if href is None or href == "":
+                    continue
+                itemURL = BASE_URL + href
+                # If we've already marked the item, skip over it
+                if marked.get(itemURL, None) is not None:
+                    continue
+                marked[itemURL] = True
+                queue.append(itemURL)
+
+        if "/m/" in url:
+            name = itemSoup.find("h1", attrs={
+                "slot": "title",
+                "data-qa": "score-panel-movie-title"
+            }).text.strip()
+            if name is None:
+                continue
+
+            scoreBoard = itemSoup.find("score-board", attrs={
+                "class": "scoreboard",
+                "data-qa": "score-panel"
+            })
+            if scoreBoard is None:
+                continue
+
+            if scoreBoard["audiencescore"]:
+                audienceScore = int(scoreBoard["audiencescore"])
+            else:
+                continue
+            if audienceScore < filterData["audienceScore"]:
+                continue
+
+            if scoreBoard["tomatometerscore"]:
+                criticsScore = int(scoreBoard["tomatometerscore"])
+            else:
+                continue
+            if criticsScore < filterData["tomatometerScore"]:
+                continue
+
+            similarInfoDict = {
+                "type": "movie",
+                "name": name,
+                "url": url,
+                "criticsScore": criticsScore,
+                "audienceScore": audienceScore
+            }
+
+            platformFlag = movieScraper.setPlatformsWithFilter(
+                itemSoup, similarInfoDict, filterData["platforms"]
+            )
+            if not platformFlag:
+                continue
+
+            # Additional information (rating, genre, etc.)
+            additionalInfo = itemSoup.find_all(
+                "div", 
+                attrs={"data-qa": "movie-info-item-label"}
+            )
+            dateFlag = False
+            for info in additionalInfo:
+                # Set info depending on category
+                if info.text == "Rating:":
+                    movieScraper.setRating(info, similarInfoDict)
+                elif info.text == "Genre:":
+                    movieScraper.setGenres(info, similarInfoDict)
+                elif info.text == "Original Language:":
+                    movieScraper.setLanguage(info, similarInfoDict)
+                elif info.text == "Release Date (Theaters):":
+                    dateFlag = movieScraper.setDateWithFilter(
+                        info, similarInfoDict, filterData["oldestYear"]
+                    )
+                    if not dateFlag:
+                        break
+                elif info.text == "Release Date (Streaming):":
+                    movieScraper.setDate(info, similarInfoDict, "streaming")
+                elif info.text == "Runtime:":
+                    movieScraper.setRuntime(info, similarInfoDict)
+                elif info.text == "Director:":
+                    movieScraper.setDirectors(info, similarInfoDict)
+                elif info.text == "Producer:":
+                    movieScraper.setProducers(info, similarInfoDict)
+                elif info.text == "Writer:":
+                    movieScraper.setWriters(info, similarInfoDict)
+                else:
+                    continue
+            
+            if not dateFlag:
+                continue
+            movieScraper.setPosterImage(itemSoup, similarInfoDict)
+            movieScraper.setCast(itemSoup, similarInfoDict)
+        
+        elif "/tv/" in url:         
+            nameHeader = itemSoup.find("div", attrs={"class": "seriesHeader"})
+            if nameHeader is None:
+                continue
+            nameList = nameHeader.contents[1].text.strip().replace("\n", "").split("(")
+            name = nameList[0]
+
+            tomatometerHeader = itemSoup.find("span", attrs={
+                "class": "mop-ratings-wrap__percentage",
+                "data-qa": "tomatometer"
+            })
+            if tomatometerHeader is None:
+                continue
+            tomatometer = int(tomatometerHeader.contents[0].text.strip()[:-1])
+            if tomatometer < filterData["tomatometerScore"]:
+                continue
+
+            audienceScoreHeader = itemSoup.find("span", attrs={
+                "class": "mop-ratings-wrap__percentage",
+                "data-qa": "audience-score"
+            })
+            if audienceScoreHeader is None:
+                continue
+            audienceScore = int(audienceScoreHeader.contents[0].text.strip()[:-1])
+            if audienceScore < filterData["audienceScore"]:
+               continue
+        
+            similarInfoDict = {
+                "type": "tv",
+                "name": name,
+                "audienceScore": audienceScore,
+                "criticsScore": tomatometer,
+                "url": url
+            }
+
+            showScraper.setPosterImage(itemSoup, similarInfoDict)
+            platformFlag = showScraper.setPlatformsWithFilter(
+                itemSoup, similarInfoDict, filterData["platforms"]
+            )
+            if not platformFlag:
+                continue
+            showScraper.setNetwork(itemSoup, similarInfoDict)
+            dateFlag = showScraper.setPremiereDateWithFilter(
+                itemSoup, similarInfoDict, filterData["oldestYear"]
+            )
+            if not dateFlag:
+                continue
+            showScraper.setGenre(itemSoup, similarInfoDict)
+            showScraper.setCreators(itemSoup, similarInfoDict)
+            showScraper.setProducers(itemSoup, similarInfoDict)
+            showScraper.setCast(itemSoup, similarInfoDict)
+        
+        # if the last row is full, create a new row
+        if len(similarInfo[-1]) == 4:
+            similarInfo.append([similarInfoDict])
+        else:
+            similarInfo[-1].append(similarInfoDict)
+        
+        print(name) # DEBUGGING: Print name
+        addedCount += 1
+
+    # Debugging
+    print(f"Total count: {addedCount}")
+    return similarInfo
