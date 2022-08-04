@@ -4,3 +4,4 @@ Website that generates movie/TV show recommendations by scraping Rotten Tomatoes
 
 Built using Flask, Bulma, and BeautifulSoup
 
+Hosted at https://rt-recommendations.herokuapp.com/
