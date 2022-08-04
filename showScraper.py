@@ -52,6 +52,20 @@ def setPremiereDate(showSoup, showInfoDict):
     if premiereDate is not None:
         showInfoDict["premiereDate"] = premiereDate.text
 
+# Returns True if the show premiered on or after a certain year,
+# False otherwise. If no date can be found, returns False
+def setPremiereDateWithFilter(showSoup, showInfoDict, oldestYear):
+    premiereDate = showSoup.find(
+        "td", 
+        attrs={"data-qa": "series-details-premiere-date"}
+    )
+    if premiereDate is None or premiereDate == "":
+        return False
+    year = int(premiereDate.text[-4:])
+    if year < oldestYear:
+        return False
+    showInfoDict["premiereDate"] = premiereDate.text
+
 def setGenre(showSoup, showInfoDict):
     genre = showSoup.find(
         "td", 
