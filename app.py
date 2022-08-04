@@ -1,10 +1,8 @@
 from flask import Flask, render_template, request
 import scraper
-from rq import Queue
-from worker import conn
+import os
 
 app = Flask(__name__)
-q = Queue(connection=conn)
 
 @app.route('/')
 def index():
@@ -28,9 +26,10 @@ def movieRecommendations():
     URLs = scraper.generateMovieURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
-    movieInfo = q.enqueue(
-        scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit
+    task = scraper.scrapeMovies.delay(
+        URLs, tomatometerScore, audienceScore, limit
     )
+    movieInfo = task.wait()
    
     if len(movieInfo[0]) == 0:
         return render_template("movieNotFound.html")

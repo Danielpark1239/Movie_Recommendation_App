@@ -6,9 +6,15 @@ from constants import *
 import movieScraper
 import showScraper
 from collections import deque
+from celery import Celery
+import os
 
-# some repeated code, but hard to modularize since pageString
-# depends on the number of URLs already in the list
+app = Celery('scraper')
+app.conf.update(
+    BROKER_URL=os.environ["REDIS_URL"], 
+    CELERY_RESULT_BACKEND=os.environ["REDIS_URL"]
+)
+
 def generateMovieURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
 ):  
@@ -153,6 +159,7 @@ def generateTVshowURLs(
         random.shuffle(URLs)
     return URLs
 
+@app.task
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     # array of row arrays; each row array contains up to 4 dictionaries/movies
     movieInfo = [[]]
@@ -271,6 +278,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
 
     return movieInfo
 
+@app.task
 def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
     # array of row arrays; each row array contains up to 4 dictionaries/shows
     tvShowInfo = [[]]
@@ -359,6 +367,7 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
 
     return tvShowInfo
 
+@app.task
 def scrapeActor(filterData):
     count = 0
     filmographyInfo = [[]]
@@ -563,6 +572,7 @@ def scrapeActor(filterData):
 
     return filmographyInfo
 
+@app.task
 def scrapeDirectorProducer(filterData, type):
     count = 0
     filmographyInfo = [[]]
@@ -773,6 +783,7 @@ def scrapeDirectorProducer(filterData, type):
 
     return filmographyInfo
 
+@app.task
 def scrapeSimilar(filterData):
     addedCount = 0
     totalCount = 0
