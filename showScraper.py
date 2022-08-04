@@ -65,14 +65,20 @@ def setPremiereDateWithFilter(showSoup, showInfoDict, oldestYear):
     if year < oldestYear:
         return False
     showInfoDict["premiereDate"] = premiereDate.text
+    return True
 
 def setGenre(showSoup, showInfoDict):
-    genre = showSoup.find(
+    genreTag = showSoup.find(
         "td", 
         attrs={"data-qa": "series-details-genre"}
     )
-    if genre is not None:
-        showInfoDict["genre"] = genre.text
+    if genreTag is not None:
+        genre = genreTag.text.strip()
+
+        if TV_TO_FRONTEND_GENRE_DICT.get(genre, None) is not None:
+            showInfoDict["genre"] = TV_TO_FRONTEND_GENRE_DICT[genre.text.strip()]
+        else:
+            showInfoDict["genre"] = genre
 
 # Returns True if the show's genre matches the filter, False otherwise
 def setGenreWithFilter(showSoup, showInfoDict, filterList):
@@ -91,7 +97,7 @@ def setGenreWithFilter(showSoup, showInfoDict, filterList):
         genre = genreTag.text.strip()
         if genre in filterList:
             flag = True
-        if TV_TO_FRONTEND_GENRE_DICT[genre]:
+        if TV_TO_FRONTEND_GENRE_DICT.get(genre, None) is not None:
             showInfoDict["genre"] = TV_TO_FRONTEND_GENRE_DICT[genre]
         else:
             showInfoDict["genre"] = genre
