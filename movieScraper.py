@@ -95,6 +95,20 @@ def setDate(info, movieInfoDict, type):
         formattedDate = date[0] + " " + date[1] + " " + date[2]
         movieInfoDict[type] = formattedDate
 
+# Returns True if the movie was released on or after a certain year,
+# False otherwise (Uses Theaters release Date)
+# If no date can be found, returns False
+def setDateWithFilter(info, movieInfoDict, oldestYear):
+    date = info.next_sibling.next_sibling.text.split()
+    if date is None:
+        return False
+    year = int(date[2])
+    if oldestYear > year:
+        return False
+    formattedDate = date[0] + " " + date[1] + " " + date[2]
+    movieInfoDict["theaters"] = formattedDate
+    return True
+
 def setRuntime(info, movieInfoDict):
     runtime = info.next_sibling.next_sibling.text.strip()
     if runtime is not None:
@@ -110,7 +124,7 @@ def setDirectors(info, movieInfoDict):
             directorName = director.text.strip()
             directorURL = BASE_URL + director["href"]
             directorDict[directorName] = directorURL
-        movieInfoDict["director"] = directorDict
+        movieInfoDict["directors"] = directorDict
 
 def setProducers(info, movieInfoDict):
     producerDict = {}
