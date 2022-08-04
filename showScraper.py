@@ -75,8 +75,8 @@ def setGenre(showSoup, showInfoDict):
     if genreTag is not None:
         genre = genreTag.text.strip()
 
-        if TV_TO_FRONTEND_GENRE_DICT.get(genre, None) is not None:
-            showInfoDict["genre"] = TV_TO_FRONTEND_GENRE_DICT[genre.text.strip()]
+        if genre in TV_TO_FRONTEND_GENRE_DICT:
+            showInfoDict["genre"] = TV_TO_FRONTEND_GENRE_DICT[genre]
         else:
             showInfoDict["genre"] = genre
 
@@ -97,7 +97,7 @@ def setGenreWithFilter(showSoup, showInfoDict, filterList):
         genre = genreTag.text.strip()
         if genre in filterList:
             flag = True
-        if TV_TO_FRONTEND_GENRE_DICT.get(genre, None) is not None:
+        if genre in TV_TO_FRONTEND_GENRE_DICT:
             showInfoDict["genre"] = TV_TO_FRONTEND_GENRE_DICT[genre]
         else:
             showInfoDict["genre"] = genre
