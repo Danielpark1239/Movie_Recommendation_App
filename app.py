@@ -6,14 +6,6 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     return render_template("index.html")
-    
-@app.route('/test/', methods=['GET', 'POST'])
-def test():
-    if request.method == "POST":
-        print(request.form.getlist("platform"))
-        print(request.form["tomatometerSlider"])
-        print(request.form["audienceSlider"])
-    return render_template("test.html")
 
 @app.route('/movies/', methods=['GET'])
 def movies():
