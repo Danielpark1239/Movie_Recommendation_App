@@ -75,11 +75,11 @@
                   >
                   {% endfor %}
                 </li>
-                {% endif %} {% if movie.director %}
+                {% endif %} {% if movie.directors %}
                 <li>
-                  <strong>Director:</strong> {% for director in movie.director
+                  <strong>Director:</strong> {% for director in movie.directors
                   %}
-                  <a href="{{movie.director[director]}}" target="_blank"
+                  <a href="{{movie.directors[director]}}" target="_blank"
                     >{{director + ", " if not loop.last else director}}</a
                   >
                   {% endfor %}
