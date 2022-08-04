@@ -100,7 +100,6 @@ def generateMovieURLs(
                 )
         if not popular:
             random.shuffle(URLs)
-        print(URLs)
         return URLs
 
 def generateTVshowURLs(
@@ -152,7 +151,6 @@ def generateTVshowURLs(
             )
     if not popular:
         random.shuffle(URLs)
-    print(URLs) # DEBUGGING
     return URLs
 
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
@@ -269,11 +267,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
             else:
                 movieInfo[-1].append(movieInfoDict)
 
-            print(name) # DEBUGGING: Print name
             movieCount += 1
-    
-    # DEBUGGING: Print total number of movies scraped
-    print(f"Movie count: {movieCount}")
 
     return movieInfo
 
@@ -361,11 +355,7 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
             else:
                 tvShowInfo[-1].append(tvShowInfoDict)
 
-            print(name) # Debugging
             tvShowCount += 1
-    
-    # DEBUGGING: Print total number of TV shows scraped
-    print(f"TV show count: {tvShowCount}")
 
     return tvShowInfo
 
@@ -491,7 +481,6 @@ def scrapeActor(filterData):
             else:
                 filmographyInfo[-1].append(movieInfoDict)
 
-            print(name) # DEBUGGING: Print name
             count += 1
 
 
@@ -570,11 +559,8 @@ def scrapeActor(filterData):
             else:
                 filmographyInfo[-1].append(showInfoDict)
 
-            print(name) # DEBUGGING: Print name
             count += 1
 
-    # Debugging: print count
-    print(f"Total count: {count}")
     return filmographyInfo
 
 def scrapeDirectorProducer(filterData, type):
@@ -704,7 +690,6 @@ def scrapeDirectorProducer(filterData, type):
             else:
                 filmographyInfo[-1].append(movieInfoDict)
 
-            print(name) # DEBUGGING: Print name
             count += 1
 
 
@@ -784,11 +769,8 @@ def scrapeDirectorProducer(filterData, type):
             else:
                 filmographyInfo[-1].append(showInfoDict)
             
-            print(name) # DEBUGGING: Print name
             count += 1
 
-    # Debugging
-    print(f"Total count: {count}")
     return filmographyInfo
 
 def scrapeSimilar(filterData):
@@ -993,9 +975,6 @@ def scrapeSimilar(filterData):
         else:
             similarInfo[-1].append(similarInfoDict)
         
-        print(name) # DEBUGGING: Print name
         addedCount += 1
 
-    # Debugging
-    print(f"Total count: {addedCount}")
     return similarInfo
