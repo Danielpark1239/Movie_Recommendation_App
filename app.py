@@ -27,7 +27,7 @@ def movieRecommendations():
     platforms = formData.getlist("platforms")
     tomatometerScore = int(formData["tomatometerSlider"])
     audienceScore = int(formData["audienceSlider"])
-    limit = int(formData["limit"])
+    limit = 10 if formData["limit"] == "" else int(formData["limit"])
     popular = True if "popular" in formData else False
 
     URLs = scraper.generateMovieURLs(
@@ -54,7 +54,7 @@ def tvshowRecommendations():
     platforms = formData.getlist("platforms")
     tomatometerScore = int(formData["tomatometerSlider"])
     audienceScore = int(formData["audienceSlider"])
-    limit = int(formData["limit"])
+    limit = 10 if formData["limit"] == "" else int(formData["limit"])
     popular = True if "popular" in formData else False
 
     URLs = scraper.generateTVshowURLs(
@@ -101,7 +101,7 @@ def actorRecommendations():
         "platforms": platforms,
         "tomatometerScore": int(formData["tomatometerSlider"]),
         "audienceScore": int(formData["audienceSlider"]),
-        "limit": int(formData["limit"])
+        "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
     actorInfo = scraper.scrapeActor(filterData)
@@ -142,7 +142,7 @@ def directorRecommendations():
         "platforms": platforms,
         "tomatometerScore": int(formData["tomatometerSlider"]),
         "audienceScore": int(formData["audienceSlider"]),
-        "limit": int(formData["limit"])
+        "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
     directorInfo = scraper.scrapeDirectorProducer(filterData, "director")
@@ -183,7 +183,7 @@ def producerRecommendations():
         "platforms": platforms,
         "tomatometerScore": int(formData["tomatometerSlider"]),
         "audienceScore": int(formData["audienceSlider"]),
-        "limit": int(formData["limit"])
+        "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
     producerInfo = scraper.scrapeDirectorProducer(filterData, "producer")
@@ -195,3 +195,34 @@ def producerRecommendations():
         return render_template("producerNotFound.html")
 
     return render_template("producerRecommendations.html", producerInfo=producerInfo)
+
+@app.route('/similar/', methods=['GET'])
+def similar():
+    return render_template('similar.html')
+
+@app.route('/similar/recommendations/', methods=['POST'])
+def similarRecommendations():
+    formData = request.form
+
+    platforms = formData.getlist("platforms")
+    if len(platforms) == 0 or "all" in platforms:
+        platforms = ["all"]
+
+    filterData = {
+        "url": formData["url"],
+        "oldestYear": int(formData["yearSlider"]),
+        "platforms": platforms,
+        "tomatometerScore": int(formData["tomatometerSlider"]),
+        "audienceScore": int(formData["audienceSlider"]),
+        "limit": 10 if formData["limit"] == "" else int(formData["limit"])
+    }
+
+    similarInfo = scraper.scrapeSimilar(filterData)
+
+    if similarInfo is None:
+        return render_template("similarInvalid.html")
+    
+    if len(similarInfo[0]) == 0:
+        return render_template("similarNotFound.html")
+
+    return render_template("similarRecommendations.html", similarInfo=similarInfo)
