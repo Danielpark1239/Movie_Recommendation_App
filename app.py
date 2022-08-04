@@ -1,7 +1,10 @@
 from flask import Flask, render_template, request
 import scraper
+from rq import Queue
+from worker import conn
 
 app = Flask(__name__)
+q = Queue(connection=conn)
 
 @app.route('/')
 def index():
@@ -25,10 +28,10 @@ def movieRecommendations():
     URLs = scraper.generateMovieURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
-    movieInfo = scraper.scrapeMovies(
-        URLs, tomatometerScore, audienceScore, limit
+    movieInfo = q.enqueue(
+        scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit
     )
-
+   
     if len(movieInfo[0]) == 0:
         return render_template("movieNotFound.html")
 
@@ -52,10 +55,10 @@ def tvshowRecommendations():
     URLs = scraper.generateTVshowURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
-    tvShowInfo = scraper.scrapeTVshows(
-        URLs, tomatometerScore, audienceScore, limit
+    tvShowInfo = q.enqueue(
+        scraper.scrapeTVshows, URLs, tomatometerScore, audienceScore, limit
     )
-
+    
     if len(tvShowInfo[0]) == 0:
         return render_template("tvshowNotFound.html")
 
@@ -96,7 +99,7 @@ def actorRecommendations():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    actorInfo = scraper.scrapeActor(filterData)
+    actorInfo = q.enqueue(scraper.scrapeActor, filterData)
 
     if actorInfo is None:
         return render_template("actorInvalid.html")
@@ -137,7 +140,7 @@ def directorRecommendations():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    directorInfo = scraper.scrapeDirectorProducer(filterData, "director")
+    directorInfo = q.enqueue(scraper.scrapeDirectorProducer, filterData, "director")
 
     if directorInfo is None:
         return render_template("directorInvalid.html")
@@ -178,7 +181,7 @@ def producerRecommendations():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    producerInfo = scraper.scrapeDirectorProducer(filterData, "producer")
+    producerInfo = q.enqueue(scraper.scrapeDirectorProducer, filterData, "producer")
 
     if producerInfo is None:
         return render_template("producerInvalid.html")
@@ -209,7 +212,7 @@ def similarRecommendations():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    similarInfo = scraper.scrapeSimilar(filterData)
+    similarInfo = q.enqueue(scraper.scrapeSimilar, filterData)
 
     if similarInfo is None:
         return render_template("similarInvalid.html")
