@@ -51,36 +51,7 @@
           </nav>
 
           <div class="columns">
-            <div class="column">
-              <div class="field">
-                <div class="control">
-                  <label class="label">Categories</label>
-                  <label class="checkbox">
-                    <input type="checkbox" name="movie" id="movie" checked />
-                    Movies
-                  </label>
-                  <label class="checkbox">
-                    <input type="checkbox" name="tv" id="tv" checked />
-                    TV Shows
-                  </label>
-                </div>
-                <div class="control mt-2">
-                  <label class="label" for="yearSlider">Oldest Year</label>
-                  <input
-                    oninput="year.value=parseInt(yearSlider.value)"
-                    name="yearSlider"
-                    id="yearSlider"
-                    class="slider has-output is-fullwidth"
-                    min="1900"
-                    max="2022"
-                    value="1900"
-                    step="1"
-                    type="range"
-                  />
-                  <output name="year" for="yearSlider">1900</output>
-                </div>
-              </div>
-            </div>
+            <div class="column"></div>
             <div class="column">
               <div class="field">
                 <div class="control">
@@ -88,9 +59,8 @@
                     >Available Platforms</label
                   >
                   <div class="select is-multiple">
-                    <select multiple size="8" name="platforms" id="platforms">
+                    <select multiple size="7" name="platforms" id="platforms">
                       <option value="all">All</option>
-                      <option value="showtimes">In Theaters</option>
                       <option value="amazon-prime-video-us">
                         Amazon Prime Video US
                       </option>
@@ -146,6 +116,20 @@
                   />
                   <output name="audience" for="audienceSlider">50</output>
 
+                  <label class="label" for="yearSlider">Oldest Year</label>
+                  <input
+                    oninput="year.value=parseInt(yearSlider.value)"
+                    name="yearSlider"
+                    id="yearSlider"
+                    class="slider has-output is-fullwidth"
+                    min="1900"
+                    max="2022"
+                    value="1900"
+                    step="1"
+                    type="range"
+                  />
+                  <output name="year" for="yearSlider">1900</output>
+
                   <label class="label mt-1" for="limit">Limit</label>
                   <input
                     name="limit"
@@ -156,11 +140,14 @@
                     max="50"
                     step="1"
                     value="10"
+                    required
                     oninput="this.value = Math.abs(this.value) > 0 ? Math.abs(this.value) : null"
+                    style="width: 33%"
                   />
                 </div>
               </div>
             </div>
+            <div class="column"></div>
           </div>
           <nav class="level">
             <div class="level-item has-text-centered">
