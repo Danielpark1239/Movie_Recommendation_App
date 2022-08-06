@@ -6,18 +6,12 @@ from constants import *
 import movieScraper
 import showScraper
 from collections import deque
-from celery import Celery
-import os
-
-app = Celery('scraper')
-app.conf.update(
-    BROKER_URL=os.environ["REDIS_URL"], 
-    CELERY_RESULT_BACKEND=os.environ["REDIS_URL"]
-)
+import time
 
 def generateMovieURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
 ):  
+    start = time.time()
     URLs = []
     # If scores are above a certain threshold, generate more pages to search
     gourmet = True if tomatometerScore >= GOURMET_THRESHOLD or\
@@ -106,11 +100,14 @@ def generateMovieURLs(
                 )
         if not popular:
             random.shuffle(URLs)
+        end = time.time()
+        print(f'Time to generate movie URLs: {end - start}')
         return URLs
 
 def generateTVshowURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
-):
+):  
+    start = time.time()
     URLs = []
     gourmet = True if tomatometerScore >= GOURMET_THRESHOLD or\
     audienceScore >= GOURMET_THRESHOLD else False
@@ -157,10 +154,12 @@ def generateTVshowURLs(
             )
     if not popular:
         random.shuffle(URLs)
+    end = time.time()
+    print(f'Time to generate TV Show URLs: {end - start}')
     return URLs
 
-@app.task
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
+    start = time.time()
     # array of row arrays; each row array contains up to 4 dictionaries/movies
     movieInfo = [[]]
     movieCount = 0
@@ -276,10 +275,12 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
 
             movieCount += 1
 
+    end = time.time()
+    print(f'Time to generate movie recs: {end - start}')
     return movieInfo
 
-@app.task
 def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
+    start = time.time()
     # array of row arrays; each row array contains up to 4 dictionaries/shows
     tvShowInfo = [[]]
     tvShowCount = 0
@@ -365,10 +366,12 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
 
             tvShowCount += 1
 
+    end = time.time()
+    print(f'Time it takes to generate tv show recs: {end - start}')
     return tvShowInfo
 
-@app.task
 def scrapeActor(filterData):
+    start = time.time()
     count = 0
     filmographyInfo = [[]]
 
@@ -570,10 +573,12 @@ def scrapeActor(filterData):
 
             count += 1
 
+    end = time.time()
+    print(f'Time to generate actor recs: {end - start}')
     return filmographyInfo
 
-@app.task
 def scrapeDirectorProducer(filterData, type):
+    start = time.time()
     count = 0
     filmographyInfo = [[]]
 
@@ -781,10 +786,12 @@ def scrapeDirectorProducer(filterData, type):
             
             count += 1
 
+    end = time.time()
+    print(f'Time to generate director/producer recs: {end - start}')
     return filmographyInfo
 
-@app.task
 def scrapeSimilar(filterData):
+    start = time.time()
     addedCount = 0
     totalCount = 0
     limit = filterData["limit"]
@@ -988,4 +995,6 @@ def scrapeSimilar(filterData):
         
         addedCount += 1
 
+    end = time.time()
+    print(f'Time to generate similar recs: {end - start}')
     return similarInfo
