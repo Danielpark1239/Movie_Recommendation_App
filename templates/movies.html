@@ -242,18 +242,18 @@
 
             const source = new EventSource("/movies/progress/" + job_id);
 
-            source.onmessage = function(event) {
+            source.onmessage = function (event) {
               const data = JSON.parse(event.data);
               console.log(data);
 
-              updateProgress(data['value']);
+              updateProgress(data["value"]);
 
-              if data['status'] == 'finished' {
+              if (data["status"] == "finished") {
                 updateProgress(100);
                 source.close();
-                document.location = data['result']
+                document.location = data["result"];
               }
-            }
+            };
           });
         });
       });
