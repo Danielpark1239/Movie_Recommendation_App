@@ -17,7 +17,7 @@ def index():
 def movies():
     return render_template('movies.html')
 
-@app.route('/movies/enqueue', methods=['POST'])
+@app.route('/movies/enqueue/', methods=['POST'])
 def moviesEnqueue():
     formData = request.form
     genres = formData.getlist("genres")
@@ -36,7 +36,7 @@ def moviesEnqueue():
 
     return {'job_id': job.id}
 
-@app.route('/movies/progress/<string:id>', methods=['GET'])
+@app.route('/movies/progress/<string:id>/', methods=['GET'])
 def moviesProgress(id):
     def getStatus():
         job = Job.fetch(id, connection=conn)
@@ -62,7 +62,7 @@ def moviesProgress(id):
 
     return Response(getStatus(), mimetype="text/event-stream")
 
-@app.route('/movies/recommendations/<string:id>', methods=['GET'])
+@app.route('/movies/recommendations/<string:id>/', methods=['GET'])
 def movieRecommendations(id):
     # TO-DO: What if job expires?
         # Possible solutions:
