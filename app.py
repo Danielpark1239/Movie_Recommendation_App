@@ -58,7 +58,7 @@ def moviesProgress(id):
             
             if job.result:
                 with app.app_context():
-                    data['result'] = url_for('movies/recommendations', id=job.id)
+                    data['result'] = url_for('movieRecommendations', id=job.id)
             
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
