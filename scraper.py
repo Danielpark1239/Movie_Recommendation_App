@@ -7,6 +7,8 @@ import movieScraper
 import showScraper
 from collections import deque
 import time
+from rq.job import Job
+from rq import get_current_job
 
 def generateMovieURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
@@ -160,6 +162,7 @@ def generateTVshowURLs(
 
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     start = time.time()
+    job = get_current_job()
     # array of row arrays; each row array contains up to 4 dictionaries/movies
     movieInfo = [[]]
     movieCount = 0
@@ -274,6 +277,8 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                 movieInfo[-1].append(movieInfoDict)
 
             movieCount += 1
+            job.meta['progress'] = movieCount // limit * 100
+            job.save_meta()
 
     end = time.time()
     print(f'Time to generate movie recs: {end - start}')
