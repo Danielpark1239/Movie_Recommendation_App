@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request
 import scraper
-import os
 
 app = Flask(__name__)
 
@@ -26,10 +25,9 @@ def movieRecommendations():
     URLs = scraper.generateMovieURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
-    task = scraper.scrapeMovies.delay(
+    movieInfo = scraper.scrapeMovies(
         URLs, tomatometerScore, audienceScore, limit
     )
-    movieInfo = task.wait()
    
     if len(movieInfo[0]) == 0:
         return render_template("movieNotFound.html")
@@ -54,9 +52,7 @@ def tvshowRecommendations():
     URLs = scraper.generateTVshowURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
-    tvShowInfo = q.enqueue(
-        scraper.scrapeTVshows, URLs, tomatometerScore, audienceScore, limit
-    )
+    tvShowInfo = scraper.scrapeTVshows(URLs, tomatometerScore, audienceScore, limit)
     
     if len(tvShowInfo[0]) == 0:
         return render_template("tvshowNotFound.html")
@@ -98,7 +94,7 @@ def actorRecommendations():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    actorInfo = q.enqueue(scraper.scrapeActor, filterData)
+    actorInfo = scraper.scrapeActor(filterData)
 
     if actorInfo is None:
         return render_template("actorInvalid.html")
@@ -139,7 +135,7 @@ def directorRecommendations():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    directorInfo = q.enqueue(scraper.scrapeDirectorProducer, filterData, "director")
+    directorInfo = scraper.scrapeDirectorProducer(filterData, "director")
 
     if directorInfo is None:
         return render_template("directorInvalid.html")
@@ -180,7 +176,7 @@ def producerRecommendations():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    producerInfo = q.enqueue(scraper.scrapeDirectorProducer, filterData, "producer")
+    producerInfo = scraper.scrapeDirectorProducer(filterData, "producer")
 
     if producerInfo is None:
         return render_template("producerInvalid.html")
@@ -211,7 +207,7 @@ def similarRecommendations():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    similarInfo = q.enqueue(scraper.scrapeSimilar, filterData)
+    similarInfo = scraper.scrapeSimilar(filterData)
 
     if similarInfo is None:
         return render_template("similarInvalid.html")
