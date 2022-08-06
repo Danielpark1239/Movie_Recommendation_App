@@ -1,7 +1,13 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, Response
 import scraper
+from rq import Queue, get_current_job
+from rq.job import Job
+from worker import conn
+import json
+import time
 
 app = Flask(__name__)
+q = Queue(connection=conn)
 
 @app.route('/')
 def index():
@@ -11,8 +17,8 @@ def index():
 def movies():
     return render_template('movies.html')
 
-@app.route('/movies/recommendations/', methods=['POST'])
-def movieRecommendations():
+@app.route('/movies/enqueue', methods=['POST'])
+def moviesEnqueue():
     formData = request.form
     genres = formData.getlist("genres")
     ratings = formData.getlist("ratings")
@@ -25,14 +31,57 @@ def movieRecommendations():
     URLs = scraper.generateMovieURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
-    movieInfo = scraper.scrapeMovies(
-        URLs, tomatometerScore, audienceScore, limit
-    )
-   
-    if len(movieInfo[0]) == 0:
-        return render_template("movieNotFound.html")
 
-    return render_template("movieRecommendations.html", movieInfo=movieInfo)
+    job = q.enqueue(scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit)
+
+    return {'job_id': job.id}
+
+@app.route('movies/progress/<string:id>', methods=['GET'])
+def moviesProgress(id):
+    def getStatus():
+        job = Job.fetch(id, connection=conn)
+        status = job.get_status()
+
+        while status != 'finished':
+            job.refresh()
+            status = job.get_status
+
+            data = {'status': status}
+
+            if 'progress' in job.meta:
+                data['value'] = job.meta['progress']
+            else:
+                data['value'] = 0
+            
+            if job.result:
+                data['result'] = url_for('movies/recommendations', id=job.id)
+            
+            json_data = json.dumps(data)
+            yield f"data:{json_data}\n\n"
+            time.sleep(1)
+
+    return Response(getStatus(), mimetype="text/event-stream")
+
+@app.route('/movies/recommendations/<string:id>', methods=['GET'])
+def movieRecommendations(id):
+    # TO-DO: What if job expires?
+        # Possible solutions:
+        # 1. Lazy: Just throw an error or URL not found
+        # 2. Store result in a database and pull from it, but what if that data gets rolled over and can't be found?
+        # 3. Most involved: learn a framework and do client-side rendering
+    
+    job = Job.fetch(id, connection=conn)
+
+    if job.get_status() == 'finished':
+        movieInfo = job.result
+        
+        if len(movieInfo[0]) == 0:
+            return render_template("movieNotFound.html")
+
+        return render_template("movieRecommendations.html", movieInfo=movieInfo)
+
+    else:
+        return "Record not found", 400
 
 @app.route('/tvshows/', methods=['GET'])
 def tvshows():
