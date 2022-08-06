@@ -36,7 +36,7 @@ def moviesEnqueue():
 
     return {'job_id': job.id}
 
-@app.route('movies/progress/<string:id>', methods=['GET'])
+@app.route('/movies/progress/<string:id>', methods=['GET'])
 def moviesProgress(id):
     def getStatus():
         job = Job.fetch(id, connection=conn)
@@ -74,7 +74,7 @@ def movieRecommendations(id):
 
     if job.get_status() == 'finished':
         movieInfo = job.result
-        
+
         if len(movieInfo[0]) == 0:
             return render_template("movieNotFound.html")
 
