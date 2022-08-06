@@ -33,6 +33,8 @@ def moviesEnqueue():
     )
 
     job = q.enqueue(scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit)
+    job.meta['progress'] = 0
+    job.save_meta()
 
     return {'job_id': job.id}
 
