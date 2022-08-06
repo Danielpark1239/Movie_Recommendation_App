@@ -28,7 +28,7 @@
   <body class="has-background-light">
     <section class="section">
       <div class="container">
-        <form action="/movies/recommendations/" method="POST">
+        <form id="form" action="/movies/enqueue/" method="POST">
           <div class="columns">
             <div class="column">
               <div class="field">
@@ -215,6 +215,12 @@
     <script>
       const limitField = document.getElementById("limit");
       const submitButton = document.getElementById("submitButton");
+      const progressBar = document.getElementById("progressBar");
+
+      function updateProgress(value) {
+        progressBar.setAttribute("value", value);
+        progressBar.innerHTML = value + "%";
+      }
 
       limit.addEventListener("input", () => {
         if (parseInt(limitField.value) > 50) {
@@ -222,6 +228,34 @@
         } else {
           submitButton.disabled = false;
         }
+      });
+
+      document.forms["form"].addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        fetch(event.target.action, {
+          method: "POST",
+          body: new URLSearchParams(new FormData(event.target)),
+        }).then((res) => {
+          res.json().then((data) => {
+            job_id = data["job_id"];
+
+            const source = new EventSource("/movies/progress/" + job_id);
+
+            source.onmessage = function(event) {
+              const data = JSON.parse(event.data);
+              console.log(data);
+
+              updateProgress(data['value']);
+
+              if data['status'] == 'finished' {
+                updateProgress(100);
+                source.close();
+                document.location = data['result']
+              }
+            }
+          });
+        });
       });
 
       document.addEventListener("DOMContentLoaded", () => {
@@ -285,7 +319,14 @@
           <p>
             Success! Please wait for your recommendations to be generated...
           </p>
-          <progress class="progress is-medium is-info" max="100">45%</progress>
+          <progress
+            class="progress is-medium is-info"
+            id="progressBar"
+            value="0"
+            max="100"
+          >
+            45%
+          </progress>
         </div>
       </div>
 
