@@ -44,7 +44,7 @@ def moviesProgress(id):
 
         while status != 'finished':
             job.refresh()
-            status = job.get_status
+            status = job.get_status()
 
             data = {'status': status}
 
