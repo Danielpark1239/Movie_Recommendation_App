@@ -7,6 +7,7 @@ import json
 import time
 
 app = Flask(__name__)
+app.config['SERVER_NAME'] = 'https://rt-recommendations.herokuapp.com'
 q = Queue(connection=conn)
 
 @app.route('/')
