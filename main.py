@@ -109,7 +109,7 @@ def tvshowRecommendations():
 
     return {'job_id': job.id}
 
-@app.route('tvshows/progress/<string:id>', methods=['GET'])
+@app.route('/tvshows/progress/<string:id>', methods=['GET'])
 def tvshowProgress(id):
     def tvshowStatus():
         try:
