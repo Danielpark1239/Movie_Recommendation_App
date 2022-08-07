@@ -322,7 +322,7 @@
             job_id = data["job_id"];
 
             const source = new EventSource(
-              "{{ url_for('sse.stream', channel=job_id) }}"
+              "{{ url_for('sse.stream', channel=str(job_id)) }}"
             );
 
             source.onmessage = async function (event) {
