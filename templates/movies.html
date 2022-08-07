@@ -307,10 +307,6 @@
         progressBar.innerHTML = value + "%";
       }
 
-      function sleep(ms) {
-        return new Promise((resolve) => setTimeout(resolve, ms));
-      }
-
       document.forms["form"].addEventListener("submit", (event) => {
         event.preventDefault();
 
@@ -323,7 +319,7 @@
 
             const source = new EventSource("/movies/progress/" + job_id);
 
-            source.onmessage = async function (event) {
+            source.onmessage = function (event) {
               const data = JSON.parse(event.data);
               console.log(data);
               if (data["progress"]) {
