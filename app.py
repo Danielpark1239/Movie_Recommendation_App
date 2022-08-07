@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, Response
+from flask_sse import sse
 import scraper
 from rq import Queue, get_current_job
 from rq.job import Job
@@ -7,7 +8,7 @@ import json
 import time
 
 app = Flask(__name__)
-# app.config['SERVER_NAME'] = 'rt-recommendations.herokuapp.com'
+app.register_blueprint(sse, url_prefix='/stream')
 BASE_URL = "https://rt-recommendations.herokuapp.com/"
 q = Queue(connection=conn)
 
@@ -39,32 +40,6 @@ def moviesEnqueue():
     job.save_meta()
 
     return {'job_id': job.id}
-
-@app.route('/movies/progress/<string:id>/', methods=['GET'])
-def moviesProgress(id):
-    def getStatus():
-        job = Job.fetch(id, connection=conn)
-        status = job.get_status()
-
-        while status != 'finished':
-            status = job.get_status()
-            job.refresh()
-
-            data = {'status': status}
-
-            if 'progress' in job.meta:
-                data['value'] = job.meta['progress']
-            else:
-                data['value'] = 0
-            
-            if job.result:
-                data['result'] = BASE_URL + "/movies/recommendations/" + job.id
-            
-            json_data = json.dumps(data)
-            yield f"data:{json_data}\n\n"
-            time.sleep(1)
-
-    return Response(getStatus(), mimetype="text/event-stream")
 
 @app.route('/movies/recommendations/<string:id>/', methods=['GET'])
 def movieRecommendations(id):

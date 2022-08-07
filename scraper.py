@@ -9,6 +9,7 @@ from collections import deque
 import time
 from rq.job import Job
 from rq import get_current_job
+from flask_sse import sse
 
 def generateMovieURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
@@ -163,6 +164,8 @@ def generateTVshowURLs(
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     start = time.time()
     job = get_current_job()
+    sse.publish({"value": 0}, channel=job.id)
+
     # array of row arrays; each row array contains up to 4 dictionaries/movies
     movieInfo = [[]]
     movieCount = 0
@@ -277,11 +280,12 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                 movieInfo[-1].append(movieInfoDict)
 
             movieCount += 1
-            job.meta['progress'] = int((movieCount / limit) * 100)
-            job.save_meta()
-
+            sse.publish({'value': int((movieCount / limit) * 100)}, channel=job.id)
+            
     end = time.time()
     print(f'Time to generate movie recs: {end - start}')
+    sse.publish({'result': BASE_URL + "/movies/recommendations/" + job.id}, channel=job.id)
+
     return movieInfo
 
 def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
