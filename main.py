@@ -30,7 +30,7 @@ def moviesEnqueue():
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
 
-    job = q.enqueue(scraper.scrapeMovies, app, URLs, tomatometerScore, audienceScore, limit)
+    job = q.enqueue(scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit)
 
     return {'job_id': job.id}
 

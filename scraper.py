@@ -161,7 +161,7 @@ def generateTVshowURLs(
     print(f'Time to generate TV Show URLs: {end - start}')
     return URLs
 
-def scrapeMovies(app, URLs, tomatometerScore, audienceScore, limit):
+def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     start = time.time()
     job = get_current_job()
     with app.app_context():
