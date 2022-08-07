@@ -9,6 +9,7 @@ from collections import deque
 import time
 from rq import get_current_job
 from flask_sse import sse
+from app import app
 
 def generateMovieURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
