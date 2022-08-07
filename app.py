@@ -9,7 +9,6 @@ import time
 
 app = Flask(__name__)
 app.register_blueprint(sse, url_prefix='/stream')
-BASE_URL = "https://rt-recommendations.herokuapp.com/"
 q = Queue(connection=conn)
 
 @app.route('/')
