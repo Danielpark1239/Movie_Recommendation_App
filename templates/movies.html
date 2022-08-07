@@ -321,7 +321,7 @@
           res.json().then((data) => {
             job_id = data["job_id"];
 
-            const source = new EventSource("{{ url_for('sse.stream') }}");
+            const source = new EventSource("/stream?channel=" + job_id);
 
             source.addEventListener("data", async function (event) {
               const data = JSON.parse(event.data);
