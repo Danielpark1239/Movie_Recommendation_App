@@ -43,7 +43,7 @@ FRONTEND_PLATFORM_DICT = {
 }
 
 # Relative path works in templates folder
-BLANK_POSTER = "../../static/blank_poster.png"
+BLANK_POSTER = "../../../static/blank_poster.png"
 
 # Mapping of genres from movie representation to tv show representation
 MOVIE_TO_TV_GENRE_DICT = {
