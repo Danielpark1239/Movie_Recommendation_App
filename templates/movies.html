@@ -325,7 +325,7 @@
               "{{ url_for('sse.stream', channel=job_id) }}"
             );
 
-            source.onmessage = async function (event) {
+            source.addEventListener("data", async function (event) {
               const data = JSON.parse(event.data);
               console.log(data);
               if (data["value"]) {
@@ -338,7 +338,7 @@
                 source.close();
                 document.location = data["result"];
               }
-            };
+            });
           });
         });
       });
