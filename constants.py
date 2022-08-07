@@ -7,7 +7,7 @@ GOURMET_THRESHOLD = 75
 FRESH_THRESHOLD = 60
 RANDOM_THRESHOLD = 75
 
-APP_BASE_URL = "https://www.rt-recommendations.herokuapp.com/"
+APP_BASE_URL = "rt-recommendations.herokuapp.com/"
 BASE_URL = "https://www.rottentomatoes.com"
 BASE_MOVIE_THEATERS_URL = "https://www.rottentomatoes.com/browse/movies_in_theaters/"
 BASE_MOVIE_HOME_URL = "https://www.rottentomatoes.com/browse/movies_at_home/"
