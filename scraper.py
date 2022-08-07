@@ -7,10 +7,9 @@ import movieScraper
 import showScraper
 from collections import deque
 import time
-from rq.job import Job
 from rq import get_current_job
 from flask_sse import sse
-from flask import current_app as app
+from app import app
 
 def generateMovieURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
