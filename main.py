@@ -42,17 +42,18 @@ def movieRecommendations(id):
         # 2. Store result in a database and pull from it, but what if that data gets rolled over and can't be found?
         # 3. Most involved: learn a framework and do client-side rendering
     
-    job = Job.fetch(id, connection=conn)
+    try: 
+        job = Job.fetch(id, connection=conn)
 
-    if job.get_status() == 'finished':
-        movieInfo = job.result
+        if job.get_status() == 'finished':
+            movieInfo = job.result
 
-        if len(movieInfo[0]) == 0:
-            return render_template("movieNotFound.html")
+            if len(movieInfo[0]) == 0:
+                return render_template("movieNotFound.html")
 
-        return render_template("movieRecommendations.html", movieInfo=movieInfo)
+            return render_template("movieRecommendations.html", movieInfo=movieInfo)
 
-    else:
+    except:
         return "Record not found", 400
 
 @app.route('/tvshows/', methods=['GET'])
