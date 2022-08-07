@@ -3,11 +3,13 @@ from flask_sse import sse
 import scraper
 from rq import Queue, get_current_job
 from rq.job import Job
-from worker import conn
+from worker import conn, redis_url
 import json
 import time
+import os
 
 app = Flask(__name__)
+app.config["REDIS_URL"] = redis_url
 app.register_blueprint(sse, url_prefix='/stream')
 q = Queue(connection=conn)
 
