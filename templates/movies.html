@@ -308,7 +308,7 @@
       }
 
       function sleep(ms) {
-        return new Promise((resolve) => setTimeOut(resolve, ms));
+        return new Promise((resolve) => setTimeout(resolve, ms));
       }
 
       document.forms["form"].addEventListener("submit", (event) => {
