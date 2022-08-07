@@ -332,7 +332,7 @@
 
               if (data["result"]) {
                 updateProgress(100);
-                await sleep(500);
+                await sleep(1000);
                 source.close();
                 document.location = data["result"];
               }
