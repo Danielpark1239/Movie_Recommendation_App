@@ -1,2 +1,2 @@
-web: gunicorn main:app --timeout 10
+web: gunicorn main:app --graceful_timeout 60
 worker: python worker.py
