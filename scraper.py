@@ -8,8 +8,6 @@ import showScraper
 from collections import deque
 import time
 from rq import get_current_job
-from flask_sse import sse
-from app import app
 
 def generateMovieURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
@@ -164,8 +162,8 @@ def generateTVshowURLs(
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     start = time.time()
     job = get_current_job()
-    with app.app_context():
-        sse.publish({"value": 0}, channel=job.id, type='data')
+    job.meta['progress'] = 0
+    job.save_meta()
 
     # array of row arrays; each row array contains up to 4 dictionaries/movies
     movieInfo = [[]]
@@ -281,13 +279,11 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                 movieInfo[-1].append(movieInfoDict)
 
             movieCount += 1
-            with app.app_context():
-                sse.publish({'value': int((movieCount / limit) * 100)}, channel=job.id, type='data')
+            job.meta['progress'] = int((movieCount / limit) * 100)
             
     end = time.time()
     print(f'Time to generate movie recs: {end - start}')
-    with app.app_context():
-        sse.publish({'result': "recommendations/" + job.id}, channel=job.id, type='data')
+    job.meta['result'] = "recommendations/" + job.id
 
     return movieInfo
 

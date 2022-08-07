@@ -321,22 +321,21 @@
           res.json().then((data) => {
             job_id = data["job_id"];
 
-            const source = new EventSource("/stream?channel=" + job_id);
+            const source = new EventSource("/movies/progress/" + job_id);
 
-            source.addEventListener("data", async function (event) {
+            source.onmessage = async function (event) {
               const data = JSON.parse(event.data);
               console.log(data);
-              if (data["value"]) {
-                updateProgress(data["value"]);
+              if (data["progress"]) {
+                updateProgress(data["progress"]);
               }
 
               if (data["result"]) {
                 updateProgress(100);
-                await sleep(1000);
                 source.close();
                 window.location = data["result"];
               }
-            });
+            };
           });
         });
       });

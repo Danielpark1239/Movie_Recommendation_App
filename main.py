@@ -1,9 +1,11 @@
-from flask import render_template, request, redirect, url_for
+from flask import render_template, request, redirect, url_for, Response
 import scraper
 from rq import Queue, get_current_job
 from rq.job import Job
 from worker import conn, redis_url
 from app import app
+import json
+import time
 
 q = Queue(connection=conn)
 
@@ -33,6 +35,34 @@ def moviesEnqueue():
     job = q.enqueue(scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit)
 
     return {'job_id': job.id}
+
+@app.route('/movies/progress/<string:id>', methods=['GET'])
+def movieProgress(id):
+    def movieStatus():
+        try:
+            job = Job.fetch(id, connection=conn)
+            status = job.get_status()
+
+            while status != 'finished':
+                status = job.get_status()
+                job.refresh()
+
+                if 'progress' in job.meta:
+                    data = {'progress': job.meta['progress']}
+                else:
+                    data = {'progress': job.meta['progress']}
+
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                time.sleep(1)
+
+            data = {'result': job.meta['result']}
+            json_data = json.dumps(data)
+            yield f"data:{json_data}\n\n"
+
+        except:
+            return {}
+    return Response(movieStatus(), mimetype='text/event-stream')
 
 @app.route('/movies/recommendations/<string:id>/', methods=['GET'])
 def movieRecommendations(id):
