@@ -281,6 +281,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
             movieCount += 1
             job.meta['progress'] = int((movieCount / limit) * 100)
             job.save_meta()
+            time.sleep(5)
             
     end = time.time()
     print(f'Time to generate movie recs: {end - start}')
