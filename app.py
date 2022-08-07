@@ -5,3 +5,6 @@ from flask_sse import sse
 app = Flask(__name__)
 app.config["REDIS_URL"] = redis_url
 app.register_blueprint(sse, url_prefix='/stream')
+
+if __name__ == '__main__':
+    app.run()
