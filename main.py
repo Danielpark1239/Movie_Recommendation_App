@@ -188,10 +188,8 @@ def actorRecommendations():
         "audienceScore": int(formData["audienceSlider"]),
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
-    print(filterData)
 
     actorInfo = scraper.scrapeActor(filterData)
-    print(actorInfo)
 
     if actorInfo is None:
         return render_template("actorInvalid.html")
