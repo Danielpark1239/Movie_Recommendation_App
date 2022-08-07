@@ -56,6 +56,7 @@ def movieProgress(id):
                 yield f"data:{json_data}\n\n"
                 time.sleep(1)
 
+            job.refresh()
             data = {'result': job.meta['result']}
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
