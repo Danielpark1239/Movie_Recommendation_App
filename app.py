@@ -8,6 +8,7 @@ import time
 
 app = Flask(__name__)
 # app.config['SERVER_NAME'] = 'rt-recommendations.herokuapp.com'
+BASE_URL = "https://rt-recommendations.herokuapp.com/"
 q = Queue(connection=conn)
 
 @app.route('/')
@@ -57,8 +58,7 @@ def moviesProgress(id):
                 data['value'] = 0
             
             if job.result:
-                with app.app_context():
-                    data['result'] = url_for('movieRecommendations', id=job.id)
+                data['result'] = BASE_URL + "/movies/recommendations/" + job.id
             
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
