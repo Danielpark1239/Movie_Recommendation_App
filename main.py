@@ -105,12 +105,54 @@ def tvshowRecommendations():
     URLs = scraper.generateTVshowURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
-    tvShowInfo = scraper.scrapeTVshows(URLs, tomatometerScore, audienceScore, limit)
-    
-    if len(tvShowInfo[0]) == 0:
-        return render_template("tvshowNotFound.html")
+    job = q.enqueue(scraper.scrapeTVshows, URLs, tomatometerScore, audienceScore, limit)
 
-    return render_template("tvshowRecommendations.html", tvShowInfo=tvShowInfo)
+    return {'job_id': job.id}
+
+@app.route('tvshows/progress/<string:id>', methods=['GET'])
+def tvshowProgress(id):
+    def tvshowStatus():
+        try:
+            job = Job.fetch(id, connection=conn)
+            status = job.get_status()
+
+            while status != 'finished':
+                status = job.get_status()
+                job.refresh()
+
+                if 'progress' in job.meta:
+                    data = {'progress': job.meta['progress']}
+                else:
+                    data = {'progress': job.meta['progress']}
+
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                time.sleep(1)
+
+            job.refresh()
+            data = {'result': job.meta['result']}
+            json_data = json.dumps(data)
+            yield f"data:{json_data}\n\n"
+
+        except:
+            return {}
+    return Response(tvshowStatus(), mimetype='text/event-stream')
+
+@app.route('/tvshows/recommendations/<string:id>/', methods=['GET'])
+def tvshowRecommendations(id):
+    try: 
+        job = Job.fetch(id, connection=conn)
+
+        if job.get_status() == 'finished':
+            tvshowInfo = job.result
+
+            if len(tvshowInfo[0]) == 0:
+                return render_template("tvshowNotFound.html")
+
+        return render_template("tvshowRecommendations.html", tvShowInfo=tvshowInfo)
+
+    except:
+        return "Record not found", 400
 
 @app.route('/actor/', methods=['GET'])
 def actor():

@@ -291,6 +291,10 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
 
 def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
     start = time.time()
+    job = get_current_job()
+    job.meta['progress'] = 0
+    job.save_meta()
+
     # array of row arrays; each row array contains up to 4 dictionaries/shows
     tvShowInfo = [[]]
     tvShowCount = 0
@@ -375,9 +379,14 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
                 tvShowInfo[-1].append(tvShowInfoDict)
 
             tvShowCount += 1
+            job.meta['progress'] = int((tvShowCount / limit) * 100)
+            job.save_meta()
 
     end = time.time()
     print(f'Time it takes to generate tv show recs: {end - start}')
+    job.meta['result'] = "recommendations/" + job.id
+    job.save_meta()
+    
     return tvShowInfo
 
 def scrapeActor(filterData):
