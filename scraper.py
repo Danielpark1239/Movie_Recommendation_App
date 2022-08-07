@@ -9,7 +9,6 @@ from collections import deque
 import time
 from rq import get_current_job
 from flask_sse import sse
-from app import app
 
 def generateMovieURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
@@ -161,7 +160,7 @@ def generateTVshowURLs(
     print(f'Time to generate TV Show URLs: {end - start}')
     return URLs
 
-def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
+def scrapeMovies(app, URLs, tomatometerScore, audienceScore, limit):
     start = time.time()
     job = get_current_job()
     with app.app_context():
