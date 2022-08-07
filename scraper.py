@@ -165,7 +165,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     start = time.time()
     job = get_current_job()
     with app.app_context():
-        sse.publish({"value": 0}, channel=job.id, type='data')
+        sse.publish({"value": 0}, type='data')
 
     # array of row arrays; each row array contains up to 4 dictionaries/movies
     movieInfo = [[]]
@@ -282,12 +282,12 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
 
             movieCount += 1
             with app.app_context():
-                sse.publish({'value': int((movieCount / limit) * 100)}, channel=job.id, type='data')
+                sse.publish({'value': int((movieCount / limit) * 100)}, type='data')
             
     end = time.time()
     print(f'Time to generate movie recs: {end - start}')
     with app.app_context():
-        sse.publish({'result': BASE_URL + "/movies/recommendations/" + job.id}, channel=job.id, type='data')
+        sse.publish({'result': BASE_URL + "/movies/recommendations/" + job.id}, type='data')
 
     return movieInfo
 
