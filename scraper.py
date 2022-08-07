@@ -287,7 +287,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
     end = time.time()
     print(f'Time to generate movie recs: {end - start}')
     with app.app_context():
-        sse.publish({'result': APP_BASE_URL + "movies/recommendations/" + job.id}, type='data')
+        sse.publish({'result': "recommendations/" + job.id}, type='data')
 
     return movieInfo
 
