@@ -91,8 +91,8 @@ def movieRecommendations(id):
 def tvshows():
     return render_template('tvshows.html')
 
-@app.route('/tvshows/recommendations/', methods=['POST'])
-def tvshowRecommendations():
+@app.route('/tvshows/enqueue/', methods=['POST'])
+def tvshowsEnqueue():
     formData = request.form
     genres = formData.getlist("genres")
     ratings = formData.getlist("ratings")
