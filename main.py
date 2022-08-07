@@ -190,6 +190,7 @@ def actorRecommendations():
     }
 
     actorInfo = scraper.scrapeActor(filterData)
+    print(actorInfo)
 
     if actorInfo is None:
         return render_template("actorInvalid.html")
