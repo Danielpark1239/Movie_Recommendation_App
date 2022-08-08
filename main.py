@@ -414,7 +414,7 @@ def producerRecommendations(id):
 def similar():
     return render_template('similar.html')
 
-@app.route('/similar/enqueue/', method=['POST'])
+@app.route('/similar/enqueue/', methods=['POST'])
 def similarEnqueue():
     formData = request.form
 
