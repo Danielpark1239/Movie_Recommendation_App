@@ -158,8 +158,8 @@ def tvshowRecommendations(id):
 def actor():
     return render_template('actor.html')
 
-@app.route('/actor/recommendations/', methods=['POST'])
-def actorRecommendations():
+@app.route('/actor/enqueue/', methods=['POST'])
+def actorEnqueue():
     formData = request.form
 
     roles = formData.getlist("role")
@@ -189,22 +189,65 @@ def actorRecommendations():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    actorInfo = scraper.scrapeActor(filterData)
+    job = q.enqueue(scraper.scrapeActor, filterData)
 
-    if actorInfo is None:
-        return render_template("actorInvalid.html")
+    return {'job_id': job.id}
+
+@app.route('/actor/progress/<string:id>', methods=['GET'])
+def actorProgress(id):
+    def actorStatus():
+        try:
+            job = Job.fetch(id, connection=conn)
+            status = job.get_status()
+
+            while status != 'finished':
+                status = job.get_status()
+                job.refresh()
+
+                if 'progress' in job.meta:
+                    data = {'progress': job.meta['progress']}
+                else:
+                    data = {'progress': job.meta['progress']}
+
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                time.sleep(1)
+
+            job.refresh()
+            data = {'result': job.meta['result']}
+            json_data = json.dumps(data)
+            yield f"data:{json_data}\n\n"
+
+        except:
+            return {}
+    return Response(actorStatus(), mimetype='text/event-stream')
+
+@app.route('/actor/recommendations/<string:id>', methods=['GET'])
+def actorRecommendations(id):
+    try: 
+        job = Job.fetch(id, connection=conn)
+
+        if job.get_status() == 'finished':
+            actorInfo = job.result
+
+            if actorInfo is None:
+                return render_template("actorInvalid.html")
     
-    if len(actorInfo[0]) == 0:
-        return render_template("actorNotFound.html")
+            if len(actorInfo[0]) == 0:
+                return render_template("actorNotFound.html")
+            
+            return render_template("actorRecommendations.html", actorInfo=actorInfo)
+        return "Job in progress", 400
 
-    return render_template("actorRecommendations.html", actorInfo=actorInfo)
+    except:
+        return "Record not found", 400
 
 @app.route('/director/', methods=['GET'])
 def director():
     return render_template('director.html')
 
-@app.route('/director/recommendations/', methods=['POST'])
-def directorRecommendations():
+@app.route('/director/enqueue/', methods=['POST'])
+def directorEnqueue():
     formData = request.form
 
     genres = formData.getlist("genres")
@@ -230,22 +273,65 @@ def directorRecommendations():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    directorInfo = scraper.scrapeDirectorProducer(filterData, "director")
+    job = q.enqueue(scraper.scrapeDirectorProducer, filterData, "director")
 
-    if directorInfo is None:
-        return render_template("directorInvalid.html")
+    return {"job_id": job.id}
+
+@app.route('/director/progress/<string:id>', methods=['GET'])
+def directorProgress(id):
+    def directorStatus():
+        try:
+            job = Job.fetch(id, connection=conn)
+            status = job.get_status()
+
+            while status != 'finished':
+                status = job.get_status()
+                job.refresh()
+
+                if 'progress' in job.meta:
+                    data = {'progress': job.meta['progress']}
+                else:
+                    data = {'progress': job.meta['progress']}
+
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                time.sleep(1)
+
+            job.refresh()
+            data = {'result': job.meta['result']}
+            json_data = json.dumps(data)
+            yield f"data:{json_data}\n\n"
+
+        except:
+            return {}
+    return Response(directorStatus(), mimetype='text/event-stream')
+
+@app.route('/director/recommendations/<string:id>', methods=['GET'])
+def directorRecommendations(id):
+    try: 
+        job = Job.fetch(id, connection=conn)
+
+        if job.get_status() == 'finished':
+            directorInfo = job.result
+
+            if directorInfo is None:
+                return render_template("directorInvalid.html")
     
-    if len(directorInfo[0]) == 0:
-        return render_template("directorNotFound.html")
+            if len(directorInfo[0]) == 0:
+                return render_template("directorNotFound.html")
 
-    return render_template("directorRecommendations.html", directorInfo=directorInfo)
+            return render_template("directorRecommendations.html", directorInfo=directorInfo)
+        return "Job in progress", 400
+
+    except:
+        return "Record not found", 400
 
 @app.route('/producer/', methods=['GET'])
 def producer():
     return render_template('producer.html')
 
-@app.route('/producer/recommendations/', methods=['POST'])
-def producerRecommendations():
+@app.route('/producer/enqueue/', methods=['POST'])
+def producerEnqueue():
     formData = request.form
 
     genres = formData.getlist("genres")
@@ -271,22 +357,65 @@ def producerRecommendations():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    producerInfo = scraper.scrapeDirectorProducer(filterData, "producer")
+    job = q.enqueue(scraper.scrapeDirectorProducer, filterData, "producer")
 
-    if producerInfo is None:
-        return render_template("producerInvalid.html")
+    return {"job_id": job.id}
+
+@app.route('/producer/progress/<string:id>', methods=['GET'])
+def producerProgress(id):
+    def producerStatus():
+        try:
+            job = Job.fetch(id, connection=conn)
+            status = job.get_status()
+
+            while status != 'finished':
+                status = job.get_status()
+                job.refresh()
+
+                if 'progress' in job.meta:
+                    data = {'progress': job.meta['progress']}
+                else:
+                    data = {'progress': job.meta['progress']}
+
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                time.sleep(1)
+
+            job.refresh()
+            data = {'result': job.meta['result']}
+            json_data = json.dumps(data)
+            yield f"data:{json_data}\n\n"
+
+        except:
+            return {}
+    return Response(producerStatus(), mimetype='text/event-stream')
+
+@app.route('/producer/recommendations/<string:id>', methods=['POST'])
+def producerRecommendations(id):
+    try: 
+        job = Job.fetch(id, connection=conn)
+
+        if job.get_status() == 'finished': 
+            producerInfo = job.result
+
+            if producerInfo is None:
+                return render_template("producerInvalid.html")
     
-    if len(producerInfo[0]) == 0:
-        return render_template("producerNotFound.html")
+            if len(producerInfo[0]) == 0:
+                return render_template("producerNotFound.html")
 
-    return render_template("producerRecommendations.html", producerInfo=producerInfo)
+            return render_template("producerRecommendations.html", producerInfo=producerInfo)
+        return "Job in progress", 400
 
+    except:
+        return "Record not found", 400
+    
 @app.route('/similar/', methods=['GET'])
 def similar():
     return render_template('similar.html')
 
-@app.route('/similar/recommendations/', methods=['POST'])
-def similarRecommendations():
+@app.route('/similar/enqueue/', method=['POST'])
+def similarEnqueue():
     formData = request.form
 
     platforms = formData.getlist("platforms")
@@ -302,12 +431,57 @@ def similarRecommendations():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    similarInfo = scraper.scrapeSimilar(filterData)
+    job = q.enqueue(scraper.scrapeSimilar, filterData)
 
-    if similarInfo is None:
-        return render_template("similarInvalid.html")
+    return {'job_id': job.id}
+
+@app.route('/similar/progress/<string:id>', methods=['GET'])
+def similarProgress(id):
+    def similarStatus():
+        try:
+            job = Job.fetch(id, connection=conn)
+            status = job.get_status()
+
+            while status != 'finished':
+                status = job.get_status()
+                job.refresh()
+
+                if 'progress' in job.meta:
+                    data = {'progress': job.meta['progress']}
+                else:
+                    data = {'progress': job.meta['progress']}
+
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                time.sleep(1)
+
+            job.refresh()
+            data = {'result': job.meta['result']}
+            json_data = json.dumps(data)
+            yield f"data:{json_data}\n\n"
+
+        except:
+            return {}
+    return Response(similarStatus(), mimetype='text/event-stream')
+
+@app.route('/similar/recommendations/<string:id>', methods=['GET'])
+def similarRecommendations(id):
+    try: 
+        job = Job.fetch(id, connection=conn)
+
+        if job.get_status() == 'finished': 
+            similarInfo = job.result
+
+            if similarInfo is None:
+                return render_template("similarInvalid.html")
     
-    if len(similarInfo[0]) == 0:
-        return render_template("similarNotFound.html")
+            if len(similarInfo[0]) == 0:
+                return render_template("similarNotFound.html")
 
-    return render_template("similarRecommendations.html", similarInfo=similarInfo)
+            return render_template("similarRecommendations.html", similarInfo=similarInfo)
+        return "Job in progress", 400
+
+    except:
+        return "Record not found", 400
+    
+
