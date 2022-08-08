@@ -390,7 +390,7 @@ def producerProgress(id):
             return {}
     return Response(producerStatus(), mimetype='text/event-stream')
 
-@app.route('/producer/recommendations/<string:id>', methods=['POST'])
+@app.route('/producer/recommendations/<string:id>', methods=['GET'])
 def producerRecommendations(id):
     try: 
         job = Job.fetch(id, connection=conn)
