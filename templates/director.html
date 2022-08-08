@@ -28,7 +28,7 @@
   <body class="has-background-light">
     <section class="section">
       <div class="container">
-        <form action="/director/recommendations/" method="POST">
+        <form id="form">
           <nav class="level">
             <div class="level-item has-text-centered">
               <div class="field">
@@ -367,12 +367,57 @@
           <p>
             Success! Please wait for your recommendations to be generated...
           </p>
-          <progress class="progress is-medium is-info" max="100">45%</progress>
+          <progress
+            class="progress is-medium is-info"
+            id="progressBar"
+            value="0"
+            max="100"
+          >
+            0%
+          </progress>
         </div>
       </div>
 
       <button class="modal-close is-large" aria-label="close"></button>
     </div>
+
+    <script>
+      const progressBar = document.getElementById("progressBar");
+
+      function updateProgress(value) {
+        progressBar.setAttribute("value", value);
+        progressBar.innerHTML = value + "%";
+      }
+
+      document.forms["form"].addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        fetch("enqueue/", {
+          method: "POST",
+          body: new URLSearchParams(new FormData(event.target)),
+        }).then((res) => {
+          res.json().then((data) => {
+            job_id = data["job_id"];
+
+            const source = new EventSource("/director/progress/" + job_id);
+
+            source.onmessage = function (event) {
+              const data = JSON.parse(event.data);
+              console.log(data);
+              if (data["progress"]) {
+                updateProgress(data["progress"]);
+              }
+
+              if (data["result"]) {
+                updateProgress(100);
+                source.close();
+                window.location = data["result"];
+              }
+            };
+          });
+        });
+      });
+    </script>
   </body>
 
   <footer class="footer has-background-light">
