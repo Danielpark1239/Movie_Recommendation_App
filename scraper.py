@@ -391,6 +391,9 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
 
 def scrapeActor(filterData):
     start = time.time()
+    job = get_current_job()
+    job.meta['progress'] = 0
+    job.save_meta()
     count = 0
     filmographyInfo = [[]]
 
@@ -513,6 +516,8 @@ def scrapeActor(filterData):
                 filmographyInfo[-1].append(movieInfoDict)
 
             count += 1
+            job.meta['progress'] = int((count / filterData['limit']) * 100)
+            job.save_meta()
 
 
     # Scrape TV shows
@@ -591,14 +596,22 @@ def scrapeActor(filterData):
                 filmographyInfo[-1].append(showInfoDict)
 
             count += 1
+            job.meta['progress'] = int((count / filterData['limit']) * 100)
+            job.save_meta()
 
     end = time.time()
     print(f'Time to generate actor recs: {end - start}')
+
+    job.meta['result'] = "recommendations/" + job.id
+    job.save_meta()
     return filmographyInfo
 
 def scrapeDirectorProducer(filterData, type):
     start = time.time()
     count = 0
+    job = get_current_job()
+    job.meta['progress'] = 0
+    job.save_meta()
     filmographyInfo = [[]]
 
     html_text = requests.get(url=filterData["url"]).text
@@ -725,6 +738,8 @@ def scrapeDirectorProducer(filterData, type):
                 filmographyInfo[-1].append(movieInfoDict)
 
             count += 1
+            job.meta['progress'] = int((count / filterData['limit']) * 100)
+            job.save_meta()
 
 
     # Scrape TV shows
@@ -804,9 +819,13 @@ def scrapeDirectorProducer(filterData, type):
                 filmographyInfo[-1].append(showInfoDict)
             
             count += 1
+            job.meta['progress'] = int((count / filterData['limit']) * 100)
+            job.save_meta()
 
     end = time.time()
     print(f'Time to generate director/producer recs: {end - start}')
+    job.meta['result'] =  "recommendations/" + job.id
+    job.save_meta()
     return filmographyInfo
 
 def scrapeSimilar(filterData):
@@ -816,6 +835,9 @@ def scrapeSimilar(filterData):
     limit = filterData["limit"]
     maxLimit = (max(filterData["tomatometerScore"], filterData["audienceScore"])\
     // 10 + 2) * limit
+    job = get_current_job()
+    job.meta['progress'] = 0
+    job.save_meta()
     similarInfo = [[]]
 
     html_text = requests.get(url=filterData["url"]).text
@@ -1013,7 +1035,11 @@ def scrapeSimilar(filterData):
             similarInfo[-1].append(similarInfoDict)
         
         addedCount += 1
+        job.meta['progress'] = int((addedCount / limit) * 100)
+        job.save_meta()
 
     end = time.time()
     print(f'Time to generate similar recs: {end - start}')
+    job.meta['result'] =  "recommendations/" + job.id
+    job.save_meta()
     return similarInfo
