@@ -2,11 +2,14 @@ from flask import render_template, request, Response
 import scraper
 from rq import Queue
 from rq.job import Job
-from worker import conn
 from app import app
 import json
 import time
+import os
+import redis
 
+redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
+conn = redis.from_url(redis_url, decode_responses=True)
 q = Queue(connection=conn)
 
 @app.route('/')
@@ -37,8 +40,7 @@ def moviesEnqueue():
 
     value = conn.get(key)
     if value is not None:
-        print(str(value))
-        return {'job_id': str(value)}
+        return {'job_id': value}
     
     URLs = scraper.generateMovieURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
