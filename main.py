@@ -57,6 +57,7 @@ def movieProgress(id):
             status = job.get_status()
             
             meta = job.get_meta(refresh=True)
+            print(meta)
             if 'result' in meta:
                 data = {'progress': 100}
                 json_data = json.dumps(data)
