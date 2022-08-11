@@ -932,11 +932,11 @@ def scrapeSimilar(filterData):
             if genreTag is None or genreTag.text == "":
                 genres = ["all"]
             else:
-                print(genreTag.text)
                 genreString = genreTag.text.strip().replace("\n", "").lower().replace(", ", ",")
                 genreString = genreString.replace(" & ", "_and_").replace("-", "_")
                 genreString = genreString.replace("+", "").replace(" ", "_")
                 genres = genreString.split(",")
+            print(genres)
             
             ratings = ["all"]
             metaLabels = soup.find_all("div", attrs={
