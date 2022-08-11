@@ -68,7 +68,7 @@ def setRatingWithFilter(info, movieInfoDict, filterList):
 
 def setGenres(info, movieInfoDict):
     genreString = info.next_sibling.next_sibling.text.strip().replace(" ", "")\
-    .replace("\n", "").replace(",", ", ")
+    .replace("\n", "").replace(",", ", ").replace("&", " & ")
     movieInfoDict["genres"] = genreString
 
 # Returns True if at least one of the movie's genres matches the filter, False otherwise
