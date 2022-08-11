@@ -33,8 +33,10 @@ def moviesEnqueue():
     popular = True if "popular" in formData else False
 
     keyArray = [
-        "M", "".join(genres), "".join(ratings), "".join(platforms),
-        formData["tomatometerSlider"], formData["audienceSlider"], formData["limit"]]
+        "M", "".join(genres), "".join(ratings), "".join(platforms), "T",
+        formData["tomatometerSlider"], "A", formData["audienceSlider"], "L", 
+        formData["limit"]
+    ]
     if popular:
         keyArray.append("P")
     key = "".join(keyArray)
@@ -124,8 +126,10 @@ def tvshowsEnqueue():
     popular = True if "popular" in formData else False
 
     keyArray = [
-        "T", "".join(genres), "".join(ratings), "".join(platforms),
-        formData["tomatometerSlider"], formData["audienceSlider"], formData["limit"]]
+        "T", "".join(genres), "".join(ratings), "".join(platforms), "T",
+        formData["tomatometerSlider"], "A", formData["audienceSlider"], "L", 
+        formData["limit"]
+    ]
     if popular:
         keyArray.append("P")
     key = "".join(keyArray)
@@ -236,9 +240,10 @@ def actorEnqueue():
     }
     actor = formData["actorURL"].split("/")[-1]
     keyArray = [
-        "A", actor, "".join(formData["category"]), "".join(roles), formData["yearSlider"],
-        formData["boxOffice"], "".join(genres), "".join(ratings), "".join(platforms),
-        formData["tomatometerSlider"], formData["audienceSlider"], formData["limit"] 
+        "A", actor, "".join(formData["category"]), "".join(roles), 
+        formData["yearSlider"], "B", formData["boxOffice"], "".join(genres), 
+        "".join(ratings), "".join(platforms), "T", formData["tomatometerSlider"],
+        "A", formData["audienceSlider"], "L", formData["limit"] 
     ]
     key = "".join(keyArray)
 
@@ -345,8 +350,9 @@ def directorEnqueue():
     director = formData["directorURL"].split("/")[-1]
     keyArray = [
         "D", director, "".join(formData["category"]), formData["yearSlider"],
-        formData["boxOffice"], "".join(genres), "".join(ratings), "".join(platforms),
-        formData["tomatometerSlider"], formData["audienceSlider"], formData["limit"] 
+        "B", formData["boxOffice"], "".join(genres), "".join(ratings), 
+        "".join(platforms), "T", formData["tomatometerSlider"], "A", 
+        formData["audienceSlider"], "L", formData["limit"] 
     ]
     key = "".join(keyArray)
 
@@ -453,11 +459,11 @@ def producerEnqueue():
     producer = formData["producerURL"].split("/")[-1]
     keyArray = [
         "P", producer, "".join(formData["category"]), formData["yearSlider"],
-        formData["boxOffice"], "".join(genres), "".join(ratings), "".join(platforms),
-        formData["tomatometerSlider"], formData["audienceSlider"], formData["limit"] 
+        "B", formData["boxOffice"], "".join(genres), "".join(ratings), 
+        "".join(platforms), "T", formData["tomatometerSlider"], "A", 
+        formData["audienceSlider"], "L", formData["limit"] 
     ]
     key = "".join(keyArray)
-
     value = cache.get(key)
     if value is not None:
         return {'job_id': value}
@@ -550,10 +556,11 @@ def similarEnqueue():
     }
     media = formData["url"].split("/")[-1]
     keyArray = [
-        "S", media, formData["yearSlider"], "".join(platforms), 
-        formData["tomatometerSlider"],  formData["audienceSlider"], formData["limit"]]
+        "S", media, formData["yearSlider"], "".join(platforms), "T",
+        formData["tomatometerSlider"], "A", formData["audienceSlider"], 
+        "L", formData["limit"]
+    ]
     key = "".join(keyArray)
-
     value = cache.get(key)
     if value is not None:
         return {'job_id': value}
