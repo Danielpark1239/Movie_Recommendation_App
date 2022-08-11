@@ -452,11 +452,23 @@ def producerEnqueue():
         "audienceScore": int(formData["audienceSlider"]),
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
+    producer = formData["producerURL"].split("/")[-1]
+    keyArray = [
+        "P", producer, "".join(formData["category"]), formData["yearSlider"],
+        formData["boxOffice"], "".join(genres), "".join(ratings), "".join(platforms),
+        formData["tomatometerSlider"], formData["audienceSlider"], formData["limit"] 
+    ]
+    key = "".join(keyArray)
+
+    value = cache.get(key)
+    if value is not None:
+        return {'job_id': value}
 
     job = q.enqueue(
         scraper.scrapeDirectorProducer, filterData, "producer", result_ttl=86400
     )
-
+    job.meta['key'] = key
+    job.save_meta()
     return {"job_id": job.id}
 
 @app.route('/producer/progress/<string:id>', methods=['GET'])
@@ -465,6 +477,15 @@ def producerProgress(id):
         try:
             job = Job.fetch(id, connection=conn)
             status = job.get_status()
+
+            if status == 'finished':
+                data = {'progress': 100}
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                data = {'result': 'recommendations/' + job.id}
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                return
 
             while status != 'finished':
                 status = job.get_status()
@@ -481,6 +502,7 @@ def producerProgress(id):
 
             job.refresh()
             data = {'result': job.meta['result']}
+            cache.set(job.meta['key'], job.id, ex=86399)
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
 
