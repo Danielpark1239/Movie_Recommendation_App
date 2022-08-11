@@ -55,6 +55,7 @@ def movieProgress(id):
         try:
             job = Job.fetch(id, connection=conn)
             status = job.get_status()
+            job.refresh()
             if 'result' in job.meta:
                 data = {'progress': 100}
                 json_data = json.dumps(data)
