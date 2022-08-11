@@ -477,8 +477,20 @@ def similarRecommendations(id):
     
             if len(similarInfo[0]) == 0:
                 return render_template("similarNotFound.html")
+            
+            if similarInfo[0][0]["similar"] == "movie":
+                return render_template(
+                    "similarMovieRecommendations.html", movieInfo=similarInfo
+                )
+            
+            if similarInfo[0][0]["similar"] == "tv":
+                return render_template(
+                    "similarTVRecommendations.html", tvShowInfo=similarInfo
+                )
 
-            return render_template("similarRecommendations.html", similarInfo=similarInfo)
+            return render_template(
+                "similarRecommendations.html", similarInfo=similarInfo
+            )
         return "Job in progress", 400
 
     except:

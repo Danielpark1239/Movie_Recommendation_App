@@ -238,6 +238,8 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None):
                 "criticsScore": scores["criticsscore"],
                 "url": url
             }
+            if year:
+                movieInfoDict["similar"] = "movie"
 
             # Get additional data about the movie by looking at its page
             movie_html_text = requests.get(url).text
@@ -380,6 +382,8 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None):
                 "criticsScore": scores["criticsscore"],
                 "url": url
             }
+            if year:
+                tvShowInfoDict["similar"] = "tv"
 
             # Get additional data about the show by looking at its page
             tvshow_html_text = requests.get(url).text
@@ -1006,7 +1010,8 @@ def scrapeSimilar(filterData):
                 "name": name,
                 "url": url,
                 "criticsScore": criticsScore,
-                "audienceScore": audienceScore
+                "audienceScore": audienceScore,
+                "similar": "both"
             }
 
             platformFlag = movieScraper.setPlatformsWithFilter(
@@ -1085,7 +1090,8 @@ def scrapeSimilar(filterData):
                 "name": name,
                 "audienceScore": audienceScore,
                 "criticsScore": tomatometer,
-                "url": url
+                "url": url,
+                "similar": "both"
             }
 
             showScraper.setPosterImage(itemSoup, similarInfoDict)
