@@ -32,7 +32,9 @@ def moviesEnqueue():
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
 
-    job = q.enqueue(scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit)
+    job = q.enqueue(
+        scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
+    )
 
     return {'job_id': job.id}
 
@@ -105,7 +107,9 @@ def tvshowsEnqueue():
     URLs = scraper.generateTVshowURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
-    job = q.enqueue(scraper.scrapeTVshows, URLs, tomatometerScore, audienceScore, limit)
+    job = q.enqueue(
+        scraper.scrapeTVshows, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
+    )
 
     return {'job_id': job.id}
 
@@ -189,7 +193,9 @@ def actorEnqueue():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    job = q.enqueue(scraper.scrapeActor, filterData)
+    job = q.enqueue(
+        scraper.scrapeActor, filterData, result_ttl=86400
+    )
 
     return {'job_id': job.id}
 
@@ -273,7 +279,9 @@ def directorEnqueue():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    job = q.enqueue(scraper.scrapeDirectorProducer, filterData, "director")
+    job = q.enqueue(
+        scraper.scrapeDirectorProducer, filterData, "director", result_ttl=86400
+    )
 
     return {"job_id": job.id}
 
@@ -357,7 +365,9 @@ def producerEnqueue():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    job = q.enqueue(scraper.scrapeDirectorProducer, filterData, "producer")
+    job = q.enqueue(
+        scraper.scrapeDirectorProducer, filterData, "producer", result_ttl=86400
+    )
 
     return {"job_id": job.id}
 
@@ -431,7 +441,9 @@ def similarEnqueue():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
 
-    job = q.enqueue(scraper.scrapeSimilar, filterData)
+    job = q.enqueue(
+        scraper.scrapeSimilar, filterData, result_ttl=86400
+    )
 
     return {'job_id': job.id}
 
