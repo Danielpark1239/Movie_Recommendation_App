@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rotten Tomatoes Recommendation App</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+    />
+    <link
+      rel="shortcut icon"
+      href="{{ url_for('static', filename='tomato-favicon.ico') }}"
+    />
+  </head>
+
+  <section class="hero is-info">
+    <div class="hero-body">
+      <p class="title">
+        Rotten Tomatoes Recommendation App
+        <img src="../../../static/tomato-favicon-32x32.png" alt="tomato" />
+      </p>
+      <p class="subtitle">
+        <strong>Similar Movies</strong>
+      </p>
+      <a class="button" href="/"> Home </a>
+      <a class="button" href="/similar"> More Similar Movies and Shows</a>
+    </div>
+  </section>
+
+  <body class="has-background-light">
+    <section class="section">
+      {% for row in movieInfo %}
+      <div class="level">
+        <div class="level-item tile is-ancestor">
+          {% for movie in row %}
+          <div class="tile is-3 is-parent">
+            <article class="tile is-child notification is-info">
+              <p class="title has-text-centered">{{ movie.name }}</p>
+              <a href="{{ movie.url }}" target="_blank">
+                <figure class="image is-2by3">
+                  <img src="{{ movie.posterImage }}" />
+                </figure>
+              </a>
+              <nav class="level">
+                <div class="level-left">
+                  <div class="level-item">
+                    <img
+                      src="../../../static/tomato-favicon-16x16.png"
+                      alt="tomato"
+                    />
+                    <p class="subtitle">{{ movie.criticsScore }}</p>
+                  </div>
+                </div>
+                <div class="level-right">
+                  <div class="level-item">
+                    <img
+                      src="../../../static/popcorn-favicon-16x16.png"
+                      alt="popcorn"
+                    />
+                    <p class="subtitle">{{ movie.audienceScore }}</p>
+                  </div>
+                </div>
+              </nav>
+
+              <ul>
+                {% if movie.genres %}
+                <li><strong>Genres:</strong> {{ movie.genres }}</li>
+                {% endif %} {% if movie.rating %}
+                <li><strong>Rating:</strong> {{ movie.rating }}</li>
+                {% endif %} {% if movie.platforms %}
+                <li><strong>Platforms:</strong> {{ movie.platforms }}</li>
+                {% endif %} {% if movie.cast %}
+                <li>
+                  <strong>Cast:</strong> {% for actor in movie.cast %}
+                  <a href="{{movie.cast[actor]}}" target="_blank"
+                    >{{actor + ", " if not loop.last else actor}}</a
+                  >
+                  {% endfor %}
+                </li>
+                {% endif %} {% if movie.directors %}
+                <li>
+                  <strong>Director:</strong> {% for director in movie.directors
+                  %}
+                  <a href="{{movie.directors[director]}}" target="_blank"
+                    >{{director + ", " if not loop.last else director}}</a
+                  >
+                  {% endfor %}
+                </li>
+                {% endif %} {% if movie.producers %}
+                <li>
+                  <strong>Producers:</strong> {% for producer in movie.producers
+                  %}
+                  <a href="{{movie.producers[producer]}}" target="_blank"
+                    >{{producer + ", " if not loop.last else producer}}</a
+                  >
+                  {% endfor %}
+                </li>
+                {% endif %} {% if movie.writers %}
+                <li>
+                  <strong>Writers:</strong> {% for writer in movie.writers %}
+                  <a href="{{movie.writers[writer]}}" target="_blank"
+                    >{{writer + ", " if not loop.last else writer}}</a
+                  >
+                  {% endfor %}
+                </li>
+                {% endif %} {% if movie["language"] %}
+                <li>
+                  <strong>Original language:</strong>
+                  {{ movie["language"] }}
+                </li>
+                {% endif %} {% if movie["theaters"] %}
+                <li>
+                  <strong>Release Date (Theaters):</strong>
+                  {{ movie["theaters"] }}
+                </li>
+                {% endif %} {% if movie["streaming"] %}
+                <li>
+                  <strong>Release Date (Streaming):</strong>
+                  {{ movie["streaming"] }}
+                </li>
+                {% endif %} {% if movie["runtime"] %}
+                <li><strong>Runtime:</strong> {{ movie["runtime"] }}</li>
+                {% endif %}
+              </ul>
+            </article>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+  </body>
+
+  <footer class="footer">
+    <div class="content has-text-centered">
+      <p>
+        <strong>Rotten Tomatoes Recommendation App</strong> by
+        <a href="https://github.com/Danielpark1239">Daniel Park</a>.
+      </p>
+    </div>
+  </footer>
+</html>

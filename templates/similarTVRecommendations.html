@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rotten Tomatoes Recommendation App</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+    />
+    <link
+      rel="shortcut icon"
+      href="{{ url_for('static', filename='tomato-favicon.ico') }}"
+    />
+  </head>
+
+  <section class="hero is-info">
+    <div class="hero-body">
+      <p class="title">
+        Rotten Tomatoes Recommendation App
+        <img src="../../../static/tomato-favicon-32x32.png" alt="tomato" />
+      </p>
+      <p class="subtitle">
+        <strong>Similar TV Shows</strong>
+      </p>
+      <a class="button" href="/"> Home </a>
+      <a class="button" href="/tvshows"> More Similar Movies and Shows </a>
+    </div>
+  </section>
+
+  <body class="has-background-light">
+    <section class="section">
+      {% for row in tvShowInfo %}
+      <div class="level">
+        <div class="level-item tile is-ancestor">
+          {% for tvShow in row %}
+          <div class="tile is-3 is-parent">
+            <article class="tile is-child notification is-info">
+              <p class="title has-text-centered">{{ tvShow.name }}</p>
+              <a href="{{ tvShow.url }}" target="_blank">
+                <figure class="image is-2by3">
+                  <img src="{{ tvShow.posterImage }}" />
+                </figure>
+              </a>
+              <nav class="level">
+                <div class="level-left">
+                  <div class="level-item">
+                    <img
+                      src="../../../static/tomato-favicon-16x16.png"
+                      alt="tomato"
+                    />
+                    <p class="subtitle">{{ tvShow.criticsScore }}</p>
+                  </div>
+                </div>
+                <div class="level-right">
+                  <div class="level-item">
+                    <img
+                      src="../../../static/popcorn-favicon-16x16.png"
+                      alt="popcorn"
+                    />
+                    <p class="subtitle">{{ tvShow.audienceScore }}</p>
+                  </div>
+                </div>
+              </nav>
+
+              <ul>
+                {% if tvShow.network %}
+                <li><strong>TV Network:</strong> {{ tvShow.network }}</li>
+                {% endif %} {% if tvShow.premiereDate %}
+                <li>
+                  <strong>Premiere Date:</strong> {{ tvShow.premiereDate }}
+                </li>
+                {% endif %} {% if tvShow.genre %}
+                <li><strong>Genre:</strong> {{ tvShow.genre }}</li>
+                {% endif %} {% if tvShow.platforms %}
+                <li><strong>Platforms:</strong> {{ tvShow.platforms }}</li>
+                {% endif %} {% if tvShow.creators %}
+                <li>
+                  <strong>Creators:</strong> {% for creator in tvShow.creators
+                  %}
+                  <a href="{{tvShow.creators[creator]}}" target="_blank"
+                    >{{creator + ", " if not loop.last else creator}}</a
+                  >
+                  {% endfor %}
+                </li>
+                {% endif %} {% if tvShow.cast %}
+                <li>
+                  <strong>Cast:</strong> {% for actor in tvShow.cast %}
+                  <a href="{{tvShow.cast[actor]}}" target="_blank"
+                    >{{actor + ", " if not loop.last else actor}}</a
+                  >
+                  {% endfor %}
+                </li>
+                {% endif %} {% if tvShow.producers %}
+                <li>
+                  <strong>Executive Producers:</strong> {% for producer in
+                  tvShow.producers %}
+                  <a href="{{tvShow.producers[producer]}}" target="_blank"
+                    >{{producer + ", " if not loop.last else producer}}</a
+                  >
+                  {% endfor %}
+                </li>
+                {% endif %}
+              </ul>
+            </article>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+  </body>
+
+  <footer class="footer">
+    <div class="content has-text-centered">
+      <p>
+        <strong>Rotten Tomatoes Recommendation App</strong> by
+        <a href="https://github.com/Danielpark1239">Daniel Park</a>.
+      </p>
+    </div>
+  </footer>
+</html>
