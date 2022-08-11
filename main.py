@@ -60,7 +60,6 @@ def movieProgress(id):
         try:
             job = Job.fetch(id, connection=conn)
             status = job.get_status(refresh=True)
-            print(status)
             
             if status == 'finished':
                 data = {'progress': 100}
@@ -95,13 +94,7 @@ def movieProgress(id):
     return Response(movieStatus(), mimetype='text/event-stream')
 
 @app.route('/movies/recommendations/<string:id>/', methods=['GET'])
-def movieRecommendations(id):
-    # TO-DO: What if job expires?
-        # Possible solutions:
-        # 1. Lazy: Just throw an error or URL not found
-        # 2. Store result in a database and pull from it, but what if that data gets rolled over and can't be found?
-        # 3. Most involved: learn a framework and do client-side rendering
-    
+def movieRecommendations(id):   
     try: 
         job = Job.fetch(id, connection=conn)
 
@@ -243,11 +236,23 @@ def actorEnqueue():
         "audienceScore": int(formData["audienceSlider"]),
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
+    actor = formData["actorURL"].split("/")[-1]
+    keyArray = [
+        "A", actor, "".join(formData["category"]), "".join(roles), formData["yearSlider"],
+        formData["boxOffice"], "".join(genres), "".join(ratings), "".join(platforms),
+        formData["tomatometerSlider"], formData["audienceSlider"], formData["limit"] 
+    ]
+    key = "".join(keyArray)
+
+    value = cache.get(key)
+    if value is not None:
+        return {'job_id': value}
 
     job = q.enqueue(
         scraper.scrapeActor, filterData, result_ttl=86400
     )
-
+    job.meta["key"] = key
+    job.save_meta()
     return {'job_id': job.id}
 
 @app.route('/actor/progress/<string:id>', methods=['GET'])
@@ -256,6 +261,15 @@ def actorProgress(id):
         try:
             job = Job.fetch(id, connection=conn)
             status = job.get_status()
+
+            if status == 'finished':
+                data = {'progress': 100}
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                data = {'result': 'recommendations/' + job.id}
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                return
 
             while status != 'finished':
                 status = job.get_status()
@@ -271,6 +285,7 @@ def actorProgress(id):
                 time.sleep(1)
 
             job.refresh()
+            cache.set(job.meta["key"], job.id, ex=86399)
             data = {'result': job.meta['result']}
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
