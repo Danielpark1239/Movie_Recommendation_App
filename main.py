@@ -59,7 +59,7 @@ def movieProgress(id):
     def movieStatus():
         try:
             job = Job.fetch(id, connection=conn)
-            status = job.get_status()
+            status = job.get_status(refresh=True)
             print(status)
             
             if status == 'finished':
