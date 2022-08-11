@@ -1,8 +1,8 @@
-from flask import render_template, request, redirect, url_for, Response
+from flask import render_template, request, Response
 import scraper
-from rq import Queue, get_current_job
+from rq import Queue
 from rq.job import Job
-from worker import conn, redis_url
+from worker import conn
 from app import app
 import json
 import time
@@ -28,14 +28,25 @@ def moviesEnqueue():
     limit = 10 if formData["limit"] == "" else int(formData["limit"])
     popular = True if "popular" in formData else False
 
+    keyArray = [
+        "M", "".join(genres), "".join(ratings), "".join(platforms),
+        formData["tomatometerSlider"], formData["audienceSlider"], formData["limit"]]
+    if popular:
+        keyArray.append("P")
+    key = "".join(keyArray)
+
+    value = conn.get(key)
+    if value is not None:
+        return {'job_id': value}
+    
     URLs = scraper.generateMovieURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
-
     job = q.enqueue(
         scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
     )
-
+    job.meta['key'] = key
+    job.save_meta()
     return {'job_id': job.id}
 
 @app.route('/movies/progress/<string:id>', methods=['GET'])
@@ -44,6 +55,11 @@ def movieProgress(id):
         try:
             job = Job.fetch(id, connection=conn)
             status = job.get_status()
+            if 'result' in job.meta:
+                data = {'result': job.meta['result']}
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                return
 
             while status != 'finished':
                 status = job.get_status()
@@ -59,6 +75,7 @@ def movieProgress(id):
                 time.sleep(1)
 
             job.refresh()
+            conn.set(job.meta['key'], job.id, ex=86399)
             data = {'result': job.meta['result']}
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
