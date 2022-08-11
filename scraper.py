@@ -933,10 +933,12 @@ def scrapeSimilar(filterData):
                 genres = ["all"]
             else:
                 genreString = genreTag.text.strip().replace("\n", "").lower().replace(", ", ",")
-                genreString = genreString.replace(" & ", "_and_").replace("-", "_")
-                print(genreString)
-                genreString = genreString.replace("+", "").replace(" ", "_")
+                genreString = genreString.replace(" & ", "_and_").replace("-", "_").replace("+", "")
                 genres = genreString.split(",")
+                for i in range(len(genres)):
+                    genres[i] = genres[i].strip()
+                    genres[i] = genres[i].replace(" ", "_")
+
             print(genres)
             
             ratings = ["all"]
