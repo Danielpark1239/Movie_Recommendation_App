@@ -5,11 +5,8 @@ from rq.job import Job
 from app import app
 import json
 import time
-import os
-import redis
+from worker import conn
 
-redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
-conn = redis.from_url(redis_url, decode_responses=True)
 q = Queue(connection=conn)
 
 @app.route('/')
