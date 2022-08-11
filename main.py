@@ -41,6 +41,7 @@ def moviesEnqueue():
     key = "".join(keyArray)
 
     value = cache.get(key)
+    print(value)
     if value is not None:
         return {'job_id': value}
     
@@ -85,7 +86,8 @@ def movieProgress(id):
                 time.sleep(1)
 
             job.refresh()
-            cache.set(job.meta['key'], job.id, ex=86399)
+            debug = cache.set(job.meta['key'], job.id, ex=86399)
+            print(debug)
             data = {'result': job.meta['result']}
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
