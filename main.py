@@ -56,13 +56,11 @@ def movieProgress(id):
             job = Job.fetch(id, connection=conn)
             status = job.get_status()
             
-            meta = job.get_meta(refresh=True)
-            print(meta)
-            if 'result' in meta:
+            if status == 'finished':
                 data = {'progress': 100}
                 json_data = json.dumps(data)
                 yield f"data:{json_data}\n\n"
-                data = {'result': job.meta['result']}
+                data = {'result': 'recommendations/' + job.id}
                 json_data = json.dumps(data)
                 yield f"data:{json_data}\n\n"
                 return
