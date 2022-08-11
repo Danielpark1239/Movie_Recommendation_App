@@ -924,13 +924,9 @@ def scrapeSimilar(filterData):
         oldestYear = filterData["oldestYear"]
 
         if "/m/" in filterData["url"]:
-            # Get genres and ratings
             genres = movieScraper.getGenreArray(soup)
-            print(genres)
-            
             ratings = movieScraper.getRatingArray(soup)
-            print(ratings)
-            
+
             URLs = generateMovieURLs(
                 genres, ratings, platforms, tomatometerScore, audienceScore,
                 limit, True
@@ -942,6 +938,9 @@ def scrapeSimilar(filterData):
             )
 
         elif "/tv/" in filterData["url"]:
+            genres = showScraper.getGenreArray(soup)
+            ratings = ["all"]
+
             URLs = generateTVshowURLs(
                 genres, ratings, platforms, tomatometerScore, audienceScore,
                 limit, True

@@ -103,6 +103,22 @@ def setGenreWithFilter(showSoup, showInfoDict, filterList):
             showInfoDict["genre"] = genre
     return flag
 
+# Default to ["all"] if no genre can be found
+def getGenreArray(showSoup):
+    genreTag = showSoup.find(
+        "td", 
+        attrs={"data-qa": "series-details-genre"}
+    )
+    genreArray = ["all"]
+    if genreTag is not None and genreTag.text != "":
+        genre = genreTag.text.strip()
+        print(genre)
+        if genre in TV_TO_URL_GENRE_DICT:
+            genreArray = [TV_TO_URL_GENRE_DICT[genre]]
+    
+    return genreArray
+       
+
 def setCreators(showSoup, showInfoDict):
     creatorsDict = {}
     creators = showSoup.find_all(
