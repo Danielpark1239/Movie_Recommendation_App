@@ -344,7 +344,7 @@ def directorEnqueue():
         "audienceScore": int(formData["audienceSlider"]),
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
-    director = formData["actorURL"].split("/")[-1]
+    director = formData["directorURL"].split("/")[-1]
     keyArray = [
         "D", director, "".join(formData["category"]), formData["yearSlider"],
         formData["boxOffice"], "".join(genres), "".join(ratings), "".join(platforms),
