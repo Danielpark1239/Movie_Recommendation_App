@@ -929,7 +929,7 @@ def scrapeSimilar(filterData):
                 "class": "meta-value genre",
                 "data-qa": "movie-info-item-value"
             })
-            if genreTag is None:
+            if genreTag is None or genreTag.text == "":
                 genres = ["all"]
             else:
                 genreString = genreTag.text.strip().lower().replace(", ", ",")
