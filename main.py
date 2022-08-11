@@ -37,7 +37,7 @@ def moviesEnqueue():
 
     value = conn.get(key)
     if value is not None:
-        return {'job_id': value}
+        return json.dumps({'job_id': value})
     
     URLs = scraper.generateMovieURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
@@ -56,6 +56,9 @@ def movieProgress(id):
             job = Job.fetch(id, connection=conn)
             status = job.get_status()
             if 'result' in job.meta:
+                data = {'progress': 100}
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
                 data = {'result': job.meta['result']}
                 json_data = json.dumps(data)
                 yield f"data:{json_data}\n\n"
