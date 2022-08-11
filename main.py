@@ -459,8 +459,10 @@ def producerEnqueue():
         formData["tomatometerSlider"], formData["audienceSlider"], formData["limit"] 
     ]
     key = "".join(keyArray)
+    print(f"key: {key}")
 
     value = cache.get(key)
+    print(f"value: {value}")
     if value is not None:
         return {'job_id': value}
 
@@ -502,6 +504,7 @@ def producerProgress(id):
 
             job.refresh()
             data = {'result': job.meta['result']}
+            print(f"job meta key: {job.meta['key']}")
             cache.set(job.meta['key'], job.id, ex=86399)
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
@@ -557,14 +560,12 @@ def similarEnqueue():
     key = "".join(keyArray)
 
     value = cache.get(key)
-    print(value)
     if value is not None:
         return {'job_id': value}
 
     job = q.enqueue(
         scraper.scrapeSimilar, filterData, result_ttl=86400
     )
-    print(key)
     job.meta["key"] = key
     job.save_meta()
     return {'job_id': job.id}
@@ -601,7 +602,6 @@ def similarProgress(id):
             job.refresh()
             data = {'result': job.meta['result']}
             cache.set(job.meta["key"], job.id, ex=86399)
-            print(job.meta["key"])
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
 
