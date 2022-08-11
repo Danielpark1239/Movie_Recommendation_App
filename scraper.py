@@ -943,6 +943,8 @@ def scrapeSimilar(filterData):
             else:
                 ratings = [ratingTag.text.strip().lower().replace("-", "_")]
 
+            print(genres)
+            print(ratings)
             URLs = generateMovieURLs(
                 genres, ratings, platforms, tomatometerScore, audienceScore,
                 limit, True
