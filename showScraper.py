@@ -49,7 +49,7 @@ def setPremiereDate(showSoup, showInfoDict):
         "td", 
         attrs={"data-qa": "series-details-premiere-date"}
     )
-    if premiereDate is not None:
+    if premiereDate is not None and premiereDate.text != "":
         showInfoDict["premiereDate"] = premiereDate.text
 
 # Returns True if the show premiered on or after a certain year,
@@ -59,7 +59,7 @@ def setPremiereDateWithFilter(showSoup, showInfoDict, oldestYear):
         "td", 
         attrs={"data-qa": "series-details-premiere-date"}
     )
-    if premiereDate is None or premiereDate == "":
+    if premiereDate is None or premiereDate.text == "":
         return False
     year = int(premiereDate.text[-4:])
     if year < oldestYear:
