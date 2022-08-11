@@ -920,11 +920,9 @@ def scrapeSimilar(filterData):
                 limit, True
             )
 
-            result = scrapeMovies(
+            return scrapeMovies(
                 URLs, tomatometerScore, audienceScore, limit, oldestYear
             )
-            print(result)
-            return result
 
         elif "/tv/" in filterData["url"]:
             URLs = generateTVshowURLs(
@@ -932,11 +930,9 @@ def scrapeSimilar(filterData):
                 limit, True
             )
 
-            result = scrapeTVshows(
+            return scrapeTVshows(
                 URLs, tomatometerScore, audienceScore, limit, oldestYear
             )
-            print(result)
-            return result
 
     for item in similarItems:
         # get URL
