@@ -918,14 +918,31 @@ def scrapeSimilar(filterData):
 
     # If no similar items, default to scrapeMovies and scrapeTvShows
     if similarItems is None or len(similarItems) == 0:
-        genres = ["all"]
-        ratings = ["all"]
         platforms = filterData["platforms"]
         tomatometerScore = filterData["tomatometerScore"]
         audienceScore = filterData["audienceScore"]
         oldestYear = filterData["oldestYear"]
 
         if "/m/" in filterData["url"]:
+            # Get genres and ratings
+            genreTag = soup.find("div", attrs={
+                "class": "meta-value genre",
+                "data-qa": "movie-info-item-value"
+            })
+            if genreTag is None:
+                genres = ["all"]
+            else:
+                genreString = genreTag.text.strip().lower().replace(", ", ",")
+                genreString = genreString.replace(" & ", "_and_").replace("-", "_")
+                genreString = genreString.replace("+", "").replace(" ", "_")
+                genres = genreString.split(",")
+            
+            ratingTag = soup.find("span", attrs={"id": "rating"})
+            if ratingTag is None or ratingTag.text == "":
+                ratings = ["all"]
+            else:
+                ratings = [ratingTag.text.strip().lower().replace("-", "_")]
+
             URLs = generateMovieURLs(
                 genres, ratings, platforms, tomatometerScore, audienceScore,
                 limit, True
