@@ -1,4 +1,3 @@
-from base64 import decode
 from flask import render_template, request, Response
 import scraper
 from rq import Queue
