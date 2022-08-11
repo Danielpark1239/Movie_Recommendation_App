@@ -499,8 +499,8 @@ def producerProgress(id):
                 time.sleep(1)
 
             job.refresh()
-            data = {'result': job.meta['result']}
             cache.set(job.meta['key'], job.id, ex=86399)
+            data = {'result': job.meta['result']}
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
 
@@ -595,8 +595,8 @@ def similarProgress(id):
                 time.sleep(1)
 
             job.refresh()
-            data = {'result': job.meta['result']}
             cache.set(job.meta["key"], job.id, ex=86399)
+            data = {'result': job.meta['result']}
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
 
