@@ -550,11 +550,22 @@ def similarEnqueue():
         "audienceScore": int(formData["audienceSlider"]),
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
+    media = formData["url"].split("/")[-1]
+    keyArray = [
+        "S", media, formData["oldestYear"], "".join(platforms), 
+        formData["tomatometerSlider"],  formData["audienceSlider"], formData["limit"]]
+    key = "".join(keyArray)
+
+    value = cache.get(key)
+    print(value)
+    if value is not None:
+        return {'job_id': value}
 
     job = q.enqueue(
         scraper.scrapeSimilar, filterData, result_ttl=86400
     )
-
+    job.meta["key"] = key
+    job.save_meta()
     return {'job_id': job.id}
 
 @app.route('/similar/progress/<string:id>', methods=['GET'])
@@ -563,6 +574,15 @@ def similarProgress(id):
         try:
             job = Job.fetch(id, connection=conn)
             status = job.get_status()
+
+            if status == 'finished':
+                data = {'progress': 100}
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                data = {'result': 'recommendations/' + job.id}
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                return
 
             while status != 'finished':
                 status = job.get_status()
@@ -579,6 +599,7 @@ def similarProgress(id):
 
             job.refresh()
             data = {'result': job.meta['result']}
+            cache.set(job.meta["key"], job.id, ex=86399)
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
 
