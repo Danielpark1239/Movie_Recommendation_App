@@ -346,7 +346,7 @@ def directorEnqueue():
     }
     director = formData["actorURL"].split("/")[-1]
     keyArray = [
-        "A", director, "".join(formData["category"]), formData["yearSlider"],
+        "D", director, "".join(formData["category"]), formData["yearSlider"],
         formData["boxOffice"], "".join(genres), "".join(ratings), "".join(platforms),
         formData["tomatometerSlider"], formData["audienceSlider"], formData["limit"] 
     ]
