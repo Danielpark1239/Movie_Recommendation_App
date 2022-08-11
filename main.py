@@ -85,8 +85,7 @@ def movieProgress(id):
                 time.sleep(1)
 
             job.refresh()
-            debug = cache.set(job.meta['key'], job.id, ex=86399)
-            print(debug)
+            cache.set(job.meta['key'], job.id, ex=86399)
             data = {'result': job.meta['result']}
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
@@ -132,6 +131,18 @@ def tvshowsEnqueue():
     limit = 10 if formData["limit"] == "" else int(formData["limit"])
     popular = True if "popular" in formData else False
 
+    keyArray = [
+        "T", "".join(genres), "".join(ratings), "".join(platforms),
+        formData["tomatometerSlider"], formData["audienceSlider"], formData["limit"]]
+    if popular:
+        keyArray.append("P")
+    key = "".join(keyArray)
+
+    value = cache.get(key)
+    print(value)
+    if value is not None:
+        return {'job_id': value}
+
     URLs = scraper.generateTVshowURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
@@ -139,6 +150,8 @@ def tvshowsEnqueue():
         scraper.scrapeTVshows, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
     )
 
+    job.meta['key'] = key
+    job.save_meta()
     return {'job_id': job.id}
 
 @app.route('/tvshows/progress/<string:id>', methods=['GET'])
@@ -147,6 +160,15 @@ def tvshowProgress(id):
         try:
             job = Job.fetch(id, connection=conn)
             status = job.get_status()
+
+            if status == 'finished':
+                data = {'progress': 100}
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                data = {'result': 'recommendations/' + job.id}
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                return
 
             while status != 'finished':
                 status = job.get_status()
@@ -162,6 +184,7 @@ def tvshowProgress(id):
                 time.sleep(1)
 
             job.refresh()
+            cache.set(job.meta['key'], job.id, ex=86399)
             data = {'result': job.meta['result']}
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
