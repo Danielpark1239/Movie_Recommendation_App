@@ -11,7 +11,7 @@ import os
 import redis
 
 redis_url = os.getenv('HEROKU_REDIS_OLIVE_URL', 'redis://localhost:6379')
-redis = redis.from_url(redis_url, decode_responses=True)
+cache = redis.from_url(redis_url, decode_responses=True)
 q = Queue(connection=conn)
 
 @app.route('/')
@@ -40,7 +40,7 @@ def moviesEnqueue():
         keyArray.append("P")
     key = "".join(keyArray)
 
-    value = redis.get(key)
+    value = cache.get(key)
     if value is not None:
         return {'job_id': value}
     
@@ -85,7 +85,7 @@ def movieProgress(id):
                 time.sleep(1)
 
             job.refresh()
-            redis.set(job.meta['key'], job.id, ex=86399)
+            cache.set(job.meta['key'], job.id, ex=86399)
             data = {'result': job.meta['result']}
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
