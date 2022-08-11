@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import random
 import re
 from constants import *
+from main import movies
 import movieScraper
 import showScraper
 from collections import deque
@@ -925,31 +926,10 @@ def scrapeSimilar(filterData):
 
         if "/m/" in filterData["url"]:
             # Get genres and ratings
-            genreTag = soup.find("div", attrs={
-                "class": "meta-value genre",
-                "data-qa": "movie-info-item-value"
-            })
-            if genreTag is None or genreTag.text == "":
-                genres = ["all"]
-            else:
-                genreString = genreTag.text.strip().replace("\n", "").lower().replace(", ", ",")
-                genreString = genreString.replace(" & ", "_and_").replace("-", "_").replace("+", "")
-                genres = genreString.split(",")
-                for i in range(len(genres)):
-                    genres[i] = genres[i].strip()
-                    genres[i] = genres[i].replace(" ", "_")
-
+            genres = movieScraper.getGenreArray(soup)
             print(genres)
             
-            ratings = ["all"]
-            metaLabels = soup.find_all("div", attrs={
-                "class": "meta-label subtle",
-                "data-qa": "movie-info-item-label"
-            })
-            for metaLabel in metaLabels:
-                if metaLabel.text == "Rating:":
-                    rating = metaLabel.next_sibling.next_sibling.text.strip().split()[0]
-                    ratings = [rating.lower().replace("-", "_")]
+            ratings = movieScraper.getRatingArray(soup)
             print(ratings)
             
             URLs = generateMovieURLs(

@@ -66,6 +66,20 @@ def setRatingWithFilter(info, movieInfoDict, filterList):
         movieInfoDict["rating"] = rating
     return flag
 
+# Defaults to ["all"] if no rating can be found
+def getRatingArray(moviePageSoup):
+    metaLabels = moviePageSoup.find_all("div", attrs={
+        "class": "meta-label subtle",
+        "data-qa": "movie-info-item-label"
+    })
+    ratingArray = ["all"]
+    for metaLabel in metaLabels:
+        if metaLabel.text == "Rating:":
+            rating = metaLabel.next_sibling.next_sibling.text.strip().split()[0]
+            ratingArray = [rating.lower().replace("-", "_")]
+            break
+    return ratingArray
+
 def setGenres(info, movieInfoDict):
     genreString = info.next_sibling.next_sibling.text.strip().replace(" ", "")\
     .replace("\n", "").replace(",", ", ").replace("&", " & ")
@@ -83,6 +97,23 @@ def setGenresWithFilter(info, movieInfoDict, filterList):
     genreString = genreString.replace(",", ", ").replace("&", " & ")
     movieInfoDict["genres"] = genreString
     return flag
+
+# Defaults to ["all"] if no genres can be found
+def getGenreArray(moviePageSoup):
+    genreTag = moviePageSoup.find("div", attrs={
+        "class": "meta-value genre",
+        "data-qa": "movie-info-item-value"
+    })
+    if genreTag is None or genreTag.text == "":
+        genres = ["all"]
+    else:
+        genreString = genreTag.text.strip().replace("\n", "").lower().replace(", ", ",")
+        genreString = genreString.replace(" & ", "_and_").replace("-", "_").replace("+", "")
+        genres = genreString.split(",")
+        for i in range(len(genres)):
+            genres[i] = genres[i].strip()
+            genres[i] = genres[i].replace(" ", "_")
+    return genres
 
 def setLanguage(info, movieInfoDict):
     language = info.next_sibling.next_sibling.text.strip()
