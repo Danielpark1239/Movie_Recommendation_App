@@ -557,6 +557,7 @@ def similarEnqueue():
     key = "".join(keyArray)
 
     value = cache.get(key)
+    print(value)
     if value is not None:
         return {'job_id': value}
 
