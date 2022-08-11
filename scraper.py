@@ -201,6 +201,10 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
         for movie in movies:
             if movieCount == limit:
                 break
+
+            currTime = time.time()
+            if currTime - start > TIMEOUT:
+                break
             
             # 80% chance of movie being added to recommendations
             # if scores are below 80
@@ -328,6 +332,10 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
         for tvShow in tvShows:
             if tvShowCount == limit:
                 break
+
+            currTime = time.time()
+            if currTime - start > TIMEOUT:
+                break
             
             if useRandom: # 80% chance of show being selected
                 randomInt = random.randint(0, 4)
@@ -414,6 +422,11 @@ def scrapeActor(filterData):
         for movie in movies:
             if count == filterData["limit"]:
                 break
+
+            currTime = time.time()
+            if currTime - start > TIMEOUT:
+                break
+
             name = movie["data-title"]
             boxOffice = int(movie["data-boxoffice"]) if movie["data-boxoffice"] else 0
             year = int(movie["data-year"])
@@ -528,6 +541,11 @@ def scrapeActor(filterData):
         for tvShow in tvShows:
             if count == filterData["limit"]:
                 break
+
+            currTime = time.time()
+            if currTime - start > TIMEOUT:
+                break
+
             name = tvShow["data-title"]
             year = int(tvShow["data-appearance-year"][1:5])
             yearString = tvShow["data-appearance-year"][1:-1].replace(",", ", ")
@@ -631,6 +649,11 @@ def scrapeDirectorProducer(filterData, type):
         for movie in movies:
             if count == filterData["limit"]:
                 break
+
+            currTime = time.time()
+            if currTime - start > TIMEOUT:
+                break
+
             name = movie["data-title"]
             boxOffice = int(movie["data-boxoffice"]) if movie["data-boxoffice"] else 0
             year = int(movie["data-year"])
@@ -750,6 +773,11 @@ def scrapeDirectorProducer(filterData, type):
         for tvShow in tvShows:
             if count == filterData["limit"]:
                 break
+
+            currTime = time.time()
+            if currTime - start > TIMEOUT:
+                break
+            
             name = tvShow["data-title"]
             year = int(tvShow["data-appearance-year"][1:5])
             yearString = tvShow["data-appearance-year"][1:-1].replace(",", ", ")
@@ -831,10 +859,7 @@ def scrapeDirectorProducer(filterData, type):
 def scrapeSimilar(filterData):
     start = time.time()
     addedCount = 0
-    totalCount = 0
     limit = filterData["limit"]
-    maxLimit = (max(filterData["tomatometerScore"], filterData["audienceScore"])\
-    // 10 + 2) * limit
     job = get_current_job()
     job.meta['progress'] = 0
     job.save_meta()
@@ -869,12 +894,15 @@ def scrapeSimilar(filterData):
         marked[itemURL] = True
         queue.append(itemURL)
 
-    while len(queue) > 0 and totalCount < maxLimit:
+    while len(queue) > 0:
         if addedCount == limit:
             break
 
+        currTime = time.time()
+        if currTime - start > TIMEOUT:
+            break
+
         url = queue.popleft()
-        totalCount += 1
         html_text = requests.get(url).text
         itemSoup = BeautifulSoup(html_text, "lxml")
 
