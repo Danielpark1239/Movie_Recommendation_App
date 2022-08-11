@@ -159,7 +159,7 @@ def generateTVshowURLs(
     print(f'Time to generate TV Show URLs: {end - start}')
     return URLs
 
-def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
+def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None):
     start = time.time()
     job = get_current_job()
     job.meta['progress'] = 0
@@ -252,6 +252,9 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                 "div", 
                 attrs={"data-qa": "movie-info-item-label"}
             )
+            
+            # If true, year filter failed; break
+            yearFlag = False
 
             for info in additionalInfo:
                 # Set info depending on category
@@ -262,7 +265,15 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                 elif info.text == desiredInfoCategories[2]:
                     movieScraper.setLanguage(info, movieInfoDict)
                 elif info.text == desiredInfoCategories[3]:
-                    movieScraper.setDate(info, movieInfoDict, "theaters")
+                    if year:
+                        yearFilter = movieScraper.setDateWithFilter(
+                            info, movieInfoDict, year
+                        )
+                        if not yearFilter:
+                            yearFlag = True
+                            break
+                    else:
+                        movieScraper.setDate(info, movieInfoDict, "theaters")
                 elif info.text == desiredInfoCategories[4]:
                     movieScraper.setDate(info, movieInfoDict, "streaming")
                 elif info.text == desiredInfoCategories[5]:
@@ -275,6 +286,9 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
                     movieScraper.setWriters(info, movieInfoDict)
                 else:
                     continue
+            
+            if yearFlag:
+                continue
 
             # if the last row is full, create a new row
             if len(movieInfo[-1]) == 4:
@@ -293,7 +307,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit):
 
     return movieInfo
 
-def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
+def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None):
     start = time.time()
     job = get_current_job()
     job.meta['progress'] = 0
@@ -370,11 +384,19 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit):
             # Get additional data about the show by looking at its page
             tvshow_html_text = requests.get(url).text
             tvShowSoup = BeautifulSoup(tvshow_html_text, "lxml")
-            
+
+            if year:
+                yearFilter = showScraper.setPremiereDateWithFilter(
+                    tvShowSoup, tvShowInfoDict, year
+                )
+                if not yearFilter:
+                    continue
+            else:
+                showScraper.setPremiereDate(tvShowSoup, tvShowInfoDict)
+
             showScraper.setPosterImage(tvShowSoup, tvShowInfoDict)
             showScraper.setPlatforms(tvShowSoup, tvShowInfoDict)
             showScraper.setNetwork(tvShowSoup, tvShowInfoDict)
-            showScraper.setPremiereDate(tvShowSoup, tvShowInfoDict)
             showScraper.setGenre(tvShowSoup, tvShowInfoDict)
             showScraper.setCreators(tvShowSoup, tvShowInfoDict)
             showScraper.setProducers(tvShowSoup, tvShowInfoDict)
@@ -882,8 +904,35 @@ def scrapeSimilar(filterData):
     similarItems = soup.find_all(
         "tiles-carousel-responsive-item", attrs={"slot": "tile"}
     )
+    
+    # If no similar items, default to scrapeMovies and scrapeTvShows
     if similarItems is None or len(similarItems) == 0:
-        return similarInfo
+        genres = ["all"]
+        ratings = ["all"]
+        platforms = filterData["platforms"]
+        tomatometerScore = filterData["tomatometerScore"]
+        audienceScore = filterData["audienceScore"]
+        oldestYear = filterData["oldestYear"]
+
+        if "/m/" in filterData["url"]:
+            URLs = generateMovieURLs(
+                genres, ratings, platforms, tomatometerScore, audienceScore,
+                limit, True
+            )
+
+            return scrapeMovies(
+                URLs, tomatometerScore, audienceScore, limit, oldestYear
+            )
+
+        elif "/tv/" in filterData["url"]:
+            URLs = generateTVshowURLs(
+                genres, ratings, platforms, tomatometerScore, audienceScore,
+                limit, True
+            )
+
+            return scrapeTVshows(
+                URLs, tomatometerScore, audienceScore, limit, oldestYear
+            )
 
     for item in similarItems:
         # get URL
