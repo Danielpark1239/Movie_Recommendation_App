@@ -904,7 +904,7 @@ def scrapeSimilar(filterData):
     similarItems = soup.find_all(
         "tiles-carousel-responsive-item", attrs={"slot": "tile"}
     )
-    
+
     # If no similar items, default to scrapeMovies and scrapeTvShows
     if similarItems is None or len(similarItems) == 0:
         genres = ["all"]
@@ -920,9 +920,11 @@ def scrapeSimilar(filterData):
                 limit, True
             )
 
-            return scrapeMovies(
+            result = scrapeMovies(
                 URLs, tomatometerScore, audienceScore, limit, oldestYear
             )
+            print(result)
+            return result
 
         elif "/tv/" in filterData["url"]:
             URLs = generateTVshowURLs(
@@ -930,9 +932,11 @@ def scrapeSimilar(filterData):
                 limit, True
             )
 
-            return scrapeTVshows(
+            result = scrapeTVshows(
                 URLs, tomatometerScore, audienceScore, limit, oldestYear
             )
+            print(result)
+            return result
 
     for item in similarItems:
         # get URL
