@@ -1,3 +1,4 @@
+from base64 import decode
 from flask import render_template, request, Response
 import scraper
 from rq import Queue
@@ -6,7 +7,11 @@ from app import app
 import json
 import time
 from worker import conn
+import os
+import redis
 
+redis_url = os.getenv('HEROKU_REDIS_OLIVE_URL', 'redis://localhost:6379')
+redis = redis.from_url(redis_url, decode_responses=True)
 q = Queue(connection=conn)
 
 @app.route('/')
@@ -35,7 +40,7 @@ def moviesEnqueue():
         keyArray.append("P")
     key = "".join(keyArray)
 
-    value = conn.get(key)
+    value = redis.get(key)
     if value is not None:
         return {'job_id': value}
     
@@ -80,7 +85,7 @@ def movieProgress(id):
                 time.sleep(1)
 
             job.refresh()
-            conn.set(job.meta['key'], job.id, ex=86399)
+            redis.set(job.meta['key'], job.id, ex=86399)
             data = {'result': job.meta['result']}
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
