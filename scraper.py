@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import random
 import re
 from constants import *
-from main import movies
 import movieScraper
 import showScraper
 from collections import deque
