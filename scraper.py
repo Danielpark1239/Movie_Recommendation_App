@@ -933,7 +933,7 @@ def scrapeSimilar(filterData):
                 genres = ["all"]
             else:
                 print(genreTag.text)
-                genreString = genreTag.text.strip().lower().replace(", ", ",")
+                genreString = genreTag.text.strip().replace("\n", "").lower().replace(", ", ",")
                 genreString = genreString.replace(" & ", "_and_").replace("-", "_")
                 genreString = genreString.replace("+", "").replace(" ", "_")
                 genres = genreString.split(",")
