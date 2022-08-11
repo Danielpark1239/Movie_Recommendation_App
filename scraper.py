@@ -938,16 +938,17 @@ def scrapeSimilar(filterData):
                 genreString = genreString.replace("+", "").replace(" ", "_")
                 genres = genreString.split(",")
             
-            ratingTag = soup.find(id="rating")
-            print(ratingTag)
-            print(ratingTag.text)
-            if ratingTag is None or ratingTag.text == "":
-                ratings = ["all"]
-            else:
-                ratings = [ratingTag.text.strip().lower().replace("-", "_")]
-
-            print(genres)
+            ratings = ["all"]
+            metaLabels = soup.find_all("div", attrs={
+                "class": "meta-label subtle",
+                "data-qa": "movie-info-item-label"
+            })
+            for metaLabel in metaLabels:
+                if metaLabel.text == "Rating:":
+                    rating = metaLabel.next_sibling.next_sibling.text.strip().split()[0]
+                    ratings = [rating.lower().replace("-", "_")]
             print(ratings)
+            
             URLs = generateMovieURLs(
                 genres, ratings, platforms, tomatometerScore, audienceScore,
                 limit, True
