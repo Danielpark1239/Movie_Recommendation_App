@@ -37,6 +37,7 @@ def moviesEnqueue():
 
     value = conn.get(key)
     if value is not None:
+        print(str(value))
         return {'job_id': str(value)}
     
     URLs = scraper.generateMovieURLs(
