@@ -37,7 +37,7 @@ def moviesEnqueue():
 
     value = conn.get(key)
     if value is not None:
-        return json.dumps({'job_id': value})
+        return {'job_id': str(value)}
     
     URLs = scraper.generateMovieURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
