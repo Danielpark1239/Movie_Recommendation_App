@@ -159,7 +159,7 @@ def generateTVshowURLs(
     print(f'Time to generate TV Show URLs: {end - start}')
     return URLs
 
-def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None):
+def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipURL=None):
     start = time.time()
     job = get_current_job()
     job.meta['progress'] = 0
@@ -215,6 +215,9 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None):
                     continue
 
             url = BASE_URL + movie["href"]
+            if skipURL:
+                if skipURL == url:
+                    continue
             data = movie.find("div", slot="caption")
             scores = data.contents[1]
 
@@ -309,7 +312,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None):
 
     return movieInfo
 
-def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None):
+def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipURL=None):
     start = time.time()
     job = get_current_job()
     job.meta['progress'] = 0
@@ -359,6 +362,10 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None):
                     continue
 
             url = BASE_URL + tvShow["href"]
+            if skipURL:
+                if skipURL == url:
+                    continue
+
             data = tvShow.find("div", slot="caption")
             scores = data.contents[1]
 
@@ -925,7 +932,8 @@ def scrapeSimilar(filterData):
             )
 
             return scrapeMovies(
-                URLs, tomatometerScore, audienceScore, limit, oldestYear
+                URLs, tomatometerScore, audienceScore, limit, 
+                oldestYear, filterData["url"]
             )
 
         elif "/tv/" in filterData["url"]:
@@ -935,7 +943,8 @@ def scrapeSimilar(filterData):
             )
 
             return scrapeTVshows(
-                URLs, tomatometerScore, audienceScore, limit, oldestYear
+                URLs, tomatometerScore, audienceScore, limit, 
+                oldestYear, filterData["url"]
             )
 
     for item in similarItems:
