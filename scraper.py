@@ -938,7 +938,7 @@ def scrapeSimilar(filterData):
                 genreString = genreString.replace("+", "").replace(" ", "_")
                 genres = genreString.split(",")
             
-            ratingTag = soup.find("span", attrs={"id": "rating"})
+            ratingTag = soup.find(id="rating")
             print(ratingTag)
             print(ratingTag.text)
             if ratingTag is None or ratingTag.text == "":
