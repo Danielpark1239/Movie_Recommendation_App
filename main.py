@@ -552,7 +552,7 @@ def similarEnqueue():
     }
     media = formData["url"].split("/")[-1]
     keyArray = [
-        "S", media, formData["oldestYear"], "".join(platforms), 
+        "S", media, formData["yearSlider"], "".join(platforms), 
         formData["tomatometerSlider"],  formData["audienceSlider"], formData["limit"]]
     key = "".join(keyArray)
 
