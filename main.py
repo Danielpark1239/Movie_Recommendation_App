@@ -471,7 +471,7 @@ def producerEnqueue():
     job = q.enqueue(
         scraper.scrapeDirectorProducer, filterData, "producer", result_ttl=86400
     )
-    job.meta["key"] = key
+    job.meta['key'] = key
     job.save_meta()
     return {"job_id": job.id}
 
