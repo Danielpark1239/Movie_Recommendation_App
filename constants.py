@@ -2,6 +2,9 @@
 ENTRIES_PER_PAGE = 30
 MAX_LIMIT = 50
 
+# Functions return after this number of seconds, regardless of current progress
+TIMEOUT = 90
+
 # If scores are above a certain threshold, generate more pages to search
 GOURMET_THRESHOLD = 75
 FRESH_THRESHOLD = 60
