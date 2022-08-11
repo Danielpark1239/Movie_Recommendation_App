@@ -55,6 +55,7 @@ def movieProgress(id):
         try:
             job = Job.fetch(id, connection=conn)
             status = job.get_status()
+            print(status)
             
             if status == 'finished':
                 data = {'progress': 100}
