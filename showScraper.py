@@ -12,7 +12,7 @@ def setPosterImage(showSoup, showInfoDict):
         showInfoDict["posterImage"] = BLANK_POSTER
     elif posterImage.has_attr("data-src"):
         imageURL = posterImage["data-src"]
-        imageURL = imageURL.replace("/206x305/", "/618x915/")
+        imageURL = imageURL.replace("/206x305/", "/480x0/")
         showInfoDict["posterImage"] = imageURL
     else:
         showInfoDict["posterImage"] = BLANK_POSTER
