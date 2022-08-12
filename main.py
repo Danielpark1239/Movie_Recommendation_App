@@ -77,11 +77,8 @@ def movieProgress(id):
 
                 if 'progress' in job.meta:
                     data = {'progress': job.meta['progress']}
-                else:
-                    data = {'progress': job.meta['progress']}
-
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
+                    json_data = json.dumps(data)
+                    yield f"data:{json_data}\n\n"
                 time.sleep(1)
 
             job.refresh()
@@ -106,6 +103,7 @@ def movieRecommendations(id):
                 return render_template("movieNotFound.html")
 
             return render_template("movieRecommendations.html", movieInfo=movieInfo)
+        return "Job in progress", 400
 
     except:
         return "Record not found", 400
@@ -171,11 +169,8 @@ def tvshowProgress(id):
 
                 if 'progress' in job.meta:
                     data = {'progress': job.meta['progress']}
-                else:
-                    data = {'progress': job.meta['progress']}
-
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
+                    json_data = json.dumps(data)
+                    yield f"data:{json_data}\n\n"
                 time.sleep(1)
 
             job.refresh()
@@ -199,7 +194,8 @@ def tvshowRecommendations(id):
             if len(tvshowInfo[0]) == 0:
                 return render_template("tvshowNotFound.html")
 
-        return render_template("tvshowRecommendations.html", tvShowInfo=tvshowInfo)
+            return render_template("tvshowRecommendations.html", tvShowInfo=tvshowInfo)
+        return "Job in progress", 400
 
     except:
         return "Record not found", 400
@@ -280,11 +276,8 @@ def actorProgress(id):
 
                 if 'progress' in job.meta:
                     data = {'progress': job.meta['progress']}
-                else:
-                    data = {'progress': job.meta['progress']}
-
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
+                    json_data = json.dumps(data)
+                    yield f"data:{json_data}\n\n"
                 time.sleep(1)
 
             job.refresh()
@@ -389,11 +382,8 @@ def directorProgress(id):
 
                 if 'progress' in job.meta:
                     data = {'progress': job.meta['progress']}
-                else:
-                    data = {'progress': job.meta['progress']}
-
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
+                    json_data = json.dumps(data)
+                    yield f"data:{json_data}\n\n"
                 time.sleep(1)
 
             job.refresh()
@@ -497,11 +487,8 @@ def producerProgress(id):
 
                 if 'progress' in job.meta:
                     data = {'progress': job.meta['progress']}
-                else:
-                    data = {'progress': job.meta['progress']}
-
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
+                    json_data = json.dumps(data)
+                    yield f"data:{json_data}\n\n"
                 time.sleep(1)
 
             job.refresh()
@@ -594,11 +581,8 @@ def similarProgress(id):
 
                 if 'progress' in job.meta:
                     data = {'progress': job.meta['progress']}
-                else:
-                    data = {'progress': job.meta['progress']}
-
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
+                    json_data = json.dumps(data)
+                    yield f"data:{json_data}\n\n"
                 time.sleep(1)
 
             job.refresh()
