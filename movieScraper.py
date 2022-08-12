@@ -11,9 +11,7 @@ def setPosterImage(movieSoup, movieInfoDict):
         movieInfoDict["posterImage"] = BLANK_POSTER
     elif posterImage.has_attr("data-src"):
         imageURL = posterImage["data-src"]
-        print(imageURL)
-        imageURL.replace("/206x305/", "/618x915/")
-        print(imageURL)
+        imageURL = imageURL.replace("/206x305/", "/618x915/")
         movieInfoDict["posterImage"] = imageURL
     else:
         movieInfoDict["posterImage"] = BLANK_POSTER
