@@ -445,7 +445,6 @@ def scrapeActor(filterData):
     main_page_content = soup.find("div", attrs={"id": "main-page-content"})
     if main_page_content is not None:
         if main_page_content.contents[1].contents[1].text.strip() == "404 - Not Found":
-            print(main_page_content.contents[1].contents[1].text.strip())
             return None
 
     # Scrape movies
