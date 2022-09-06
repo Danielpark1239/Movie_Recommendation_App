@@ -27,7 +27,8 @@ URL_PLATFORM_DICT = {
     "netflix": "netflix",
     "paramount-plus-us": "paramount_plus",
     "peacock": "peacock",
-    "vudu": "vudu"
+    "vudu": "vudu",
+    "showtime": "showtime"
 }
 
 # Mapping from platform to frontend representation
@@ -42,7 +43,8 @@ FRONTEND_PLATFORM_DICT = {
     "netflix": "Netflix",
     "paramount-plus-us": "Paramount+",
     "peacock": "Peacock",
-    "vudu": "Vudu"
+    "vudu": "Vudu",
+    "showtime": "Showtime"
 }
 
 # Relative path works in templates folder
