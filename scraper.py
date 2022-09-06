@@ -306,6 +306,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
             job.save_meta()
             
     end = time.time()
+    print(movieInfo)
     print(f'Time to generate movie recs: {end - start}')
     job.meta['result'] = "recommendations/" + job.id
     job.save_meta()
