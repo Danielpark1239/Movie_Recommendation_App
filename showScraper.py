@@ -3,6 +3,17 @@
 import re
 from constants import *
 
+def getName(showSoup):
+    name = showSoup.find(
+        "h1",
+        attrs={
+            "data-qa": "score-panel-series-title"
+        }
+    )
+    if name is None or name.text.strip() == "":
+        return None
+    return name.text.strip()
+
 def setPosterImage(showSoup, showInfoDict):
     posterImage = showSoup.find(
         "img",

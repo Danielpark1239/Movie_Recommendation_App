@@ -226,17 +226,8 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
                 continue
             if scores["criticsscore"] == "" or int(scores["criticsscore"]) < tomatometerScore:
                 continue
-
-            name = data.contents[-2].text.strip()
             
-            # Avoid duplicates
-            if name in movieDict:
-                continue
-            else:
-                movieDict[name] = True
-
             movieInfoDict = {
-                "name": name,
                 "audienceScore": scores["audiencescore"],
                 "criticsScore": scores["criticsscore"],
                 "url": url
@@ -247,6 +238,18 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
             # Get additional data about the movie by looking at its page
             movie_html_text = requests.get(url).text
             movieSoup = BeautifulSoup(movie_html_text, "lxml")
+
+            name = movieScraper.getName(movieSoup)
+            if name is None:
+                continue
+
+            # Avoid duplicates
+            if name in movieDict:
+                continue
+            else:
+                movieDict[name] = True
+            
+            movieInfoDict["name"] = name
             
             movieScraper.setPosterImage(movieSoup, movieInfoDict)
             movieScraper.setPlatforms(movieSoup, movieInfoDict)
@@ -376,16 +379,7 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
             if scores["criticsscore"] == "" or int(scores["criticsscore"]) < tomatometerScore:
                 continue
 
-            name = data.contents[3].text.strip()
-            
-            # Avoid duplicates
-            if name in tvShowDict:
-                continue
-            else:
-                tvShowDict[name] = True
-
             tvShowInfoDict = {
-                "name": name,
                 "audienceScore": scores["audiencescore"],
                 "criticsScore": scores["criticsscore"],
                 "url": url
@@ -396,6 +390,18 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
             # Get additional data about the show by looking at its page
             tvshow_html_text = requests.get(url).text
             tvShowSoup = BeautifulSoup(tvshow_html_text, "lxml")
+
+            name = showScraper.getName(tvShowSoup)
+            if name is None:
+                continue
+
+            # Avoid duplicates
+            if name in tvShowDict:
+                continue
+            else:
+                tvShowDict[name] = True
+
+            tvShowInfoDict["name"] = name
 
             if year:
                 yearFilter = showScraper.setPremiereDateWithFilter(
@@ -991,10 +997,7 @@ def scrapeSimilar(filterData):
                 queue.append(itemURL)
 
         if "/m/" in url:
-            name = itemSoup.find("h1", attrs={
-                "slot": "title",
-                "data-qa": "score-panel-movie-title"
-            }).text.strip()
+            name = movieScraper.getName(itemSoup)
             if name is None:
                 continue
 
@@ -1073,11 +1076,9 @@ def scrapeSimilar(filterData):
             movieScraper.setCast(itemSoup, similarInfoDict)
         
         elif "/tv/" in url:         
-            nameHeader = itemSoup.find("div", attrs={"class": "seriesHeader"})
-            if nameHeader is None:
+            name = showScraper.getName(itemSoup)
+            if name is None:
                 continue
-            nameList = nameHeader.contents[1].text.strip().replace("\n", "").split("(")
-            name = nameList[0]
 
             tomatometerHeader = itemSoup.find("span", attrs={
                 "class": "mop-ratings-wrap__percentage",

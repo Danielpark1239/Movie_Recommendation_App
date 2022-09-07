@@ -2,6 +2,17 @@
 import re
 from constants import *
 
+def getName(movieSoup):
+    name = movieSoup.find(
+        "h1",
+        attrs={
+            "data-qa": "score-panel-movie-title"
+        }
+    )
+    if name is None or name.text.strip() == "":
+        return None
+    return name.text.strip()
+
 def setPosterImage(movieSoup, movieInfoDict):
     posterImage = movieSoup.find(
         "img",
