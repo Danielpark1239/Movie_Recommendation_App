@@ -103,6 +103,7 @@ def generateMovieURLs(
             random.shuffle(URLs)
         end = time.time()
         print(f'Time to generate movie URLs: {end - start}')
+        print(f'Movie URLs: {URLs}')
         return URLs
 
 def generateTVshowURLs(
@@ -157,6 +158,7 @@ def generateTVshowURLs(
         random.shuffle(URLs)
     end = time.time()
     print(f'Time to generate TV Show URLs: {end - start}')
+    print(f'TV show URLs: {URLs}')
     return URLs
 
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipURL=None):
