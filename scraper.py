@@ -201,6 +201,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
             )
 
         for movie in movies:
+            print(f'Movie count: {movieCount}')
             if movieCount == limit:
                 break
 
@@ -244,6 +245,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
             name = movieScraper.getName(movieSoup)
             if name is None:
                 continue
+            print(f'Name: {name}')
 
             # Avoid duplicates
             if name in movieDict:
