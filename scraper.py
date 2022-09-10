@@ -181,10 +181,12 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
     for url in URLs:
         if movieCount == limit:
             break
-
+        
+        # When the app goes idle for a while this breaks????
         html_text = requests.get(
             url=url
         ).text
+        print("HTML_TEXT OUTPUT:")
         print(html_text[:150]) # Checking if the request is working
         moviePageSoup = BeautifulSoup(html_text, "lxml")
 
