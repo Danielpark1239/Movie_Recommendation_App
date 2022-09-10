@@ -185,6 +185,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
         html_text = requests.get(
             url=url
         ).text
+        print(html_text[:150]) # Checking if the request is working
         moviePageSoup = BeautifulSoup(html_text, "lxml")
 
         # Specify a limit if we have more than 2 URLs to search
