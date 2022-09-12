@@ -8,7 +8,7 @@ import showScraper
 from collections import deque
 import time
 from rq import get_current_job
-import proxies
+import proxyGetter
 
 def generateMovieURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
@@ -178,7 +178,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
         "Rating:", "Genre:", "Original Language:", "Release Date (Theaters):",
         "Release Date (Streaming):", "Runtime:", "Director:", "Producer:", "Writer:"
     ]
-    proxies = proxies.get_proxy()
+    proxies = proxyGetter.get_proxy()
 
     for url in URLs:
         if movieCount == limit:
