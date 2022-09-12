@@ -182,12 +182,12 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
         if movieCount == limit:
             break
         
-        # When the app goes idle for a while this breaks????
         html_text = requests.get(
-            url=url
+            url=url,
+            headers=HEADERS
         ).text
-        print("HTML_TEXT OUTPUT:")
-        print(html_text[:150]) # Checking if the request is working
+        # check if the request is getting blocked
+        print(f"HTML_TEXT OUTPUT: {html_text[:150]}")
         moviePageSoup = BeautifulSoup(html_text, "lxml")
 
         # Specify a limit if we have more than 2 URLs to search
@@ -242,7 +242,10 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
                 movieInfoDict["similar"] = "movie"
 
             # Get additional data about the movie by looking at its page
-            movie_html_text = requests.get(url).text
+            movie_html_text = requests.get(
+                url=url,
+                headers=HEADERS
+            ).text
             movieSoup = BeautifulSoup(movie_html_text, "lxml")
 
             name = movieScraper.getName(movieSoup)
@@ -341,8 +344,11 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
             break
 
         html_text = requests.get(
-            url=url
+            url=url,
+            headers=HEADERS
         ).text
+        # check if the request is getting blocked
+        print(f"HTML_TEXT OUTPUT: {html_text[:150]}")
         tvShowPageSoup = BeautifulSoup(html_text, "lxml")
 
         # Specify a limit if we have more than 2 URLs to search
@@ -395,7 +401,10 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
                 tvShowInfoDict["similar"] = "tv"
 
             # Get additional data about the show by looking at its page
-            tvshow_html_text = requests.get(url).text
+            tvshow_html_text = requests.get(
+                url=url,
+                headers=HEADERS
+            ).text
             tvShowSoup = BeautifulSoup(tvshow_html_text, "lxml")
 
             name = showScraper.getName(tvShowSoup)
@@ -452,7 +461,12 @@ def scrapeActor(filterData):
     count = 0
     filmographyInfo = [[]]
 
-    html_text = requests.get(url=filterData["actorURL"]).text
+    html_text = requests.get(
+        url=filterData["actorURL"],
+        headers=HEADERS
+    ).text
+    # check if the request is getting blocked
+    print(f"HTML_TEXT OUTPUT: {html_text[:150]}")
     soup = BeautifulSoup(html_text, "lxml")
 
     # If URL is invalid, return None
@@ -508,7 +522,10 @@ def scrapeActor(filterData):
 
             # Search movie page
             moviePageURL = BASE_URL + movie.contents[5].contents[1]["href"]
-            movie_html_text = requests.get(url=moviePageURL).text
+            movie_html_text = requests.get(
+                url=moviePageURL,
+                headers=HEADERS
+            ).text
             movieSoup = BeautifulSoup(movie_html_text, "lxml")
 
             movieInfoDict = {
@@ -623,7 +640,10 @@ def scrapeActor(filterData):
 
             # Search tv show page
             showPageURL = BASE_URL + tvShow.contents[5].contents[1]["href"]
-            show_html_text = requests.get(url=showPageURL).text
+            show_html_text = requests.get(
+                url=showPageURL,
+                headers=HEADERS
+            ).text
             showSoup = BeautifulSoup(show_html_text, "lxml")
 
             showInfoDict = {
@@ -679,7 +699,12 @@ def scrapeDirectorProducer(filterData, type):
     job.save_meta()
     filmographyInfo = [[]]
 
-    html_text = requests.get(url=filterData["url"]).text
+    html_text = requests.get(
+        url=filterData["url"],
+        headers=HEADERS
+    ).text
+    # check if the request is getting blocked
+    print(f"HTML_TEXT OUTPUT: {html_text[:150]}")
     soup = BeautifulSoup(html_text, "lxml")
 
     # If URL is invalid, return None
@@ -733,7 +758,10 @@ def scrapeDirectorProducer(filterData, type):
 
             # Search movie page
             moviePageURL = BASE_URL + movie.contents[5].contents[1]["href"]
-            movie_html_text = requests.get(url=moviePageURL).text
+            movie_html_text = requests.get(
+                url=moviePageURL,
+                headers=HEADERS
+            ).text
             movieSoup = BeautifulSoup(movie_html_text, "lxml")
 
             movieInfoDict = {
@@ -853,7 +881,10 @@ def scrapeDirectorProducer(filterData, type):
 
             # Search tv show page
             showPageURL = BASE_URL + tvShow.contents[5].contents[1]["href"]
-            show_html_text = requests.get(url=showPageURL).text
+            show_html_text = requests.get(
+                url=showPageURL,
+                headers=HEADERS
+            ).text
             showSoup = BeautifulSoup(show_html_text, "lxml")
 
             showInfoDict = {
@@ -912,7 +943,12 @@ def scrapeSimilar(filterData):
     job.save_meta()
     similarInfo = [[]]
 
-    html_text = requests.get(url=filterData["url"]).text
+    html_text = requests.get(
+        url=filterData["url"],
+        headers=HEADERS
+    ).text
+    # check if the request is getting blocked
+    print(f"HTML_TEXT OUTPUT: {html_text[:150]}")
     soup = BeautifulSoup(html_text, "lxml")
 
     # If URL is invalid, return None
@@ -983,7 +1019,10 @@ def scrapeSimilar(filterData):
             break
 
         url = queue.popleft()
-        html_text = requests.get(url).text
+        html_text = requests.get(
+            url=url,
+            headers=HEADERS
+        ).text
         itemSoup = BeautifulSoup(html_text, "lxml")
 
         # Add similar items to BFS queue

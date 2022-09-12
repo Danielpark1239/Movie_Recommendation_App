@@ -16,6 +16,9 @@ BASE_MOVIE_THEATERS_URL = "https://www.rottentomatoes.com/browse/movies_in_theat
 BASE_MOVIE_HOME_URL = "https://www.rottentomatoes.com/browse/movies_at_home/"
 BASE_TV_URL = "https://www.rottentomatoes.com/browse/tv_series_browse/"
 
+# HTTP request headers to not run into "Access Denied", hopefully this works
+HEADERS = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36' } 
+
 # Mapping from platform to correct URL representation
 URL_PLATFORM_DICT = {
     "amazon-prime-video-us": "amazon_prime",
