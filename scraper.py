@@ -8,6 +8,7 @@ import showScraper
 from collections import deque
 import time
 from rq import get_current_job
+import proxies
 
 def generateMovieURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
@@ -177,6 +178,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
         "Rating:", "Genre:", "Original Language:", "Release Date (Theaters):",
         "Release Date (Streaming):", "Runtime:", "Director:", "Producer:", "Writer:"
     ]
+    proxies = proxies.get_proxy()
 
     for url in URLs:
         if movieCount == limit:
@@ -184,7 +186,8 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
         
         html_text = requests.get(
             url=url,
-            headers=HEADERS
+            headers=HEADERS,
+            proxies=proxies
         ).text
         # check if the request is getting blocked
         print(f"HTML_TEXT OUTPUT: {html_text[:150]}")
@@ -244,7 +247,8 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
             # Get additional data about the movie by looking at its page
             movie_html_text = requests.get(
                 url=url,
-                headers=HEADERS
+                headers=HEADERS,
+                proxies=proxies
             ).text
             movieSoup = BeautifulSoup(movie_html_text, "lxml")
 
