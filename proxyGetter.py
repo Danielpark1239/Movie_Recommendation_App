@@ -6,7 +6,7 @@ import random
 def get_proxy():
     PROXIES_URL = os.environ['PROXIES_URL']
     proxiesResponse = requests.get(url=PROXIES_URL).text
-    proxiesResponseList = proxiesResponse.split()
+    proxiesResponseList = proxiesResponse.splitlines()
     
     # Choose a random proxy
     proxy = random.choice(proxiesResponseList)
