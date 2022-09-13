@@ -2,7 +2,7 @@ import os
 import requests
 import random
 
-# Returns a valid proxy from proxy.webshare.io
+# Returns a valid proxy
 def get_proxy():
     PROXIES_URL = os.environ['PROXIES_URL']
     proxiesResponse = requests.get(url=PROXIES_URL).text
