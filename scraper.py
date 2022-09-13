@@ -207,7 +207,6 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
             )
 
         for movie in movies:
-            print(f'Movie count: {movieCount}')
             if movieCount == limit:
                 break
 
@@ -255,8 +254,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
             name = movieScraper.getName(movieSoup)
             if name is None:
                 continue
-            print(f'Name: {name}')
-
+            
             # Avoid duplicates
             if name in movieDict:
                 continue
@@ -311,6 +309,8 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
             
             if yearFlag:
                 continue
+                
+            print(name)
 
             # if the last row is full, create a new row
             if len(movieInfo[-1]) == 4:
@@ -323,7 +323,6 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
             job.save_meta()
             
     end = time.time()
-    print(movieInfo)
     print(f'Time to generate movie recs: {end - start}')
     job.meta['result'] = "recommendations/" + job.id
     job.save_meta()
@@ -353,7 +352,7 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
             headers=HEADERS,
             proxies=proxies
         ).text
-        # check if the request is getting blocked
+        # Debugging: check if the request is getting blocked
         print(f"HTML_TEXT OUTPUT: {html_text[:150]}")
         tvShowPageSoup = BeautifulSoup(html_text, "lxml")
 
@@ -442,6 +441,8 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
             showScraper.setCreators(tvShowSoup, tvShowInfoDict)
             showScraper.setProducers(tvShowSoup, tvShowInfoDict)
             showScraper.setCast(tvShowSoup, tvShowInfoDict)
+
+            print(name)
 
             # if the last row is full, create a new row
             if len(tvShowInfo[-1]) == 4:
@@ -596,6 +597,8 @@ def scrapeActor(filterData):
 
             movieScraper.setPosterImage(movieSoup, movieInfoDict)
 
+            print(name)
+
             # if the last row is full, create a new row
             if len(filmographyInfo[-1]) == 4:
                 filmographyInfo.append([movieInfoDict])
@@ -684,6 +687,8 @@ def scrapeActor(filterData):
 
             showScraper.setNetwork(showSoup, showInfoDict)
             showScraper.setPosterImage(showSoup, showInfoDict)
+
+            print(name)
 
             # if the last row is full, create a new row
             if len(filmographyInfo[-1]) == 4:
@@ -843,6 +848,8 @@ def scrapeDirectorProducer(filterData, type):
             movieScraper.setCast(movieSoup, movieInfoDict)
             movieScraper.setPosterImage(movieSoup, movieInfoDict)
 
+            print(name)
+
             # if the last row is full, create a new row
             if len(filmographyInfo[-1]) == 4:
                 filmographyInfo.append([movieInfoDict])
@@ -932,6 +939,8 @@ def scrapeDirectorProducer(filterData, type):
             showScraper.setProducers(showSoup, showInfoDict)
             showScraper.setCast(showSoup, showInfoDict)
             showScraper.setPosterImage(showSoup, showInfoDict)
+
+            print(name)
 
             # if the last row is full, create a new row
             if len(filmographyInfo[-1]) == 4:
@@ -1138,6 +1147,8 @@ def scrapeSimilar(filterData):
                 continue
             movieScraper.setPosterImage(itemSoup, similarInfoDict)
             movieScraper.setCast(itemSoup, similarInfoDict)
+
+            print(name)
         
         elif "/tv/" in url:         
             name = showScraper.getName(itemSoup)
@@ -1189,6 +1200,8 @@ def scrapeSimilar(filterData):
             showScraper.setCreators(itemSoup, similarInfoDict)
             showScraper.setProducers(itemSoup, similarInfoDict)
             showScraper.setCast(itemSoup, similarInfoDict)
+
+            print(name)
         
         # if the last row is full, create a new row
         if len(similarInfo[-1]) == 4:
