@@ -20,4 +20,5 @@ def get_proxy():
 # Should rename this module
 def get_user_agent():
     agent = user_agent.generate_user_agent()
+    print(f'Selected user_agent: {agent}')
     return {'User-Agent': agent}
