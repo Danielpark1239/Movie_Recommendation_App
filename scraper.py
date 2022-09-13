@@ -342,6 +342,7 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
     tvShowDict = {} # Keys contain tv show names; used to avoid duplicates
     useRandom = True if tomatometerScore <= RANDOM_THRESHOLD and \
     audienceScore <= RANDOM_THRESHOLD else False
+    proxies = proxyGetter.get_proxy()
 
     for url in URLs:
         if tvShowCount == limit:
@@ -349,7 +350,8 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
 
         html_text = requests.get(
             url=url,
-            headers=HEADERS
+            headers=HEADERS,
+            proxies=proxies
         ).text
         # check if the request is getting blocked
         print(f"HTML_TEXT OUTPUT: {html_text[:150]}")
@@ -407,7 +409,8 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
             # Get additional data about the show by looking at its page
             tvshow_html_text = requests.get(
                 url=url,
-                headers=HEADERS
+                headers=HEADERS,
+                proxies=proxies
             ).text
             tvShowSoup = BeautifulSoup(tvshow_html_text, "lxml")
 
@@ -464,10 +467,12 @@ def scrapeActor(filterData):
     job.save_meta()
     count = 0
     filmographyInfo = [[]]
+    proxies = proxyGetter.get_proxy()
 
     html_text = requests.get(
         url=filterData["actorURL"],
-        headers=HEADERS
+        headers=HEADERS,
+        proxies=proxies
     ).text
     # check if the request is getting blocked
     print(f"HTML_TEXT OUTPUT: {html_text[:150]}")
@@ -528,7 +533,8 @@ def scrapeActor(filterData):
             moviePageURL = BASE_URL + movie.contents[5].contents[1]["href"]
             movie_html_text = requests.get(
                 url=moviePageURL,
-                headers=HEADERS
+                headers=HEADERS,
+                proxies=proxies
             ).text
             movieSoup = BeautifulSoup(movie_html_text, "lxml")
 
@@ -646,7 +652,8 @@ def scrapeActor(filterData):
             showPageURL = BASE_URL + tvShow.contents[5].contents[1]["href"]
             show_html_text = requests.get(
                 url=showPageURL,
-                headers=HEADERS
+                headers=HEADERS,
+                proxies=proxies
             ).text
             showSoup = BeautifulSoup(show_html_text, "lxml")
 
@@ -702,10 +709,12 @@ def scrapeDirectorProducer(filterData, type):
     job.meta['progress'] = 0
     job.save_meta()
     filmographyInfo = [[]]
+    proxies = proxyGetter.get_proxy()
 
     html_text = requests.get(
         url=filterData["url"],
-        headers=HEADERS
+        headers=HEADERS,
+        proxies=proxies
     ).text
     # check if the request is getting blocked
     print(f"HTML_TEXT OUTPUT: {html_text[:150]}")
@@ -764,7 +773,8 @@ def scrapeDirectorProducer(filterData, type):
             moviePageURL = BASE_URL + movie.contents[5].contents[1]["href"]
             movie_html_text = requests.get(
                 url=moviePageURL,
-                headers=HEADERS
+                headers=HEADERS,
+                proxies=proxies
             ).text
             movieSoup = BeautifulSoup(movie_html_text, "lxml")
 
@@ -887,7 +897,8 @@ def scrapeDirectorProducer(filterData, type):
             showPageURL = BASE_URL + tvShow.contents[5].contents[1]["href"]
             show_html_text = requests.get(
                 url=showPageURL,
-                headers=HEADERS
+                headers=HEADERS,
+                proxies=proxies
             ).text
             showSoup = BeautifulSoup(show_html_text, "lxml")
 
@@ -946,10 +957,12 @@ def scrapeSimilar(filterData):
     job.meta['progress'] = 0
     job.save_meta()
     similarInfo = [[]]
+    proxies = proxyGetter.get_proxy()
 
     html_text = requests.get(
         url=filterData["url"],
-        headers=HEADERS
+        headers=HEADERS,
+        proxies=proxies
     ).text
     # check if the request is getting blocked
     print(f"HTML_TEXT OUTPUT: {html_text[:150]}")
@@ -1025,7 +1038,8 @@ def scrapeSimilar(filterData):
         url = queue.popleft()
         html_text = requests.get(
             url=url,
-            headers=HEADERS
+            headers=HEADERS,
+            proxies=proxies
         ).text
         itemSoup = BeautifulSoup(html_text, "lxml")
 
