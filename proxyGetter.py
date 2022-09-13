@@ -13,6 +13,6 @@ def get_proxy():
     print(f'Selected proxy: {proxy}')
 
     return {
-        'http': proxy,
-        'https': proxy
+        'http': 'http://' + proxy,
+        'https': 'https://' + proxy
     }
