@@ -1,6 +1,7 @@
 import os
 import requests
 import random
+import user_agent
 
 # Returns a valid proxy
 def get_proxy():
@@ -15,3 +16,7 @@ def get_proxy():
     return {
         'http': proxy
     }
+
+# Should rename this module
+def get_user_agent():
+    return user_agent.generate_user_agent()
