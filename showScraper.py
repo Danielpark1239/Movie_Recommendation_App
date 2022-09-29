@@ -33,7 +33,12 @@ def setPlatforms(showSoup, showInfoDict):
     if availablePlatforms is not None:
         platformList = []
         for platform in availablePlatforms:
-            platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
+            if platform["affiliate"] in FRONTEND_PLATFORM_DICT:
+                platformList.append(
+                    FRONTEND_PLATFORM_DICT[platform["affiliate"]]
+                )
+            else:
+                platformList.append(platform["affiliate"])
         platformString = ", ".join(platformList)
         showInfoDict["platforms"] = platformString
 
@@ -44,7 +49,12 @@ def setPlatformsWithFilter(showSoup, showInfoDict, filterList):
     for platform in availablePlatforms:
         if platform["affiliate"] in filterList:
             flag = True
-        platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
+        if platform["affiliate"] in FRONTEND_PLATFORM_DICT:
+            platformList.append(
+                FRONTEND_PLATFORM_DICT[platform["affiliate"]]
+            )
+        else:
+            platformList.append(platform["affiliate"])
     platformString = ", ".join(platformList)
     showInfoDict["platforms"] = platformString
     return flag

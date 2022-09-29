@@ -31,7 +31,12 @@ def setPlatforms(movieSoup, movieInfoDict):
     availablePlatforms = movieSoup.find_all("where-to-watch-meta")
     platformList = []
     for platform in availablePlatforms:
-        platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
+        if platform["affiliate"] in FRONTEND_PLATFORM_DICT:
+            platformList.append(
+                FRONTEND_PLATFORM_DICT[platform["affiliate"]]
+            )
+        else:
+            platformList.append(platform["affiliate"])
     platformString = ", ".join(platformList)
     movieInfoDict["platforms"] = platformString
 
@@ -44,7 +49,12 @@ def setPlatformsWithFilter(movieSoup, movieInfoDict, filterList):
     for platform in availablePlatforms:
         if platform["affiliate"] in filterList:
             flag = True
-        platformList.append(FRONTEND_PLATFORM_DICT[platform["affiliate"]])
+        if platform["affiliate"] in FRONTEND_PLATFORM_DICT:
+            platformList.append(
+                FRONTEND_PLATFORM_DICT[platform["affiliate"]]
+            )
+        else:
+            platformList.append(platform["affiliate"])
     platformString = ", ".join(platformList)
     movieInfoDict["platforms"] = platformString
     return flag
