@@ -10,6 +10,7 @@ import time
 from rq import get_current_job
 import proxyGetter
 
+# Generate movie URLs for scraping based on the filters
 def generateMovieURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
 ):  
@@ -107,6 +108,7 @@ def generateMovieURLs(
         print(f'Movie URLs: {URLs}')
         return URLs
 
+# Generate TV show URLs to scrape based on the filters
 def generateTVshowURLs(
     genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
 ):  
@@ -162,6 +164,8 @@ def generateTVshowURLs(
     print(f'TV show URLs: {URLs}')
     return URLs
 
+# return a dictionary of movie recommendations based on the URLs and filters,
+# setting the job meta result
 def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipURL=None):
     start = time.time()
     job = get_current_job()
@@ -330,6 +334,8 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
 
     return movieInfo
 
+# return a dictionary of TV show recommendations based on the URLs and filters,
+# setting the job meta result
 def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipURL=None):
     start = time.time()
     job = get_current_job()
@@ -463,6 +469,8 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
     
     return tvShowInfo
 
+# return a dictionary of actor movie/show recommendations based on the 
+# URLs and filters, setting the job meta result
 def scrapeActor(filterData):
     start = time.time()
     job = get_current_job()
@@ -710,6 +718,8 @@ def scrapeActor(filterData):
     job.save_meta()
     return filmographyInfo
 
+# return a dictionary of director or producer movie/show recommendations
+# based on the URLs and filters, setting the job meta result
 def scrapeDirectorProducer(filterData, type):
     start = time.time()
     count = 0
@@ -962,6 +972,8 @@ def scrapeDirectorProducer(filterData, type):
     job.save_meta()
     return filmographyInfo
 
+# return a dictionary of similar movie/show recommendations based on the 
+# URLs and filters, setting the job meta result
 def scrapeSimilar(filterData):
     start = time.time()
     addedCount = 0

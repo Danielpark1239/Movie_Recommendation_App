@@ -3,6 +3,7 @@
 import re
 from constants import *
 
+# For a given showSoup, return the name as a string
 def getName(showSoup):
     name = showSoup.find(
         "h1",
@@ -14,6 +15,7 @@ def getName(showSoup):
         return None
     return name.text.strip()
 
+# For a given showSoup, set the poster image in showInfoDict
 def setPosterImage(showSoup, showInfoDict):
     posterImage = showSoup.find(
         "img",
@@ -32,6 +34,7 @@ def setPosterImage(showSoup, showInfoDict):
     else:
         showInfoDict["posterImage"] = BLANK_POSTER
 
+# For a given showSoup, set platforms in the showInfoDict
 def setPlatforms(showSoup, showInfoDict):
     availablePlatforms = showSoup.find_all("where-to-watch-meta")
     if availablePlatforms is not None:
@@ -46,6 +49,8 @@ def setPlatforms(showSoup, showInfoDict):
         platformString = ", ".join(platformList)
         showInfoDict["platforms"] = platformString
 
+# For a given showSoup, set platforms in the showInfoDict adhering 
+# to the filters in filterList
 def setPlatformsWithFilter(showSoup, showInfoDict, filterList):
     flag = True if "all" in filterList else False
     availablePlatforms = showSoup.find_all("where-to-watch-meta")
@@ -63,6 +68,7 @@ def setPlatformsWithFilter(showSoup, showInfoDict, filterList):
     showInfoDict["platforms"] = platformString
     return flag
 
+# For a given showSoup, set the TV network in showInfoDict
 def setNetwork(showSoup, showInfoDict):
     network = showSoup.find(
         "td", 
@@ -71,6 +77,7 @@ def setNetwork(showSoup, showInfoDict):
     if network is not None:
         showInfoDict["network"] = network.text
 
+# For a given showSoup, set the premiere date in showInfoDict
 def setPremiereDate(showSoup, showInfoDict):
     premiereDate = showSoup.find(
         "td", 
@@ -94,6 +101,7 @@ def setPremiereDateWithFilter(showSoup, showInfoDict, oldestYear):
     showInfoDict["premiereDate"] = premiereDate.text
     return True
 
+# For a given showSoup, set the genre in showInfoDict
 def setGenre(showSoup, showInfoDict):
     genreTag = showSoup.find(
         "td", 
@@ -145,7 +153,7 @@ def getGenreArray(showSoup):
     
     return genreArray
        
-
+# For a given showSoup, set the creators in showInfoDict
 def setCreators(showSoup, showInfoDict):
     creatorsDict = {}
     creators = showSoup.find_all(
@@ -159,6 +167,7 @@ def setCreators(showSoup, showInfoDict):
             creatorsDict[creatorName] = creatorURL
         showInfoDict["creators"] = creatorsDict
 
+# For a given showSoup, set the producers in showInfoDict
 def setProducers(showSoup, showInfoDict):
     producersDict = {}
     producers = showSoup.find_all(
@@ -173,6 +182,7 @@ def setProducers(showSoup, showInfoDict):
             producersDict[producerName] = producerURL
         showInfoDict["producers"] = producersDict
 
+# For a given showSoup, set the cast in showInfoDict
 def setCast(showSoup, showInfoDict):
     castDict = {}
     cast = showSoup.find_all(

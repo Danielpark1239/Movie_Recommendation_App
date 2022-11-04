@@ -2,6 +2,7 @@
 import re
 from constants import *
 
+# For a given movieSoup, return the name as a string
 def getName(movieSoup):
     name = movieSoup.find(
         "h1",
@@ -13,6 +14,8 @@ def getName(movieSoup):
         return None
     return name.text.strip()
 
+# For a given movieSoup and movieInfoDict, set the poster image
+# in the movieInfoDict
 def setPosterImage(movieSoup, movieInfoDict):
     posterImage = movieSoup.find(
         "img",
@@ -31,6 +34,8 @@ def setPosterImage(movieSoup, movieInfoDict):
     else:
         movieInfoDict["posterImage"] = BLANK_POSTER
 
+# For a given movieSoup and movieInfoDict, set the platforms in the 
+# movieInfoDict
 def setPlatforms(movieSoup, movieInfoDict):
     availablePlatforms = movieSoup.find_all("where-to-watch-meta")
     platformList = []
@@ -63,6 +68,7 @@ def setPlatformsWithFilter(movieSoup, movieInfoDict, filterList):
     movieInfoDict["platforms"] = platformString
     return flag
 
+# For a given movieSoup and movieInfoDict, set the cast in the movieInfoDict
 def setCast(movieSoup, movieInfoDict):
     castDict = {}
     cast = movieSoup.find_all(
@@ -107,6 +113,7 @@ def getRatingArray(moviePageSoup):
             break
     return ratingArray
 
+# For a matching info tag, set the genres in the movieInfoDict
 def setGenres(info, movieInfoDict):
     genreString = info.next_sibling.next_sibling.text.strip().replace(" ", "")\
     .replace("\n", "").replace(",", ", ").replace("&", " & ")
@@ -142,11 +149,13 @@ def getGenreArray(moviePageSoup):
             genres[i] = genres[i].replace(" ", "_")
     return genres
 
+# For a matching info tag, set the language in the movieInfoDict
 def setLanguage(info, movieInfoDict):
     language = info.next_sibling.next_sibling.text.strip()
     if language is not None:
         movieInfoDict["language"] = language
 
+# For a matching info tag, set the date in the movieInfoDict
 def setDate(info, movieInfoDict, type):
     date = info.next_sibling.next_sibling.text.split()
     if date is not None:
@@ -167,11 +176,13 @@ def setDateWithFilter(info, movieInfoDict, oldestYear):
     movieInfoDict["theaters"] = formattedDate
     return True
 
+# For a matching info tag, set the runtime in movieInfoDict
 def setRuntime(info, movieInfoDict):
     runtime = info.next_sibling.next_sibling.text.strip()
     if runtime is not None:
         movieInfoDict["runtime"] = runtime
 
+# For a matching info tag, set directors in movieInfoDict
 def setDirectors(info, movieInfoDict):
     directorDict = {}
     directorTag = info.next_sibling.next_sibling
@@ -184,6 +195,7 @@ def setDirectors(info, movieInfoDict):
             directorDict[directorName] = directorURL
         movieInfoDict["directors"] = directorDict
 
+# For a matching info tag, set producers in movieInfoDict
 def setProducers(info, movieInfoDict):
     producerDict = {}
     producerTag = info.next_sibling.next_sibling
@@ -196,6 +208,7 @@ def setProducers(info, movieInfoDict):
             producerDict[producerName] = producerURL
         movieInfoDict["producers"] = producerDict
 
+# For a matching info tag, set writers in movieInfoDict
 def setWriters(info, movieInfoDict):
     writerDict = {}
     writerTag = info.next_sibling.next_sibling
