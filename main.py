@@ -9,6 +9,7 @@ from worker import conn
 import os
 import redis
 
+# Initialize Redis
 redis_url = os.getenv('HEROKU_REDIS_OLIVE_URL', 'redis://localhost:6379')
 cache = redis.from_url(redis_url, decode_responses=True)
 q = Queue(connection=conn)
@@ -17,10 +18,12 @@ q = Queue(connection=conn)
 def index():
     return render_template("index.html")
 
+# Movies form page
 @app.route('/movies/', methods=['GET'])
 def movies():
     return render_template('movies.html')
 
+# Enqueue movie scraping job in worker queue
 @app.route('/movies/enqueue/', methods=['POST'])
 def moviesEnqueue():
     formData = request.form
@@ -32,6 +35,7 @@ def moviesEnqueue():
     limit = 10 if formData["limit"] == "" else int(formData["limit"])
     popular = True if "popular" in formData else False
 
+    # Generate a cache key from the client filters
     keyArray = [
         "M", "".join(genres), "".join(ratings), "".join(platforms), "T",
         formData["tomatometerSlider"], "A", formData["audienceSlider"], "L", 
@@ -40,14 +44,17 @@ def moviesEnqueue():
     if popular:
         keyArray.append("P")
     key = "".join(keyArray)
-
+    
     value = cache.get(key)
     if value is not None:
         return {'job_id': value}
     
+    # Generate a list of URLs to search 
     URLs = scraper.generateMovieURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
+
+    # Enqueue the job
     job = q.enqueue(
         scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
     )
@@ -55,6 +62,7 @@ def moviesEnqueue():
     job.save_meta()
     return {'job_id': job.id}
 
+# Get progress of current job
 @app.route('/movies/progress/<string:id>', methods=['GET'])
 def movieProgress(id):
     def movieStatus():
@@ -62,6 +70,7 @@ def movieProgress(id):
             job = Job.fetch(id, connection=conn)
             status = job.get_status(refresh=True)
             
+            # If job is finished, return the link to the recommendations page
             if status == 'finished':
                 data = {'progress': 100}
                 json_data = json.dumps(data)
@@ -71,6 +80,7 @@ def movieProgress(id):
                 yield f"data:{json_data}\n\n"
                 return
 
+            # If not, use server-sent events to yield data every second
             while status != 'finished':
                 status = job.get_status()
                 job.refresh()
@@ -82,7 +92,7 @@ def movieProgress(id):
                 time.sleep(1)
 
             job.refresh()
-            cache.set(job.meta['key'], job.id, ex=86399)
+            cache.set(job.meta['key'], job.id, ex=86399) # Each job cached for 1 day
             data = {'result': job.meta['result']}
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
@@ -91,6 +101,7 @@ def movieProgress(id):
             return {}
     return Response(movieStatus(), mimetype='text/event-stream')
 
+# Return the recommendations page for a given job id
 @app.route('/movies/recommendations/<string:id>/', methods=['GET'])
 def movieRecommendations(id):   
     try: 
@@ -99,19 +110,23 @@ def movieRecommendations(id):
         if job.get_status() == 'finished':
             movieInfo = job.result
 
+            # No recommendations found
             if len(movieInfo[0]) == 0:
                 return render_template("movieNotFound.html")
 
             return render_template("movieRecommendations.html", movieInfo=movieInfo)
         return "Job in progress", 400
 
+    # If job id not in Redis, it expired
     except:
         return "Record not found", 400
 
+# TV shows form page
 @app.route('/tvshows/', methods=['GET'])
 def tvshows():
     return render_template('tvshows.html')
 
+# Enqueue tv show scraping in worker queue
 @app.route('/tvshows/enqueue/', methods=['POST'])
 def tvshowsEnqueue():
     formData = request.form
@@ -123,6 +138,7 @@ def tvshowsEnqueue():
     limit = 10 if formData["limit"] == "" else int(formData["limit"])
     popular = True if "popular" in formData else False
 
+    # Generate cache key from client filters
     keyArray = [
         "T", "".join(genres), "".join(ratings), "".join(platforms), "T",
         formData["tomatometerSlider"], "A", formData["audienceSlider"], "L", 
@@ -136,9 +152,12 @@ def tvshowsEnqueue():
     if value is not None:
         return {'job_id': value}
 
+    # Generate list of URLs to search based on filters
     URLs = scraper.generateTVshowURLs(
         genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
     )
+
+    # Enqueue a job that stores its result for 1 day
     job = q.enqueue(
         scraper.scrapeTVshows, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
     )
@@ -147,6 +166,7 @@ def tvshowsEnqueue():
     job.save_meta()
     return {'job_id': job.id}
 
+# Progress for tv show scraping job
 @app.route('/tvshows/progress/<string:id>', methods=['GET'])
 def tvshowProgress(id):
     def tvshowStatus():
@@ -154,6 +174,7 @@ def tvshowProgress(id):
             job = Job.fetch(id, connection=conn)
             status = job.get_status()
 
+            # If job is finished, return the recommendations page link
             if status == 'finished':
                 data = {'progress': 100}
                 json_data = json.dumps(data)
@@ -163,16 +184,18 @@ def tvshowProgress(id):
                 yield f"data:{json_data}\n\n"
                 return
 
+            # If job, yield progress from 0-99 every second with SSE
             while status != 'finished':
                 status = job.get_status()
                 job.refresh()
-
+                
                 if 'progress' in job.meta:
                     data = {'progress': job.meta['progress']}
                     json_data = json.dumps(data)
                     yield f"data:{json_data}\n\n"
                 time.sleep(1)
 
+            # When job finishes, return the recommendations page link
             job.refresh()
             cache.set(job.meta['key'], job.id, ex=86399)
             data = {'result': job.meta['result']}
@@ -183,6 +206,7 @@ def tvshowProgress(id):
             return {}
     return Response(tvshowStatus(), mimetype='text/event-stream')
 
+# TV show recommendations page for a given job id
 @app.route('/tvshows/recommendations/<string:id>/', methods=['GET'])
 def tvshowRecommendations(id):
     try: 
@@ -200,10 +224,12 @@ def tvshowRecommendations(id):
     except:
         return "Record not found", 400
 
+# Movies/tv shows by actor form page
 @app.route('/actor/', methods=['GET'])
 def actor():
     return render_template('actor.html')
 
+# Enqueue a scraping job for actor movies/tv shows
 @app.route('/actor/enqueue/', methods=['POST'])
 def actorEnqueue():
     formData = request.form
@@ -235,6 +261,8 @@ def actorEnqueue():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
     actor = formData["actorURL"].split("/")[-1]
+
+    # Generate a cache key
     keyArray = [
         "A", actor, "".join(formData["category"]), "".join(roles), 
         formData["yearSlider"], "B", formData["boxOffice"], "".join(genres), 
@@ -254,6 +282,7 @@ def actorEnqueue():
     job.save_meta()
     return {'job_id': job.id}
 
+# Get progress for an actor scraping job for a given id
 @app.route('/actor/progress/<string:id>', methods=['GET'])
 def actorProgress(id):
     def actorStatus():
@@ -290,6 +319,7 @@ def actorProgress(id):
             return {}
     return Response(actorStatus(), mimetype='text/event-stream')
 
+# Actor recommendations page for a given id
 @app.route('/actor/recommendations/<string:id>', methods=['GET'])
 def actorRecommendations(id):
     try: 
@@ -310,10 +340,12 @@ def actorRecommendations(id):
     except:
         return "Record not found", 400
 
+# Movies/tv shows by director form page
 @app.route('/director/', methods=['GET'])
 def director():
     return render_template('director.html')
 
+# Enqueue a director scraping job
 @app.route('/director/enqueue/', methods=['POST'])
 def directorEnqueue():
     formData = request.form
@@ -341,6 +373,7 @@ def directorEnqueue():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
     director = formData["directorURL"].split("/")[-1]
+    # Cache key
     keyArray = [
         "D", director, "".join(formData["category"]), formData["yearSlider"],
         "B", formData["boxOffice"], "".join(genres), "".join(ratings), 
@@ -360,6 +393,7 @@ def directorEnqueue():
     job.save_meta()
     return {"job_id": job.id}
 
+# For a given id, get progress of director scraping job
 @app.route('/director/progress/<string:id>', methods=['GET'])
 def directorProgress(id):
     def directorStatus():
@@ -396,6 +430,7 @@ def directorProgress(id):
             return {}
     return Response(directorStatus(), mimetype='text/event-stream')
 
+# Director recommendations page for a given id
 @app.route('/director/recommendations/<string:id>', methods=['GET'])
 def directorRecommendations(id):
     try: 
@@ -416,10 +451,12 @@ def directorRecommendations(id):
     except:
         return "Record not found", 400
 
+# Movies/tv shows by producer page
 @app.route('/producer/', methods=['GET'])
 def producer():
     return render_template('producer.html')
 
+# Enqueue a producer scraping job
 @app.route('/producer/enqueue/', methods=['POST'])
 def producerEnqueue():
     formData = request.form
@@ -447,6 +484,7 @@ def producerEnqueue():
         "limit": 10 if formData["limit"] == "" else int(formData["limit"])
     }
     producer = formData["producerURL"].split("/")[-1]
+    # Cache key based on filter data
     keyArray = [
         "P", producer, "".join(formData["category"]), formData["yearSlider"],
         "B", formData["boxOffice"], "".join(genres), "".join(ratings), 
@@ -458,6 +496,7 @@ def producerEnqueue():
     if value is not None:
         return {'job_id': value}
 
+    # Enqueue the job if the results aren't cached
     job = q.enqueue(
         scraper.scrapeDirectorProducer, filterData, "producer", result_ttl=86400
     )
@@ -465,6 +504,7 @@ def producerEnqueue():
     job.save_meta()
     return {"job_id": job.id}
 
+# Given an id, return the progress of a producer scraping job
 @app.route('/producer/progress/<string:id>', methods=['GET'])
 def producerProgress(id):
     def producerStatus():
@@ -501,6 +541,7 @@ def producerProgress(id):
             return {}
     return Response(producerStatus(), mimetype='text/event-stream')
 
+# Producer recommendations page for a given id
 @app.route('/producer/recommendations/<string:id>', methods=['GET'])
 def producerRecommendations(id):
     try: 
@@ -520,11 +561,13 @@ def producerRecommendations(id):
 
     except:
         return "Record not found", 400
-    
+
+# Form page for similar movies/shows
 @app.route('/similar/', methods=['GET'])
 def similar():
     return render_template('similar.html')
 
+# Enqueue a similar scraping job
 @app.route('/similar/enqueue/', methods=['POST'])
 def similarEnqueue():
     formData = request.form
@@ -547,6 +590,7 @@ def similarEnqueue():
         formData["tomatometerSlider"], "A", formData["audienceSlider"], 
         "L", formData["limit"]
     ]
+    # Cache key
     key = "".join(keyArray)
     value = cache.get(key)
     if value is not None:
@@ -559,6 +603,7 @@ def similarEnqueue():
     job.save_meta()
     return {'job_id': job.id}
 
+# Given an id, get the progress of a similar scraping job
 @app.route('/similar/progress/<string:id>', methods=['GET'])
 def similarProgress(id):
     def similarStatus():
@@ -595,6 +640,7 @@ def similarProgress(id):
             return {}
     return Response(similarStatus(), mimetype='text/event-stream')
 
+# Similar recommendations page for a job id
 @app.route('/similar/recommendations/<string:id>', methods=['GET'])
 def similarRecommendations(id):
     try: 
@@ -626,5 +672,3 @@ def similarRecommendations(id):
 
     except:
         return "Record not found", 400
-    
-
