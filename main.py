@@ -3,7 +3,6 @@ from worker import redis_url
 import scraper
 from rq import Queue
 from rq.job import Job
-from app import app
 import json
 import time
 from worker import conn
