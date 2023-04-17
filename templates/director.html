@@ -1,436 +1,348 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Tomato Recommendations</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
-    />
-    <link rel="stylesheet" href="../static/css/main.css">
-    <link
-      rel="shortcut icon"
-      href="{{ url_for('static', filename='tomato-favicon.ico') }}"
-    />
-  </head>
 
-  <section class="hero is-info">
-    <div class="hero-body">
-      <p class="title">
-        Tomato Recommendations
-        <img
-          src="{{ url_for('static', filename='tomato-favicon-32x32.png') }}"
-          alt="tomato"
-        />
-      </p>
-      <p class="subtitle"><strong>Recommendations by Director</strong></p>
-      <a class="button" href="/"> Home </a>
-    </div>
-  </section>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RT Recommendations</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+  <link rel="stylesheet" href="../static/css/main.css">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='tomato-favicon.ico') }}" />
+</head>
 
-  <body class="has-background-light">
-    <section class="section">
-      <div class="container">
-        <form id="form">
-          <nav class="level">
-            <div class="level-item has-text-centered">
-              <div class="field">
-                <div class="control">
-                  <label class="label" for="directorURL"
-                    >Director's Rotten Tomatoes Page</label
-                  >
-                  <input
-                    class="input"
-                    type="url"
-                    id="directorURL"
-                    name="directorURL"
-                    value="https://www.rottentomatoes.com/celebrity/"
-                    placeholder="https://www.rottentomatoes.com/celebrity/example"
-                    pattern="https://www.rottentomatoes.com/celebrity/.*"
-                    required
-                    size="60"
-                  />
-                </div>
+<section class="hero is-info">
+  <div class="hero-body">
+    <p class="title">
+      RT Recommendations
+      <img src="{{ url_for('static', filename='tomato-favicon-32x32.png') }}" alt="tomato" />
+    </p>
+    <p class="subtitle"><strong>Recommendations by Director</strong></p>
+    <a class="button" href="/"> Home </a>
+  </div>
+</section>
+
+<body class="has-background-light">
+  <section class="section">
+    <div class="container">
+      <form id="form">
+        <nav class="level">
+          <div class="level-item has-text-centered">
+            <div class="field">
+              <div class="control">
+                <label class="label" for="directorURL">Director's Rotten Tomatoes Page</label>
+                <input class="input" type="url" id="directorURL" name="directorURL"
+                  value="https://www.rottentomatoes.com/celebrity/"
+                  placeholder="https://www.rottentomatoes.com/celebrity/example"
+                  pattern="https://www.rottentomatoes.com/celebrity/.*" required size="60" />
               </div>
             </div>
-          </nav>
+          </div>
+        </nav>
 
-          <div class="columns">
-            <div class="column is-one-fifth">
-              <div class="field">
-                <div class="control">
-                  <label class="label">Category</label>
-                  <label class="radio">
-                    <input
-                      type="radio"
-                      name="category"
-                      id="category"
-                      value="movie"
-                      checked
-                    />
-                    Movies
-                  </label>
-                  <label class="radio">
-                    <input
-                      type="radio"
-                      name="category"
-                      id="category"
-                      value="tv"
-                    />
-                    TV Shows
-                  </label>
-                </div>
-                <div class="control mt-2">
-                  <label class="label" for="yearSlider">Oldest Year</label>
-                  <input
-                    oninput="year.value=parseInt(yearSlider.value)"
-                    name="yearSlider"
-                    id="yearSlider"
-                    class="slider has-output is-fullwidth"
-                    min="1900"
-                    max="2022"
-                    value="1900"
-                    step="1"
-                    type="range"
-                  />
-                  <output name="year" for="yearSlider">1900</output>
-                </div>
-                <div class="control mt-2">
-                  <label class="label" for="boxOffice"
-                    >Minimum Box Office (Millions)</label
-                  >
-                  <input
-                    type="number"
-                    id="boxOffice"
-                    name="boxOffice"
-                    value="0"
-                    min="0"
-                    oninput="this.value = 
-                    !!this.value && Math.abs(this.value) >= 0 ? Math.abs(this.value) : null"
-                  />
-                </div>
+        <div class="columns">
+          <div class="column is-one-fifth">
+            <div class="field">
+              <div class="control">
+                <label class="label">Category</label>
+                <label class="radio">
+                  <input type="radio" name="category" id="category" value="movie" checked />
+                  Movies
+                </label>
+                <label class="radio">
+                  <input type="radio" name="category" id="category" value="tv" />
+                  TV Shows
+                </label>
+              </div>
+              <div class="control mt-2">
+                <label class="label" for="yearSlider">Oldest Year</label>
+                <input oninput="year.value=parseInt(yearSlider.value)" name="yearSlider" id="yearSlider"
+                  class="slider has-output is-fullwidth" min="1900" max="2022" value="1900" step="1" type="range" />
+                <output name="year" for="yearSlider">1900</output>
+              </div>
+              <div class="control mt-2">
+                <label class="label" for="boxOffice">Minimum Box Office (Millions)</label>
+                <input type="number" id="boxOffice" name="boxOffice" value="0" min="0" oninput="this.value = 
+                    !!this.value && Math.abs(this.value) >= 0 ? Math.abs(this.value) : null" />
               </div>
             </div>
-            <div class="column">
-              <div class="field">
-                <div class="control">
-                  <label class="label" for="genres">Genres</label>
-                  <div class="select is-multiple">
-                    <select multiple size="8" name="genres" id="genres">
-                      <option value="all">All</option>
-                      <option value="Action">Action</option>
-                      <option value="Adventure">Adventure</option>
-                      <option value="Animation">Animation</option>
-                      <option value="Anime">Anime</option>
-                      <option value="Biography">Biography</option>
-                      <option value="Comedy">Comedy</option>
-                      <option value="Crime">Crime</option>
-                      <option value="Documentary">Documentary</option>
-                      <option value="Drama">Drama</option>
-                      <option value="Faith&spirituality">
-                        Faith and Spirituality
-                      </option>
-                      <option value="Fantasy">Fantasy</option>
-                      <option value="Foreign">Foreign</option>
-                      <option value="Game show">Game Show</option>
-                      <option value="Health&wellness">
-                        Health and Wellness
-                      </option>
-                      <option value="History">History</option>
-                      <option value="Horror">Horror</option>
-                      <option value="House&garden">House and Garden</option>
-                      <option value="Independent">Independent</option>
-                      <option value="Kids&family">Kids and Family</option>
-                      <option value="Lgbtq+">LGBTQ</option>
-                      <option value="Music">Music</option>
-                      <option value="Musical">Musical</option>
-                      <option value="Mystery&thriller">
-                        Mystery and Thriller
-                      </option>
-                      <option value="Nature">Nature</option>
-                      <option value="News">News</option>
-                      <option value="Other">Other</option>
-                      <option value="Reality">Reality</option>
-                      <option value="Romance">Romance</option>
-                      <option value="Sci-Fi">Sci-Fi</option>
-                      <option value="Short">Short</option>
-                      <option value="Soap">Soap</option>
-                      <option value="Special Interest">Special Interest</option>
-                      <option value="Sports&fitness">Sports and Fitness</option>
-                      <option value="Stand Up">Stand Up</option>
-                      <option value="Talk show">Talk Show</option>
-                      <option value="Travel">Travel</option>
-                      <option value="Variety">Variety</option>
-                      <option value="War">War</option>
-                      <option value="Western">Western</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="column">
-              <div class="field">
-                <div class="control">
-                  <label class="label" for="ratings">Ratings</label>
-                  <div class="select is-multiple">
-                    <select multiple size="6" name="ratings" id="ratings">
-                      <option value="all">All</option>
-                      <option value="G">G</option>
-                      <option value="PG">PG</option>
-                      <option value="PG-13">PG-13</option>
-                      <option value="R">R</option>
-                      <option value="NC-17">NC-17</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="column">
-              <div class="field">
-                <div class="control">
-                  <label class="label" for="platforms"
-                    >Available Platforms</label
-                  >
-                  <div class="select is-multiple">
-                    <select multiple size="8" name="platforms" id="platforms">
-                      <option value="all">All</option>
-                      <option value="showtimes">In Theaters</option>
-                      <option value="amazon-prime-video-us">
-                        Amazon Prime Video US
-                      </option>
-                      <option value="itunes">Itunes</option>
-                      <option value="apple-tv-plus-us">Apple TV Plus US</option>
-                      <option value="disney-plus-us">Disney Plus US</option>
-                      <option value="hbo-max">HBO Max</option>
-                      <option value="hulu">Hulu</option>
-                      <option value="netflix">Netflix</option>
-                      <option value="paramount-plus-us">
-                        Paramount Plus US
-                      </option>
-                      <option value="peacock">Peacock</option>
-                      <option value="vudu">Vudu</option>
-                      <option value="showtime">Showtime</option>
-                      <option value="amc-plus-us">AMC Plus US</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="column">
-              <div class="field">
-                <div class="control">
-                  <label class="label" for="tomatometerSlider"
-                    >Minimum Tomatometer Score</label
-                  >
-                  <input
-                    oninput="tomato.value=parseInt(tomatometerSlider.value)"
-                    name="tomatometerSlider"
-                    id="tomatometerSlider"
-                    class="slider has-output is-fullwidth"
-                    min="0"
-                    max="100"
-                    value="50"
-                    step="1"
-                    type="range"
-                  />
-                  <output name="tomato" for="tomatometerSlider">50</output>
-
-                  <label class="label" for="audienceSlider"
-                    >Minimum Audience Score</label
-                  >
-                  <input
-                    oninput="audience.value=parseInt(audienceSlider.value)"
-                    name="audienceSlider"
-                    id="audienceSlider"
-                    class="slider has-output is-fullwidth"
-                    min="0"
-                    max="100"
-                    value="50"
-                    step="1"
-                    type="range"
-                  />
-                  <output name="audience" for="audienceSlider">50</output>
-
-                  <label class="label mt-1" for="limit">Limit</label>
-                  <input
-                    name="limit"
-                    id="limit"
-                    class="input"
-                    type="number"
-                    min="1"
-                    max="50"
-                    step="1"
-                    value="10"
-                    style="width: 33%"
-                    oninput="this.value = Math.abs(this.value) > 0 ? Math.abs(this.value) : null"
-                  />
+          </div>
+          <div class="column">
+            <div class="field">
+              <div class="control">
+                <label class="label" for="genres">Genres</label>
+                <div class="select is-multiple">
+                  <select multiple size="8" name="genres" id="genres">
+                    <option value="all">All</option>
+                    <option value="Action">Action</option>
+                    <option value="Adventure">Adventure</option>
+                    <option value="Animation">Animation</option>
+                    <option value="Anime">Anime</option>
+                    <option value="Biography">Biography</option>
+                    <option value="Comedy">Comedy</option>
+                    <option value="Crime">Crime</option>
+                    <option value="Documentary">Documentary</option>
+                    <option value="Drama">Drama</option>
+                    <option value="Faith&spirituality">
+                      Faith and Spirituality
+                    </option>
+                    <option value="Fantasy">Fantasy</option>
+                    <option value="Foreign">Foreign</option>
+                    <option value="Game show">Game Show</option>
+                    <option value="Health&wellness">
+                      Health and Wellness
+                    </option>
+                    <option value="History">History</option>
+                    <option value="Horror">Horror</option>
+                    <option value="House&garden">House and Garden</option>
+                    <option value="Independent">Independent</option>
+                    <option value="Kids&family">Kids and Family</option>
+                    <option value="Lgbtq+">LGBTQ</option>
+                    <option value="Music">Music</option>
+                    <option value="Musical">Musical</option>
+                    <option value="Mystery&thriller">
+                      Mystery and Thriller
+                    </option>
+                    <option value="Nature">Nature</option>
+                    <option value="News">News</option>
+                    <option value="Other">Other</option>
+                    <option value="Reality">Reality</option>
+                    <option value="Romance">Romance</option>
+                    <option value="Sci-Fi">Sci-Fi</option>
+                    <option value="Short">Short</option>
+                    <option value="Soap">Soap</option>
+                    <option value="Special Interest">Special Interest</option>
+                    <option value="Sports&fitness">Sports and Fitness</option>
+                    <option value="Stand Up">Stand Up</option>
+                    <option value="Talk show">Talk Show</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Variety">Variety</option>
+                    <option value="War">War</option>
+                    <option value="Western">Western</option>
+                  </select>
                 </div>
               </div>
             </div>
           </div>
-          <nav class="level">
-            <div class="level-item has-text-centered">
-              <button
-                class="button js-modal-trigger is-info"
-                type="submit"
-                data-target="success-modal"
-                id="submitButton"
-                disabled
-              >
-                Generate recommendations!
-              </button>
+
+          <div class="column">
+            <div class="field">
+              <div class="control">
+                <label class="label" for="ratings">Ratings</label>
+                <div class="select is-multiple">
+                  <select multiple size="6" name="ratings" id="ratings">
+                    <option value="all">All</option>
+                    <option value="G">G</option>
+                    <option value="PG">PG</option>
+                    <option value="PG-13">PG-13</option>
+                    <option value="R">R</option>
+                    <option value="NC-17">NC-17</option>
+                  </select>
+                </div>
+              </div>
             </div>
-          </nav>
-        </form>
-      </div>
-    </section>
+          </div>
 
-    <script>
-      const directorURLField = document.getElementById("directorURL");
-      const limitField = document.getElementById("limit");
-      const submitButton = document.getElementById("submitButton");
-      const expression = /^https:\/\/www.rottentomatoes.com\/celebrity\/.*/;
-      const regEx = new RegExp(expression);
-      directorURL.addEventListener("keyup", () => {
-        if (regEx.test(directorURLField.value)) {
-          submitButton.disabled = false;
-        } else {
-          submitButton.disabled = true;
-        }
-      });
+          <div class="column">
+            <div class="field">
+              <div class="control">
+                <label class="label" for="platforms">Available Platforms</label>
+                <div class="select is-multiple">
+                  <select multiple size="8" name="platforms" id="platforms">
+                    <option value="all">All</option>
+                    <option value="showtimes">In Theaters</option>
+                    <option value="amazon-prime-video-us">
+                      Amazon Prime Video US
+                    </option>
+                    <option value="itunes">Itunes</option>
+                    <option value="apple-tv-plus-us">Apple TV Plus US</option>
+                    <option value="disney-plus-us">Disney Plus US</option>
+                    <option value="hbo-max">HBO Max</option>
+                    <option value="hulu">Hulu</option>
+                    <option value="netflix">Netflix</option>
+                    <option value="paramount-plus-us">
+                      Paramount Plus US
+                    </option>
+                    <option value="peacock">Peacock</option>
+                    <option value="vudu">Vudu</option>
+                    <option value="showtime">Showtime</option>
+                    <option value="amc-plus-us">AMC Plus US</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
 
-      limit.addEventListener("input", () => {
-        if (parseInt(limitField.value) > 50) {
-          submitButton.disabled = true;
-        } else {
-          submitButton.disabled = false;
-        }
-      });
+          <div class="column">
+            <div class="field">
+              <div class="control">
+                <label class="label" for="tomatometerSlider">Minimum Tomatometer Score</label>
+                <input oninput="tomato.value=parseInt(tomatometerSlider.value)" name="tomatometerSlider"
+                  id="tomatometerSlider" class="slider has-output is-fullwidth" min="0" max="100" value="50" step="1"
+                  type="range" />
+                <output name="tomato" for="tomatometerSlider">50</output>
 
-      document.addEventListener("DOMContentLoaded", () => {
-        // Functions to open and close a modal
-        function openModal($el, $url) {
-          $el.classList.add("is-active");
-        }
+                <label class="label" for="audienceSlider">Minimum Audience Score</label>
+                <input oninput="audience.value=parseInt(audienceSlider.value)" name="audienceSlider" id="audienceSlider"
+                  class="slider has-output is-fullwidth" min="0" max="100" value="50" step="1" type="range" />
+                <output name="audience" for="audienceSlider">50</output>
 
-        function closeModal($el) {
-          $el.classList.remove("is-active");
-        }
-
-        function closeAllModals() {
-          (document.querySelectorAll(".modal") || []).forEach(($modal) => {
-            closeModal($modal);
-          });
-        }
-
-        // Add a click event on buttons to open a specific modal
-        (document.querySelectorAll(".js-modal-trigger") || []).forEach(
-          ($trigger) => {
-            const modal = $trigger.dataset.target;
-            const $target = document.getElementById(modal);
-            const $url = document.getElementById("actorURL");
-
-            $trigger.addEventListener("click", () => {
-              openModal($target, $url);
-            });
-          }
-        );
-
-        // Add a click event on various child elements to close the parent modal
-        (
-          document.querySelectorAll(
-            ".modal-background, .modal-close, .modal-card-head .delete, .modal-card-foot .button"
-          ) || []
-        ).forEach(($close) => {
-          const $target = $close.closest(".modal");
-
-          $close.addEventListener("click", () => {
-            closeModal($target);
-          });
-        });
-
-        // Add a keyboard event to close all modals
-        document.addEventListener("keydown", (event) => {
-          const e = event || window.event;
-
-          if (e.keyCode === 27) {
-            // Escape key
-            closeAllModals();
-          }
-        });
-      });
-    </script>
-
-    <div id="success-modal" class="modal">
-      <div class="modal-background"></div>
-
-      <div class="modal-content">
-        <div class="box">
-          <p>
-            Success! Please wait for your recommendations to be generated...
-          </p>
-          <progress
-            class="progress is-medium is-info"
-            id="progressBar"
-            value="0"
-            max="100"
-          >
-            0%
-          </progress>
+                <label class="label mt-1" for="limit">Limit</label>
+                <input name="limit" id="limit" class="input" type="number" min="1" max="50" step="1" value="10"
+                  style="width: 33%" oninput="this.value = Math.abs(this.value) > 0 ? Math.abs(this.value) : null" />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <button class="modal-close is-large" aria-label="close"></button>
+        <nav class="level">
+          <div class="level-item has-text-centered">
+            <button class="button js-modal-trigger is-info" type="submit" data-target="success-modal" id="submitButton"
+              disabled>
+              Generate recommendations!
+            </button>
+          </div>
+        </nav>
+      </form>
     </div>
+  </section>
 
-    <script>
-      const progressBar = document.getElementById("progressBar");
+  <script>
+    const directorURLField = document.getElementById("directorURL");
+    const limitField = document.getElementById("limit");
+    const submitButton = document.getElementById("submitButton");
+    const expression = /^https:\/\/www.rottentomatoes.com\/celebrity\/.*/;
+    const regEx = new RegExp(expression);
+    directorURL.addEventListener("keyup", () => {
+      if (regEx.test(directorURLField.value)) {
+        submitButton.disabled = false;
+      } else {
+        submitButton.disabled = true;
+      }
+    });
 
-      function updateProgress(value) {
-        progressBar.setAttribute("value", value);
-        progressBar.innerHTML = value + "%";
+    limit.addEventListener("input", () => {
+      if (parseInt(limitField.value) > 50) {
+        submitButton.disabled = true;
+      } else {
+        submitButton.disabled = false;
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Functions to open and close a modal
+      function openModal($el, $url) {
+        $el.classList.add("is-active");
       }
 
-      document.forms["form"].addEventListener("submit", (event) => {
-        event.preventDefault();
+      function closeModal($el) {
+        $el.classList.remove("is-active");
+      }
 
-        fetch("enqueue/", {
-          method: "POST",
-          body: new URLSearchParams(new FormData(event.target)),
-        }).then((res) => {
-          res.json().then((data) => {
-            job_id = data["job_id"];
+      function closeAllModals() {
+        (document.querySelectorAll(".modal") || []).forEach(($modal) => {
+          closeModal($modal);
+        });
+      }
 
-            const source = new EventSource("/director/progress/" + job_id);
+      // Add a click event on buttons to open a specific modal
+      (document.querySelectorAll(".js-modal-trigger") || []).forEach(
+        ($trigger) => {
+          const modal = $trigger.dataset.target;
+          const $target = document.getElementById(modal);
+          const $url = document.getElementById("actorURL");
 
-            source.onmessage = function (event) {
-              const data = JSON.parse(event.data);
-              if (data["progress"]) {
-                updateProgress(data["progress"]);
-              }
-
-              if (data["result"]) {
-                updateProgress(100);
-                source.close();
-                window.location = data["result"];
-              }
-            };
+          $trigger.addEventListener("click", () => {
+            openModal($target, $url);
           });
+        }
+      );
+
+      // Add a click event on various child elements to close the parent modal
+      (
+        document.querySelectorAll(
+          ".modal-background, .modal-close, .modal-card-head .delete, .modal-card-foot .button"
+        ) || []
+      ).forEach(($close) => {
+        const $target = $close.closest(".modal");
+
+        $close.addEventListener("click", () => {
+          closeModal($target);
         });
       });
-    </script>
-  </body>
 
-  <footer class="footer has-background-light">
-    <div class="content has-text-centered">
-      <p>
-        <strong>Tomato Recommendations</strong> by
-        <a href="https://github.com/Danielpark1239">Daniel Park</a>.
-      </p>
+      // Add a keyboard event to close all modals
+      document.addEventListener("keydown", (event) => {
+        const e = event || window.event;
+
+        if (e.keyCode === 27) {
+          // Escape key
+          closeAllModals();
+        }
+      });
+    });
+  </script>
+
+  <div id="success-modal" class="modal">
+    <div class="modal-background"></div>
+
+    <div class="modal-content">
+      <div class="box">
+        <p>
+          Success! Please wait for your recommendations to be generated...
+        </p>
+        <progress class="progress is-medium is-info" id="progressBar" value="0" max="100">
+          0%
+        </progress>
+      </div>
     </div>
-  </footer>
+
+    <button class="modal-close is-large" aria-label="close"></button>
+  </div>
+
+  <script>
+    const progressBar = document.getElementById("progressBar");
+
+    function updateProgress(value) {
+      progressBar.setAttribute("value", value);
+      progressBar.innerHTML = value + "%";
+    }
+
+    document.forms["form"].addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      fetch("enqueue/", {
+        method: "POST",
+        body: new URLSearchParams(new FormData(event.target)),
+      }).then((res) => {
+        res.json().then((data) => {
+          job_id = data["job_id"];
+
+          const source = new EventSource("/director/progress/" + job_id);
+
+          source.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            if (data["progress"]) {
+              updateProgress(data["progress"]);
+            }
+
+            if (data["result"]) {
+              updateProgress(100);
+              source.close();
+              window.location = data["result"];
+            }
+          };
+        });
+      });
+    });
+  </script>
+</body>
+
+<footer class="footer has-background-light">
+  <div class="content has-text-centered">
+    <p>
+      <strong>RT Recommendations</strong> by
+      <a href="https://github.com/Danielpark1239">Daniel Park</a>.
+    </p>
+  </div>
+</footer>
+
 </html>

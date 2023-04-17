@@ -1,220 +1,191 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Tomato Recommendations</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
-    />
-    <link rel="stylesheet" href="../static/css/main.css">
-    <link
-      rel="shortcut icon"
-      href="{{ url_for('static', filename='tomato-favicon.ico') }}"
-    />
-  </head>
 
-  <section class="hero is-info">
-    <div class="hero-body">
-      <p class="title">
-        Tomato Recommendations
-        <img
-          src="{{ url_for('static', filename='tomato-favicon-32x32.png') }}"
-          alt="tomato"
-        />
-      </p>
-      <p class="subtitle">
-        <strong>Recommendations by Director</strong>
-      </p>
-      <a class="button" href="/">Home</a>
-      <a class="button" href="/director">More Recommendations by Director</a>
-    </div>
-  </section>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RT Recommendations</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+  <link rel="stylesheet" href="../static/css/main.css">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='tomato-favicon.ico') }}" />
+</head>
 
-  <body class="has-background-light">
-    <section class="section">
-      {% for row in directorInfo %}
-      <div class="level">
-        <div class="level-item tile is-ancestor">
-          {% for item in row %} {% if item.type == "movie" %}
-          <div class="tile is-3 is-parent">
-            <article class="tile is-child notification is-info">
-              <p class="title has-text-centered">{{ item.name }}</p>
-              <a href="{{ item.url }}" target="_blank">
-                <figure class="image is-2by3">
-                  <img src="{{ item.posterImage }}" />
-                </figure>
-              </a>
-              <nav class="level">
-                <div class="level-left">
-                  <div class="level-item">
-                    <img
-                      src="{{ url_for('static', filename='tomato-favicon-16x16.png') }}"
-                      alt="tomato"
-                    />
-                    <p class="subtitle">{{ item.criticsScore }}</p>
-                  </div>
+<section class="hero is-info">
+  <div class="hero-body">
+    <p class="title">
+      RT Recommendations
+      <img src="{{ url_for('static', filename='tomato-favicon-32x32.png') }}" alt="tomato" />
+    </p>
+    <p class="subtitle">
+      <strong>Recommendations by Director</strong>
+    </p>
+    <a class="button" href="/">Home</a>
+    <a class="button" href="/director">More Recommendations by Director</a>
+  </div>
+</section>
+
+<body class="has-background-light">
+  <section class="section">
+    {% for row in directorInfo %}
+    <div class="level">
+      <div class="level-item tile is-ancestor">
+        {% for item in row %} {% if item.type == "movie" %}
+        <div class="tile is-3 is-parent">
+          <article class="tile is-child notification is-info">
+            <p class="title has-text-centered">{{ item.name }}</p>
+            <a href="{{ item.url }}" target="_blank">
+              <figure class="image is-2by3">
+                <img src="{{ item.posterImage }}" />
+              </figure>
+            </a>
+            <nav class="level">
+              <div class="level-left">
+                <div class="level-item">
+                  <img src="{{ url_for('static', filename='tomato-favicon-16x16.png') }}" alt="tomato" />
+                  <p class="subtitle">{{ item.criticsScore }}</p>
                 </div>
-                <div class="level-right">
-                  <div class="level-item">
-                    <img
-                      src="{{ url_for('static', filename='popcorn-favicon-16x16.png') }}"
-                      alt="popcorn"
-                    />
-                    <p class="subtitle">{{ item.audienceScore }}</p>
-                  </div>
+              </div>
+              <div class="level-right">
+                <div class="level-item">
+                  <img src="{{ url_for('static', filename='popcorn-favicon-16x16.png') }}" alt="popcorn" />
+                  <p class="subtitle">{{ item.audienceScore }}</p>
                 </div>
-              </nav>
+              </div>
+            </nav>
 
-              <ul>
-                {% if item.genres %}
-                <li><strong>Genres:</strong> {{ item.genres }}</li>
-                {% endif %} {% if item.rating %}
-                <li><strong>Rating:</strong> {{ item.rating }}</li>
-                {% endif %} {% if item.platforms %}
-                <li><strong>Platforms:</strong> {{ item.platforms }}</li>
-                {% endif %} {% if item.directors %}
-                <li>
-                  <strong>Directors:</strong> {% for director in item.directors
-                  %}
-                  <a href="{{item.directors[director]}}" target="_blank"
-                    >{{director + ", " if not loop.last else director}}</a
-                  >
-                  {% endfor %}
-                </li>
-                {% endif %} {% if item.producers %}
-                <li>
-                  <strong>Producers:</strong> {% for producer in item.producers
-                  %}
-                  <a href="{{item.producers[producer]}}" target="_blank"
-                    >{{producer + ", " if not loop.last else producer}}</a
-                  >
-                  {% endfor %}
-                </li>
-                {% endif %} {% if item.writers %}
-                <li>
-                  <strong>Writers:</strong> {% for writer in item.writers %}
-                  <a href="{{item.writers[writer]}}" target="_blank"
-                    >{{writer + ", " if not loop.last else writer}}</a
-                  >
-                  {% endfor %}
-                </li>
-                {% endif %} {% if item.cast %}
-                <li>
-                  <strong>Cast:</strong> {% for actor in item.cast %}
-                  <a href="{{item.cast[actor]}}" target="_blank"
-                    >{{actor + ", " if not loop.last else actor}}</a
-                  >
-                  {% endfor %}
-                </li>
-                {% endif %} {% if item["language"] %}
-                <li>
-                  <strong>Original language:</strong>
-                  {{ item["language"] }}
-                </li>
-                {% endif %} {% if item["theaters"] %}
-                <li>
-                  <strong>Release Date (Theaters):</strong>
-                  {{ item["theaters"] }}
-                </li>
-                {% endif %} {% if item["streaming"] %}
-                <li>
-                  <strong>Release Date (Streaming):</strong>
-                  {{ item["streaming"] }}
-                </li>
-                {% endif %} {% if item["boxOffice"] %}
-                <li><strong>Box Office:</strong> {{ item["boxOffice"] }}</li>
-                {% endif %} {% if item["runtime"] %}
-                <li><strong>Runtime:</strong> {{ item["runtime"] }}</li>
-                {% endif %}
-              </ul>
-            </article>
-          </div>
-
-          {% endif %} {% if item.type == "tv" %}
-          <div class="tile is-3 is-parent">
-            <article class="tile is-child notification is-info">
-              <p class="title has-text-centered">{{ item.name }}</p>
-              <a href="{{ item.url }}" target="_blank">
-                <figure class="image is-2by3">
-                  <img src="{{ item.posterImage }}" />
-                </figure>
-              </a>
-              <nav class="level">
-                <div class="level-left">
-                  <div class="level-item">
-                    <img
-                      src="{{ url_for('static', filename='tomato-favicon-16x16.png') }}"
-                      alt="tomato"
-                    />
-                    <p class="subtitle">{{ item.criticsScore }}</p>
-                  </div>
-                </div>
-                <div class="level-right">
-                  <div class="level-item">
-                    <img
-                      src="{{ url_for('static', filename='popcorn-favicon-16x16.png') }}"
-                      alt="popcorn"
-                    />
-                    <p class="subtitle">{{ item.audienceScore }}</p>
-                  </div>
-                </div>
-              </nav>
-
-              <ul>
-                {% if item.network %}
-                <li><strong>TV Network:</strong> {{ item.network }}</li>
-                {% endif %} {% if item.premiereDate %}
-                <li><strong>Premiere Date:</strong> {{ item.premiereDate }}</li>
-                {% endif %} {% if item.genre %}
-                <li><strong>Genre:</strong> {{ item.genre }}</li>
-                {% endif %} {% if item.platforms %}
-                <li><strong>Platforms:</strong> {{ item.platforms }}</li>
-                {% endif %} {% if item.creators %}
-                <li>
-                  <strong>Creators:</strong> {% for creator in item.creators %}
-                  <a href="{{item.creators[creator]}}" target="_blank"
-                    >{{creator + ", " if not loop.last else creator}}</a
-                  >
-                  {% endfor %}
-                </li>
-                {% endif %} {% if item.producers %}
-                <li>
-                  <strong>Executive Producers:</strong> {% for producer in
-                  item.producers %}
-                  <a href="{{item.producers[producer]}}" target="_blank"
-                    >{{producer + ", " if not loop.last else producer}}</a
-                  >
-                  {% endfor %}
-                </li>
-                {% endif %} {% if item.cast %}
-                <li>
-                  <strong>Cast:</strong> {% for actor in item.cast %}
-                  <a href="{{item.cast[actor]}}" target="_blank"
-                    >{{actor + ", " if not loop.last else actor}}</a
-                  >
-                  {% endfor %}
-                </li>
-                {% endif %} {% if item.years %}
-                <li><strong>Years:</strong> {{ item.years }}</li>
-                {% endif %}
-              </ul>
-            </article>
-          </div>
-          {% endif %} {% endfor %}
+            <ul>
+              {% if item.genres %}
+              <li><strong>Genres:</strong> {{ item.genres }}</li>
+              {% endif %} {% if item.rating %}
+              <li><strong>Rating:</strong> {{ item.rating }}</li>
+              {% endif %} {% if item.platforms %}
+              <li><strong>Platforms:</strong> {{ item.platforms }}</li>
+              {% endif %} {% if item.directors %}
+              <li>
+                <strong>Directors:</strong> {% for director in item.directors
+                %}
+                <a href="{{item.directors[director]}}" target="_blank">{{director + ", " if not loop.last else
+                  director}}</a>
+                {% endfor %}
+              </li>
+              {% endif %} {% if item.producers %}
+              <li>
+                <strong>Producers:</strong> {% for producer in item.producers
+                %}
+                <a href="{{item.producers[producer]}}" target="_blank">{{producer + ", " if not loop.last else
+                  producer}}</a>
+                {% endfor %}
+              </li>
+              {% endif %} {% if item.writers %}
+              <li>
+                <strong>Writers:</strong> {% for writer in item.writers %}
+                <a href="{{item.writers[writer]}}" target="_blank">{{writer + ", " if not loop.last else writer}}</a>
+                {% endfor %}
+              </li>
+              {% endif %} {% if item.cast %}
+              <li>
+                <strong>Cast:</strong> {% for actor in item.cast %}
+                <a href="{{item.cast[actor]}}" target="_blank">{{actor + ", " if not loop.last else actor}}</a>
+                {% endfor %}
+              </li>
+              {% endif %} {% if item["language"] %}
+              <li>
+                <strong>Original language:</strong>
+                {{ item["language"] }}
+              </li>
+              {% endif %} {% if item["theaters"] %}
+              <li>
+                <strong>Release Date (Theaters):</strong>
+                {{ item["theaters"] }}
+              </li>
+              {% endif %} {% if item["streaming"] %}
+              <li>
+                <strong>Release Date (Streaming):</strong>
+                {{ item["streaming"] }}
+              </li>
+              {% endif %} {% if item["boxOffice"] %}
+              <li><strong>Box Office:</strong> {{ item["boxOffice"] }}</li>
+              {% endif %} {% if item["runtime"] %}
+              <li><strong>Runtime:</strong> {{ item["runtime"] }}</li>
+              {% endif %}
+            </ul>
+          </article>
         </div>
-      </div>
-      {% endfor %}
-    </section>
-  </body>
 
-  <footer class="footer">
-    <div class="content has-text-centered">
-      <p>
-        <strong>Tomato Recommendations</strong> by
-        <a href="https://github.com/Danielpark1239">Daniel Park</a>.
-      </p>
+        {% endif %} {% if item.type == "tv" %}
+        <div class="tile is-3 is-parent">
+          <article class="tile is-child notification is-info">
+            <p class="title has-text-centered">{{ item.name }}</p>
+            <a href="{{ item.url }}" target="_blank">
+              <figure class="image is-2by3">
+                <img src="{{ item.posterImage }}" />
+              </figure>
+            </a>
+            <nav class="level">
+              <div class="level-left">
+                <div class="level-item">
+                  <img src="{{ url_for('static', filename='tomato-favicon-16x16.png') }}" alt="tomato" />
+                  <p class="subtitle">{{ item.criticsScore }}</p>
+                </div>
+              </div>
+              <div class="level-right">
+                <div class="level-item">
+                  <img src="{{ url_for('static', filename='popcorn-favicon-16x16.png') }}" alt="popcorn" />
+                  <p class="subtitle">{{ item.audienceScore }}</p>
+                </div>
+              </div>
+            </nav>
+
+            <ul>
+              {% if item.network %}
+              <li><strong>TV Network:</strong> {{ item.network }}</li>
+              {% endif %} {% if item.premiereDate %}
+              <li><strong>Premiere Date:</strong> {{ item.premiereDate }}</li>
+              {% endif %} {% if item.genre %}
+              <li><strong>Genre:</strong> {{ item.genre }}</li>
+              {% endif %} {% if item.platforms %}
+              <li><strong>Platforms:</strong> {{ item.platforms }}</li>
+              {% endif %} {% if item.creators %}
+              <li>
+                <strong>Creators:</strong> {% for creator in item.creators %}
+                <a href="{{item.creators[creator]}}" target="_blank">{{creator + ", " if not loop.last else
+                  creator}}</a>
+                {% endfor %}
+              </li>
+              {% endif %} {% if item.producers %}
+              <li>
+                <strong>Executive Producers:</strong> {% for producer in
+                item.producers %}
+                <a href="{{item.producers[producer]}}" target="_blank">{{producer + ", " if not loop.last else
+                  producer}}</a>
+                {% endfor %}
+              </li>
+              {% endif %} {% if item.cast %}
+              <li>
+                <strong>Cast:</strong> {% for actor in item.cast %}
+                <a href="{{item.cast[actor]}}" target="_blank">{{actor + ", " if not loop.last else actor}}</a>
+                {% endfor %}
+              </li>
+              {% endif %} {% if item.years %}
+              <li><strong>Years:</strong> {{ item.years }}</li>
+              {% endif %}
+            </ul>
+          </article>
+        </div>
+        {% endif %} {% endfor %}
+      </div>
     </div>
-  </footer>
+    {% endfor %}
+  </section>
+</body>
+
+<footer class="footer">
+  <div class="content has-text-centered">
+    <p>
+      <strong>RT Recommendations</strong> by
+      <a href="https://github.com/Danielpark1239">Daniel Park</a>.
+    </p>
+  </div>
+</footer>
+
 </html>
