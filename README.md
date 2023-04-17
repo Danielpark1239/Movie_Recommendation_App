@@ -1,4 +1,4 @@
-# Rotten Tomatoes Recommendation App
+# Tomato Recommendations
 
 Website that generates movie/TV show recommendations by scraping Rotten Tomatoes based on user filters
 
@@ -11,3 +11,5 @@ Built using Flask, Bulma, and BeautifulSoup
   
 ~~* Note: webscraping apps are difficult to maintain, so the website may fail to generate recommendations.
   For example, the Rotten Tomatoes website could change its format or some of my proxies may go down.~~
+  
+## Screenshots
