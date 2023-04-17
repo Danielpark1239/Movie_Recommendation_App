@@ -1,153 +1,134 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Rotten Tomatoes Recommendation App</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
-    />
-    <link
-      rel="shortcut icon"
-      href="{{ url_for('static', filename='tomato-favicon.ico') }}"
-    />
-  </head>
 
-  <section class="hero is-info">
-    <div class="hero-body">
-      <p class="title">
-        Rotten Tomatoes Recommendation App
-        <img
-          src="{{ url_for('static', filename='tomato-favicon-32x32.png') }}"
-          alt="tomato"
-        />
-      </p>
-      <p class="subtitle">
-        <strong>Recommendations by Actor</strong>
-      </p>
-      <a class="button" href="/">Home</a>
-      <a class="button" href="/actor">More Recommendations by Actor</a>
-    </div>
-  </section>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tomato Recommendations</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+  <link rel="shortcut icon" href="{{ url_for('static', filename='tomato-favicon.ico') }}" />
+</head>
 
-  <body class="has-background-light">
-    <section class="section">
-      {% for row in actorInfo %}
-      <div class="level">
-        <div class="level-item tile is-ancestor">
-          {% for item in row %} {% if item.type == "movie" %}
-          <div class="tile is-3 is-parent">
-            <article class="tile is-child notification is-info">
-              <p class="title has-text-centered">{{ item.name }}</p>
-              <a href="{{ item.url }}" target="_blank">
-                <figure class="image is-2by3">
-                  <img src="{{ item.posterImage }}" />
-                </figure>
-              </a>
-              <nav class="level">
-                <div class="level-left">
-                  <div class="level-item">
-                    <img
-                      src="{{ url_for('static', filename='tomato-favicon-16x16.png') }}"
-                      alt="tomato"
-                    />
-                    <p class="subtitle">{{ item.criticsScore }}</p>
-                  </div>
-                </div>
-                <div class="level-right">
-                  <div class="level-item">
-                    <img
-                      src="{{ url_for('static', filename='popcorn-favicon-16x16.png') }}"
-                      alt="popcorn"
-                    />
-                    <p class="subtitle">{{ item.audienceScore }}</p>
-                  </div>
-                </div>
-              </nav>
+<section class="hero is-info">
+  <div class="hero-body">
+    <p class="title">
+      Tomato Recommendations
+      <img src="{{ url_for('static', filename='tomato-favicon-32x32.png') }}" alt="tomato" />
+    </p>
+    <p class="subtitle">
+      <strong>Recommendations by Actor</strong>
+    </p>
+    <a class="button" href="/">Home</a>
+    <a class="button" href="/actor">More Recommendations by Actor</a>
+  </div>
+</section>
 
-              <ul>
-                {% if item.genres %}
-                <li><strong>Genres:</strong> {{ item.genres }}</li>
-                {% endif %} {% if item.rating %}
-                <li><strong>Rating:</strong> {{ item.rating }}</li>
-                {% endif %} {% if item.platforms %}
-                <li><strong>Platforms:</strong> {{ item.platforms }}</li>
-                {% endif %} {% if item.role %}
-                <li><strong>Role:</strong> {{ item.role }}</li>
-                {% endif %} {% if item["language"] %}
-                <li>
-                  <strong>Language:</strong>
-                  {{ item["language"] }}
-                </li>
-                {% endif %} {% if item.boxOffice %}
-                <li><strong>Box Office:</strong> {{ item.boxOffice }}</li>
-                {% endif %} {% if item.year %}
-                <li><strong>Year:</strong> {{ item.year }}</li>
-                {% endif %} {% if item["runtime"] %}
-                <li><strong>Runtime:</strong> {{ item["runtime"] }}</li>
-                {% endif %}
-              </ul>
-            </article>
-          </div>
-          {% endif %} {% if item.type == "tv" %}
-          <div class="tile is-3 is-parent">
-            <article class="tile is-child notification is-info">
-              <p class="title has-text-centered">{{ item.name }}</p>
-              <a href="{{ item.url }}" target="_blank">
-                <figure class="image is-2by3">
-                  <img src="{{ item.posterImage }}" />
-                </figure>
-              </a>
-              <nav class="level">
-                <div class="level-left">
-                  <div class="level-item">
-                    <img
-                      src="{{ url_for('static', filename='tomato-favicon-16x16.png') }}"
-                      alt="tomato"
-                    />
-                    <p class="subtitle">{{ item.criticsScore }}</p>
-                  </div>
+<body class="has-background-light">
+  <section class="section">
+    {% for row in actorInfo %}
+    <div class="level">
+      <div class="level-item tile is-ancestor">
+        {% for item in row %} {% if item.type == "movie" %}
+        <div class="tile is-3 is-parent">
+          <article class="tile is-child notification is-info">
+            <p class="title has-text-centered">{{ item.name }}</p>
+            <a href="{{ item.url }}" target="_blank">
+              <figure class="image is-2by3">
+                <img src="{{ item.posterImage }}" />
+              </figure>
+            </a>
+            <nav class="level">
+              <div class="level-left">
+                <div class="level-item">
+                  <img src="{{ url_for('static', filename='tomato-favicon-16x16.png') }}" alt="tomato" />
+                  <p class="subtitle">{{ item.criticsScore }}</p>
                 </div>
-                <div class="level-right">
-                  <div class="level-item">
-                    <img
-                      src="{{ url_for('static', filename='popcorn-favicon-16x16.png') }}"
-                      alt="popcorn"
-                    />
-                    <p class="subtitle">{{ item.audienceScore }}</p>
-                  </div>
+              </div>
+              <div class="level-right">
+                <div class="level-item">
+                  <img src="{{ url_for('static', filename='popcorn-favicon-16x16.png') }}" alt="popcorn" />
+                  <p class="subtitle">{{ item.audienceScore }}</p>
                 </div>
-              </nav>
+              </div>
+            </nav>
 
-              <ul>
-                {% if item.network %}
-                <li><strong>TV Network:</strong> {{ item.network }}</li>
-                {% endif %} {% if item.genre %}
-                <li><strong>Genre:</strong> {{ item.genre }}</li>
-                {% endif %} {% if item.platforms %}
-                <li><strong>Platforms:</strong> {{ item.platforms }}</li>
-                {% endif %} {% if item.role %}
-                <li><strong>Role:</strong> {{ item.role }}</li>
-                {% endif %} {% if item.years %}
-                <li><strong>Years:</strong> {{ item.years }}</li>
-                {% endif %}
-              </ul>
-            </article>
-          </div>
-          {% endif %} {% endfor %}
+            <ul>
+              {% if item.genres %}
+              <li><strong>Genres:</strong> {{ item.genres }}</li>
+              {% endif %} {% if item.rating %}
+              <li><strong>Rating:</strong> {{ item.rating }}</li>
+              {% endif %} {% if item.platforms %}
+              <li><strong>Platforms:</strong> {{ item.platforms }}</li>
+              {% endif %} {% if item.role %}
+              <li><strong>Role:</strong> {{ item.role }}</li>
+              {% endif %} {% if item["language"] %}
+              <li>
+                <strong>Language:</strong>
+                {{ item["language"] }}
+              </li>
+              {% endif %} {% if item.boxOffice %}
+              <li><strong>Box Office:</strong> {{ item.boxOffice }}</li>
+              {% endif %} {% if item.year %}
+              <li><strong>Year:</strong> {{ item.year }}</li>
+              {% endif %} {% if item["runtime"] %}
+              <li><strong>Runtime:</strong> {{ item["runtime"] }}</li>
+              {% endif %}
+            </ul>
+          </article>
         </div>
-      </div>
-      {% endfor %}
-    </section>
-  </body>
+        {% endif %} {% if item.type == "tv" %}
+        <div class="tile is-3 is-parent">
+          <article class="tile is-child notification is-info">
+            <p class="title has-text-centered">{{ item.name }}</p>
+            <a href="{{ item.url }}" target="_blank">
+              <figure class="image is-2by3">
+                <img src="{{ item.posterImage }}" />
+              </figure>
+            </a>
+            <nav class="level">
+              <div class="level-left">
+                <div class="level-item">
+                  <img src="{{ url_for('static', filename='tomato-favicon-16x16.png') }}" alt="tomato" />
+                  <p class="subtitle">{{ item.criticsScore }}</p>
+                </div>
+              </div>
+              <div class="level-right">
+                <div class="level-item">
+                  <img src="{{ url_for('static', filename='popcorn-favicon-16x16.png') }}" alt="popcorn" />
+                  <p class="subtitle">{{ item.audienceScore }}</p>
+                </div>
+              </div>
+            </nav>
 
-  <footer class="footer">
-    <div class="content has-text-centered">
-      <p>
-        <strong>Rotten Tomatoes Recommendation App</strong> by
-        <a href="https://github.com/Danielpark1239">Daniel Park</a>.
-      </p>
+            <ul>
+              {% if item.network %}
+              <li><strong>TV Network:</strong> {{ item.network }}</li>
+              {% endif %} {% if item.genre %}
+              <li><strong>Genre:</strong> {{ item.genre }}</li>
+              {% endif %} {% if item.platforms %}
+              <li><strong>Platforms:</strong> {{ item.platforms }}</li>
+              {% endif %} {% if item.role %}
+              <li><strong>Role:</strong> {{ item.role }}</li>
+              {% endif %} {% if item.years %}
+              <li><strong>Years:</strong> {{ item.years }}</li>
+              {% endif %}
+            </ul>
+          </article>
+        </div>
+        {% endif %} {% endfor %}
+      </div>
     </div>
-  </footer>
+    {% endfor %}
+  </section>
+</body>
+
+<footer class="footer">
+  <div class="content has-text-centered">
+    <p>
+      <strong>Tomato Recommendations</strong> by
+      <a href="https://github.com/Danielpark1239">Daniel Park</a>.
+    </p>
+  </div>
+</footer>
+
 </html>
