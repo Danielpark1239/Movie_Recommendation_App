@@ -1,4 +1,5 @@
-from flask import render_template, request, Response
+from flask import Flask, render_template, request, Response
+from worker import redis_url
 import scraper
 from rq import Queue
 from rq.job import Job
@@ -9,7 +10,9 @@ from worker import conn
 import os
 import redis
 
-# Initialize Redis
+app = Flask(__name__)
+
+# Initialize Redis for worker queue
 redis_url = os.getenv('HEROKU_REDIS_OLIVE_URL', 'redis://localhost:6379')
 cache = redis.from_url(redis_url, decode_responses=True)
 q = Queue(connection=conn)
