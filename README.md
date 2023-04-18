@@ -8,6 +8,34 @@ Built using Flask, Bulma, and BeautifulSoup
 
 - Available until Nov 28, 2022, when Heroku shuts down free dynos; not feasible to deploy on Render with a free plan,
   so the website is no longer active :(
-- Note: This app is no longer maintained, so it may fail to generate recommendations. If the Rotten Tomatoes website has changed, the webscraping code has to be changed. \*
+- Note: This app is not regularly maintained, so it may fail to generate recommendations. If the Rotten Tomatoes website has changed, the webscraping code needs to be updated.
 
-## Screenshots
+# Initial setup
+### Install dependencies
+Note: You could also use a conda env or any venv of your choice
+```
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Prepare .env
+Note: You could use any proxies of your choice; I'll be going over a free provider that I use:
+1. Go to https://www.webshare.io/
+2. Sign up/log in
+3. In the left sidebar, click on "Proxy", then "List" in the drop-down. The default settings should be fine.
+4. Click on "download", then copy the provided URL
+5. In .env.template, replace "URL goes here" with the copied URL.
+6. Rename .env.template to .env
+
+### Run local Redis
+1. Install Redis for your OS here: https://redis.io/docs/getting-started/
+2. Run `redis-server` in a separate window and verify that the displayed port is 6739
+
+### Run worker
+1. Run `python worker.py` in a separate window
+
+### Run server
+1. Run `flask run`
+
+# Screenshots
