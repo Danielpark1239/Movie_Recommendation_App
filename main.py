@@ -1,20 +1,22 @@
 from flask import Flask, render_template, request, Response
-from worker import redis_url
 import scraper
 from rq import Queue
 from rq.job import Job
 import json
 import time
-from worker import conn
+from worker import worker_conn
 import os
 import redis
+from dotenv import load_dotenv
 
+# Load environment variables and run app
+load_dotenv()
 app = Flask(__name__)
 
-# Initialize Redis for worker queue
-redis_url = os.getenv('HEROKU_REDIS_OLIVE_URL', 'redis://localhost:6379')
-cache = redis.from_url(redis_url, decode_responses=True)
-q = Queue(connection=conn)
+# Initialize Redis for cache
+cache_redis_url = os.getenv('HEROKU_REDIS_OLIVE_URL', 'redis://localhost:6380')
+cache = redis.from_url(cache_redis_url, decode_responses=True)
+q = Queue(connection=worker_conn)
 
 @app.route('/')
 def index():
@@ -28,48 +30,52 @@ def movies():
 # Enqueue movie scraping job in worker queue
 @app.route('/movies/enqueue/', methods=['POST'])
 def moviesEnqueue():
-    formData = request.form
-    genres = formData.getlist("genres")
-    ratings = formData.getlist("ratings")
-    platforms = formData.getlist("platforms")
-    tomatometerScore = int(formData["tomatometerSlider"])
-    audienceScore = int(formData["audienceSlider"])
-    limit = 10 if formData["limit"] == "" else int(formData["limit"])
-    popular = True if "popular" in formData else False
+    try:
+        formData = request.form
+        genres = formData.getlist("genres")
+        ratings = formData.getlist("ratings")
+        platforms = formData.getlist("platforms")
+        tomatometerScore = int(formData["tomatometerSlider"])
+        audienceScore = int(formData["audienceSlider"])
+        limit = 10 if formData["limit"] == "" else int(formData["limit"])
+        popular = True if "popular" in formData else False
 
-    # Generate a cache key from the client filters
-    keyArray = [
-        "M", "".join(genres), "".join(ratings), "".join(platforms), "T",
-        formData["tomatometerSlider"], "A", formData["audienceSlider"], "L", 
-        formData["limit"]
-    ]
-    if popular:
-        keyArray.append("P")
-    key = "".join(keyArray)
-    
-    value = cache.get(key)
-    if value is not None:
-        return {'job_id': value}
-    
-    # Generate a list of URLs to search 
-    URLs = scraper.generateMovieURLs(
-        genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
-    )
+        # Generate a cache key from the client filters
+        keyArray = [
+            "M", "".join(genres), "".join(ratings), "".join(platforms), "T",
+            formData["tomatometerSlider"], "A", formData["audienceSlider"], "L", 
+            formData["limit"]
+        ]
+        if popular:
+            keyArray.append("P")
+        key = "".join(keyArray)
+        
+        value = cache.get(key)
+        if value is not None:
+            return {'job_id': value}
+        
+        # Generate a list of URLs to search 
+        URLs = scraper.generateMovieURLs(
+            genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
+        )
 
-    # Enqueue the job
-    job = q.enqueue(
-        scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
-    )
-    job.meta['key'] = key
-    job.save_meta()
-    return {'job_id': job.id}
+        # Enqueue the job
+        job = q.enqueue(
+            scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
+        )
+        job.meta['key'] = key
+        job.save_meta()
+        return {'job_id': job.id}
+    except Exception as e:
+        print("Error enqueuing movies job", e)
+        return {}
 
 # Get progress of current job
 @app.route('/movies/progress/<string:id>', methods=['GET'])
 def movieProgress(id):
     def movieStatus():
         try:
-            job = Job.fetch(id, connection=conn)
+            job = Job.fetch(id, connection=worker_conn)
             status = job.get_status(refresh=True)
             
             # If job is finished, return the link to the recommendations page
@@ -99,7 +105,8 @@ def movieProgress(id):
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
 
-        except:
+        except Exception as e:
+            print("Error getting movie job status", e)
             return {}
     return Response(movieStatus(), mimetype='text/event-stream')
 
@@ -107,7 +114,7 @@ def movieProgress(id):
 @app.route('/movies/recommendations/<string:id>/', methods=['GET'])
 def movieRecommendations(id):   
     try: 
-        job = Job.fetch(id, connection=conn)
+        job = Job.fetch(id, connection=worker_conn)
 
         if job.get_status() == 'finished':
             movieInfo = job.result
@@ -120,7 +127,8 @@ def movieRecommendations(id):
         return "Job in progress", 400
 
     # If job id not in Redis, it expired
-    except:
+    except Exception as e:
+        print("Error getting movie rec page", e)
         return "Record not found", 400
 
 # TV shows form page
@@ -131,49 +139,53 @@ def tvshows():
 # Enqueue tv show scraping in worker queue
 @app.route('/tvshows/enqueue/', methods=['POST'])
 def tvshowsEnqueue():
-    formData = request.form
-    genres = formData.getlist("genres")
-    ratings = formData.getlist("ratings")
-    platforms = formData.getlist("platforms")
-    tomatometerScore = int(formData["tomatometerSlider"])
-    audienceScore = int(formData["audienceSlider"])
-    limit = 10 if formData["limit"] == "" else int(formData["limit"])
-    popular = True if "popular" in formData else False
+    try:
+        formData = request.form
+        genres = formData.getlist("genres")
+        ratings = formData.getlist("ratings")
+        platforms = formData.getlist("platforms")
+        tomatometerScore = int(formData["tomatometerSlider"])
+        audienceScore = int(formData["audienceSlider"])
+        limit = 10 if formData["limit"] == "" else int(formData["limit"])
+        popular = True if "popular" in formData else False
 
-    # Generate cache key from client filters
-    keyArray = [
-        "T", "".join(genres), "".join(ratings), "".join(platforms), "T",
-        formData["tomatometerSlider"], "A", formData["audienceSlider"], "L", 
-        formData["limit"]
-    ]
-    if popular:
-        keyArray.append("P")
-    key = "".join(keyArray)
+        # Generate cache key from client filters
+        keyArray = [
+            "T", "".join(genres), "".join(ratings), "".join(platforms), "T",
+            formData["tomatometerSlider"], "A", formData["audienceSlider"], "L", 
+            formData["limit"]
+        ]
+        if popular:
+            keyArray.append("P")
+        key = "".join(keyArray)
 
-    value = cache.get(key)
-    if value is not None:
-        return {'job_id': value}
+        value = cache.get(key)
+        if value is not None:
+            return {'job_id': value}
 
-    # Generate list of URLs to search based on filters
-    URLs = scraper.generateTVshowURLs(
-        genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
-    )
+        # Generate list of URLs to search based on filters
+        URLs = scraper.generateTVshowURLs(
+            genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
+        )
 
-    # Enqueue a job that stores its result for 1 day
-    job = q.enqueue(
-        scraper.scrapeTVshows, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
-    )
+        # Enqueue a job that stores its result for 1 day
+        job = q.enqueue(
+            scraper.scrapeTVshows, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
+        )
 
-    job.meta['key'] = key
-    job.save_meta()
-    return {'job_id': job.id}
+        job.meta['key'] = key
+        job.save_meta()
+        return {'job_id': job.id}
+    except Exception as e:
+        print("Error enqueuing tv show job", e)
+        return {}
 
 # Progress for tv show scraping job
 @app.route('/tvshows/progress/<string:id>', methods=['GET'])
 def tvshowProgress(id):
     def tvshowStatus():
         try:
-            job = Job.fetch(id, connection=conn)
+            job = Job.fetch(id, connection=worker_conn)
             status = job.get_status()
 
             # If job is finished, return the recommendations page link
@@ -204,7 +216,8 @@ def tvshowProgress(id):
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
 
-        except:
+        except Exception as e:
+            print("Error getting tv show job status", e)
             return {}
     return Response(tvshowStatus(), mimetype='text/event-stream')
 
@@ -212,7 +225,7 @@ def tvshowProgress(id):
 @app.route('/tvshows/recommendations/<string:id>/', methods=['GET'])
 def tvshowRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=conn)
+        job = Job.fetch(id, connection=worker_conn)
 
         if job.get_status() == 'finished':
             tvshowInfo = job.result
@@ -223,7 +236,8 @@ def tvshowRecommendations(id):
             return render_template("tvshowRecommendations.html", tvShowInfo=tvshowInfo)
         return "Job in progress", 400
 
-    except:
+    except Exception as e:
+        print("Error getting movies rec page", e)
         return "Record not found", 400
 
 # Movies/tv shows by actor form page
@@ -234,62 +248,66 @@ def actor():
 # Enqueue a scraping job for actor movies/tv shows
 @app.route('/actor/enqueue/', methods=['POST'])
 def actorEnqueue():
-    formData = request.form
+    try:
+        formData = request.form
 
-    roles = formData.getlist("role")
-    if len(roles) == 0 or "all" in roles:
-        roles = ["all"]
-    genres = formData.getlist("genres")
-    if len(genres) == 0 or "all" in genres:
-        genres = ["all"]
-    ratings = formData.getlist("ratings")
-    if len(ratings) == 0 or "all" in ratings:
-        ratings = ["all"]
-    platforms = formData.getlist("platforms")
-    if len(platforms) == 0 or "all" in platforms:
-        platforms = ["all"]
+        roles = formData.getlist("role")
+        if len(roles) == 0 or "all" in roles:
+            roles = ["all"]
+        genres = formData.getlist("genres")
+        if len(genres) == 0 or "all" in genres:
+            genres = ["all"]
+        ratings = formData.getlist("ratings")
+        if len(ratings) == 0 or "all" in ratings:
+            ratings = ["all"]
+        platforms = formData.getlist("platforms")
+        if len(platforms) == 0 or "all" in platforms:
+            platforms = ["all"]
 
-    filterData = {
-        "actorURL": formData["actorURL"],
-        "category": formData["category"],
-        "roles": roles,
-        "oldestYear": int(formData["yearSlider"]),
-        "boxOffice": int(formData["boxOffice"]),
-        "genres": genres,
-        "ratings": ratings,
-        "platforms": platforms,
-        "tomatometerScore": int(formData["tomatometerSlider"]),
-        "audienceScore": int(formData["audienceSlider"]),
-        "limit": 10 if formData["limit"] == "" else int(formData["limit"])
-    }
-    actor = formData["actorURL"].split("/")[-1]
+        filterData = {
+            "actorURL": formData["actorURL"],
+            "category": formData["category"],
+            "roles": roles,
+            "oldestYear": int(formData["yearSlider"]),
+            "boxOffice": int(formData["boxOffice"]),
+            "genres": genres,
+            "ratings": ratings,
+            "platforms": platforms,
+            "tomatometerScore": int(formData["tomatometerSlider"]),
+            "audienceScore": int(formData["audienceSlider"]),
+            "limit": 10 if formData["limit"] == "" else int(formData["limit"])
+        }
+        actor = formData["actorURL"].split("/")[-1]
 
-    # Generate a cache key
-    keyArray = [
-        "A", actor, "".join(formData["category"]), "".join(roles), 
-        formData["yearSlider"], "B", formData["boxOffice"], "".join(genres), 
-        "".join(ratings), "".join(platforms), "T", formData["tomatometerSlider"],
-        "A", formData["audienceSlider"], "L", formData["limit"] 
-    ]
-    key = "".join(keyArray)
+        # Generate a cache key
+        keyArray = [
+            "A", actor, "".join(formData["category"]), "".join(roles), 
+            formData["yearSlider"], "B", formData["boxOffice"], "".join(genres), 
+            "".join(ratings), "".join(platforms), "T", formData["tomatometerSlider"],
+            "A", formData["audienceSlider"], "L", formData["limit"] 
+        ]
+        key = "".join(keyArray)
 
-    value = cache.get(key)
-    if value is not None:
-        return {'job_id': value}
+        value = cache.get(key)
+        if value is not None:
+            return {'job_id': value}
 
-    job = q.enqueue(
-        scraper.scrapeActor, filterData, result_ttl=86400
-    )
-    job.meta["key"] = key
-    job.save_meta()
-    return {'job_id': job.id}
+        job = q.enqueue(
+            scraper.scrapeActor, filterData, result_ttl=86400
+        )
+        job.meta["key"] = key
+        job.save_meta()
+        return {'job_id': job.id}
+    except Exception as e:
+        print("Error getting actor job", e)
+        return {}
 
 # Get progress for an actor scraping job for a given id
 @app.route('/actor/progress/<string:id>', methods=['GET'])
 def actorProgress(id):
     def actorStatus():
         try:
-            job = Job.fetch(id, connection=conn)
+            job = Job.fetch(id, connection=worker_conn)
             status = job.get_status()
 
             if status == 'finished':
@@ -317,7 +335,8 @@ def actorProgress(id):
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
 
-        except:
+        except Exception as e:
+            print("Error getting actor job progress", e)
             return {}
     return Response(actorStatus(), mimetype='text/event-stream')
 
@@ -325,7 +344,7 @@ def actorProgress(id):
 @app.route('/actor/recommendations/<string:id>', methods=['GET'])
 def actorRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=conn)
+        job = Job.fetch(id, connection=worker_conn)
 
         if job.get_status() == 'finished':
             actorInfo = job.result
@@ -339,7 +358,8 @@ def actorRecommendations(id):
             return render_template("actorRecommendations.html", actorInfo=actorInfo)
         return "Job in progress", 400
 
-    except:
+    except Exception as e:
+        print("Error getting actor rec page", e)
         return "Record not found", 400
 
 # Movies/tv shows by director form page
@@ -350,57 +370,61 @@ def director():
 # Enqueue a director scraping job
 @app.route('/director/enqueue/', methods=['POST'])
 def directorEnqueue():
-    formData = request.form
+    try:
+        formData = request.form
 
-    genres = formData.getlist("genres")
-    if len(genres) == 0 or "all" in genres:
-        genres = ["all"]
-    ratings = formData.getlist("ratings")
-    if len(ratings) == 0 or "all" in ratings:
-        ratings = ["all"]
-    platforms = formData.getlist("platforms")
-    if len(platforms) == 0 or "all" in platforms:
-        platforms = ["all"]
+        genres = formData.getlist("genres")
+        if len(genres) == 0 or "all" in genres:
+            genres = ["all"]
+        ratings = formData.getlist("ratings")
+        if len(ratings) == 0 or "all" in ratings:
+            ratings = ["all"]
+        platforms = formData.getlist("platforms")
+        if len(platforms) == 0 or "all" in platforms:
+            platforms = ["all"]
 
-    filterData = {
-        "url": formData["directorURL"],
-        "category": formData["category"],
-        "oldestYear": int(formData["yearSlider"]),
-        "boxOffice": int(formData["boxOffice"]),
-        "genres": genres,
-        "ratings": ratings,
-        "platforms": platforms,
-        "tomatometerScore": int(formData["tomatometerSlider"]),
-        "audienceScore": int(formData["audienceSlider"]),
-        "limit": 10 if formData["limit"] == "" else int(formData["limit"])
-    }
-    director = formData["directorURL"].split("/")[-1]
-    # Cache key
-    keyArray = [
-        "D", director, "".join(formData["category"]), formData["yearSlider"],
-        "B", formData["boxOffice"], "".join(genres), "".join(ratings), 
-        "".join(platforms), "T", formData["tomatometerSlider"], "A", 
-        formData["audienceSlider"], "L", formData["limit"] 
-    ]
-    key = "".join(keyArray)
+        filterData = {
+            "url": formData["directorURL"],
+            "category": formData["category"],
+            "oldestYear": int(formData["yearSlider"]),
+            "boxOffice": int(formData["boxOffice"]),
+            "genres": genres,
+            "ratings": ratings,
+            "platforms": platforms,
+            "tomatometerScore": int(formData["tomatometerSlider"]),
+            "audienceScore": int(formData["audienceSlider"]),
+            "limit": 10 if formData["limit"] == "" else int(formData["limit"])
+        }
+        director = formData["directorURL"].split("/")[-1]
+        # Cache key
+        keyArray = [
+            "D", director, "".join(formData["category"]), formData["yearSlider"],
+            "B", formData["boxOffice"], "".join(genres), "".join(ratings), 
+            "".join(platforms), "T", formData["tomatometerSlider"], "A", 
+            formData["audienceSlider"], "L", formData["limit"] 
+        ]
+        key = "".join(keyArray)
 
-    value = cache.get(key)
-    if value is not None:
-        return {'job_id': value}
+        value = cache.get(key)
+        if value is not None:
+            return {'job_id': value}
 
-    job = q.enqueue(
-        scraper.scrapeDirectorProducer, filterData, "director", result_ttl=86400
-    )
-    job.meta['key'] = key
-    job.save_meta()
-    return {"job_id": job.id}
+        job = q.enqueue(
+            scraper.scrapeDirectorProducer, filterData, "director", result_ttl=86400
+        )
+        job.meta['key'] = key
+        job.save_meta()
+        return {"job_id": job.id}
+    except Exception as e:
+        print("Error enqueuing director job", e)
+        return {}
 
 # For a given id, get progress of director scraping job
 @app.route('/director/progress/<string:id>', methods=['GET'])
 def directorProgress(id):
     def directorStatus():
         try:
-            job = Job.fetch(id, connection=conn)
+            job = Job.fetch(id, connection=worker_conn)
             status = job.get_status()
 
             if status == 'finished':
@@ -428,7 +452,8 @@ def directorProgress(id):
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
 
-        except:
+        except Exception as e:
+            print("Error getting progress of director job", e)
             return {}
     return Response(directorStatus(), mimetype='text/event-stream')
 
@@ -436,7 +461,7 @@ def directorProgress(id):
 @app.route('/director/recommendations/<string:id>', methods=['GET'])
 def directorRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=conn)
+        job = Job.fetch(id, connection=worker_conn)
 
         if job.get_status() == 'finished':
             directorInfo = job.result
@@ -450,7 +475,8 @@ def directorRecommendations(id):
             return render_template("directorRecommendations.html", directorInfo=directorInfo)
         return "Job in progress", 400
 
-    except:
+    except Exception as e:
+        print("Error getting director rec page", e)
         return "Record not found", 400
 
 # Movies/tv shows by producer page
@@ -461,57 +487,61 @@ def producer():
 # Enqueue a producer scraping job
 @app.route('/producer/enqueue/', methods=['POST'])
 def producerEnqueue():
-    formData = request.form
+    try:
+        formData = request.form
 
-    genres = formData.getlist("genres")
-    if len(genres) == 0 or "all" in genres:
-        genres = ["all"]
-    ratings = formData.getlist("ratings")
-    if len(ratings) == 0 or "all" in ratings:
-        ratings = ["all"]
-    platforms = formData.getlist("platforms")
-    if len(platforms) == 0 or "all" in platforms:
-        platforms = ["all"]
+        genres = formData.getlist("genres")
+        if len(genres) == 0 or "all" in genres:
+            genres = ["all"]
+        ratings = formData.getlist("ratings")
+        if len(ratings) == 0 or "all" in ratings:
+            ratings = ["all"]
+        platforms = formData.getlist("platforms")
+        if len(platforms) == 0 or "all" in platforms:
+            platforms = ["all"]
 
-    filterData = {
-        "url": formData["producerURL"],
-        "category": formData["category"],
-        "oldestYear": int(formData["yearSlider"]),
-        "boxOffice": int(formData["boxOffice"]),
-        "genres": genres,
-        "ratings": ratings,
-        "platforms": platforms,
-        "tomatometerScore": int(formData["tomatometerSlider"]),
-        "audienceScore": int(formData["audienceSlider"]),
-        "limit": 10 if formData["limit"] == "" else int(formData["limit"])
-    }
-    producer = formData["producerURL"].split("/")[-1]
-    # Cache key based on filter data
-    keyArray = [
-        "P", producer, "".join(formData["category"]), formData["yearSlider"],
-        "B", formData["boxOffice"], "".join(genres), "".join(ratings), 
-        "".join(platforms), "T", formData["tomatometerSlider"], "A", 
-        formData["audienceSlider"], "L", formData["limit"] 
-    ]
-    key = "".join(keyArray)
-    value = cache.get(key)
-    if value is not None:
-        return {'job_id': value}
+        filterData = {
+            "url": formData["producerURL"],
+            "category": formData["category"],
+            "oldestYear": int(formData["yearSlider"]),
+            "boxOffice": int(formData["boxOffice"]),
+            "genres": genres,
+            "ratings": ratings,
+            "platforms": platforms,
+            "tomatometerScore": int(formData["tomatometerSlider"]),
+            "audienceScore": int(formData["audienceSlider"]),
+            "limit": 10 if formData["limit"] == "" else int(formData["limit"])
+        }
+        producer = formData["producerURL"].split("/")[-1]
+        # Cache key based on filter data
+        keyArray = [
+            "P", producer, "".join(formData["category"]), formData["yearSlider"],
+            "B", formData["boxOffice"], "".join(genres), "".join(ratings), 
+            "".join(platforms), "T", formData["tomatometerSlider"], "A", 
+            formData["audienceSlider"], "L", formData["limit"] 
+        ]
+        key = "".join(keyArray)
+        value = cache.get(key)
+        if value is not None:
+            return {'job_id': value}
 
-    # Enqueue the job if the results aren't cached
-    job = q.enqueue(
-        scraper.scrapeDirectorProducer, filterData, "producer", result_ttl=86400
-    )
-    job.meta['key'] = key
-    job.save_meta()
-    return {"job_id": job.id}
+        # Enqueue the job if the results aren't cached
+        job = q.enqueue(
+            scraper.scrapeDirectorProducer, filterData, "producer", result_ttl=86400
+        )
+        job.meta['key'] = key
+        job.save_meta()
+        return {"job_id": job.id}
+    except Exception as e:
+        print("Error enqueuing producer job", e)
+        return {}
 
 # Given an id, return the progress of a producer scraping job
 @app.route('/producer/progress/<string:id>', methods=['GET'])
 def producerProgress(id):
     def producerStatus():
         try:
-            job = Job.fetch(id, connection=conn)
+            job = Job.fetch(id, connection=worker_conn)
             status = job.get_status()
 
             if status == 'finished':
@@ -539,7 +569,8 @@ def producerProgress(id):
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
 
-        except:
+        except Exception as e:
+            print("Error getting producer job status", e)
             return {}
     return Response(producerStatus(), mimetype='text/event-stream')
 
@@ -547,7 +578,7 @@ def producerProgress(id):
 @app.route('/producer/recommendations/<string:id>', methods=['GET'])
 def producerRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=conn)
+        job = Job.fetch(id, connection=worker_conn)
 
         if job.get_status() == 'finished': 
             producerInfo = job.result
@@ -561,7 +592,8 @@ def producerRecommendations(id):
             return render_template("producerRecommendations.html", producerInfo=producerInfo)
         return "Job in progress", 400
 
-    except:
+    except Exception as e:
+        print("Error getting producer rec page", e)
         return "Record not found", 400
 
 # Form page for similar movies/shows
@@ -572,45 +604,49 @@ def similar():
 # Enqueue a similar scraping job
 @app.route('/similar/enqueue/', methods=['POST'])
 def similarEnqueue():
-    formData = request.form
+    try:
+        formData = request.form
 
-    platforms = formData.getlist("platforms")
-    if len(platforms) == 0 or "all" in platforms:
-        platforms = ["all"]
+        platforms = formData.getlist("platforms")
+        if len(platforms) == 0 or "all" in platforms:
+            platforms = ["all"]
 
-    filterData = {
-        "url": formData["url"],
-        "oldestYear": int(formData["yearSlider"]),
-        "platforms": platforms,
-        "tomatometerScore": int(formData["tomatometerSlider"]),
-        "audienceScore": int(formData["audienceSlider"]),
-        "limit": 10 if formData["limit"] == "" else int(formData["limit"])
-    }
-    media = formData["url"].split("/")[-1]
-    keyArray = [
-        "S", media, formData["yearSlider"], "".join(platforms), "T",
-        formData["tomatometerSlider"], "A", formData["audienceSlider"], 
-        "L", formData["limit"]
-    ]
-    # Cache key
-    key = "".join(keyArray)
-    value = cache.get(key)
-    if value is not None:
-        return {'job_id': value}
+        filterData = {
+            "url": formData["url"],
+            "oldestYear": int(formData["yearSlider"]),
+            "platforms": platforms,
+            "tomatometerScore": int(formData["tomatometerSlider"]),
+            "audienceScore": int(formData["audienceSlider"]),
+            "limit": 10 if formData["limit"] == "" else int(formData["limit"])
+        }
+        media = formData["url"].split("/")[-1]
+        keyArray = [
+            "S", media, formData["yearSlider"], "".join(platforms), "T",
+            formData["tomatometerSlider"], "A", formData["audienceSlider"], 
+            "L", formData["limit"]
+        ]
+        # Cache key
+        key = "".join(keyArray)
+        value = cache.get(key)
+        if value is not None:
+            return {'job_id': value}
 
-    job = q.enqueue(
-        scraper.scrapeSimilar, filterData, result_ttl=86400
-    )
-    job.meta["key"] = key
-    job.save_meta()
-    return {'job_id': job.id}
+        job = q.enqueue(
+            scraper.scrapeSimilar, filterData, result_ttl=86400
+        )
+        job.meta["key"] = key
+        job.save_meta()
+        return {'job_id': job.id}
+    except Exception as e:
+        print("Error enqueuing similar job", e)
+        return {}
 
 # Given an id, get the progress of a similar scraping job
 @app.route('/similar/progress/<string:id>', methods=['GET'])
 def similarProgress(id):
     def similarStatus():
         try:
-            job = Job.fetch(id, connection=conn)
+            job = Job.fetch(id, connection=worker_conn)
             status = job.get_status()
 
             if status == 'finished':
@@ -638,7 +674,8 @@ def similarProgress(id):
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
 
-        except:
+        except Exception as e:
+            print("Error getting progress of similar job", e)
             return {}
     return Response(similarStatus(), mimetype='text/event-stream')
 
@@ -646,7 +683,7 @@ def similarProgress(id):
 @app.route('/similar/recommendations/<string:id>', methods=['GET'])
 def similarRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=conn)
+        job = Job.fetch(id, connection=worker_conn)
 
         if job.get_status() == 'finished': 
             similarInfo = job.result
@@ -672,5 +709,6 @@ def similarRecommendations(id):
             )
         return "Job in progress", 400
 
-    except:
+    except Exception as e:
+        print("Error getting progress of similar job", e)
         return "Record not found", 400
