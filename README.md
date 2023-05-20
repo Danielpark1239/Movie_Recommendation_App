@@ -20,13 +20,15 @@ pip install -r requirements.txt
 ```
 
 ### Prepare .env
-Note: You could use any proxies of your choice; I'll be going over a free provider that I use:
+To stop Rotten Tomatoes from blocking my requests, I use proxies. You could use any proxies of your choice; I'll be going over a free provider that I use:
 1. Go to https://www.webshare.io/
 2. Sign up/log in
 3. In the left sidebar, click on "Proxy", then "List" in the drop-down. The default settings should be fine.
 4. Click on "download", then copy the provided URL
 5. In .env.template, replace "URL goes here" with the copied URL.
 6. Rename .env.template to .env
+
+It may be helpful to have US-based proxies, as the app was built to accomodate streaming platforms available in the US.
 
 ### Run local Redis
 1. Install Redis for your OS here: https://redis.io/docs/getting-started/
@@ -37,5 +39,8 @@ Note: You could use any proxies of your choice; I'll be going over a free provid
 
 ### Run server
 1. Run `flask run`
+
+### Testing
+1. Run `pytest tests.py` for some basic tests! (should take ~60s to run)
 
 # Screenshots
