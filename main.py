@@ -4,7 +4,7 @@ from rq import Queue
 from rq.job import Job
 import json
 import time
-from worker import worker_conn
+from worker import conn
 import os
 import redis
 from dotenv import load_dotenv
@@ -13,10 +13,9 @@ from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__)
 
-# Initialize Redis for cache
-cache_redis_url = os.getenv('HEROKU_REDIS_OLIVE_URL', 'redis://localhost:6380')
-cache = redis.from_url(cache_redis_url, decode_responses=True)
-q = Queue(connection=worker_conn)
+# Use Redis for cache
+cache = conn
+q = Queue(connection=conn)
 
 @app.route('/')
 def index():
@@ -60,6 +59,7 @@ def moviesEnqueue():
         )
 
         # Enqueue the job
+        scraper.scrapeMovies(URLs, tomatometerScore, audienceScore, limit)
         job = q.enqueue(
             scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
         )
@@ -75,7 +75,7 @@ def moviesEnqueue():
 def movieProgress(id):
     def movieStatus():
         try:
-            job = Job.fetch(id, connection=worker_conn)
+            job = Job.fetch(id, connection=conn)
             status = job.get_status(refresh=True)
             
             # If job is finished, return the link to the recommendations page
@@ -114,7 +114,7 @@ def movieProgress(id):
 @app.route('/movies/recommendations/<string:id>/', methods=['GET'])
 def movieRecommendations(id):   
     try: 
-        job = Job.fetch(id, connection=worker_conn)
+        job = Job.fetch(id, connection=conn)
 
         if job.get_status() == 'finished':
             movieInfo = job.result
@@ -169,6 +169,7 @@ def tvshowsEnqueue():
         )
 
         # Enqueue a job that stores its result for 1 day
+        scraper.scrapeTVshows(URLs, tomatometerScore, audienceScore, limit)
         job = q.enqueue(
             scraper.scrapeTVshows, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
         )
@@ -185,7 +186,7 @@ def tvshowsEnqueue():
 def tvshowProgress(id):
     def tvshowStatus():
         try:
-            job = Job.fetch(id, connection=worker_conn)
+            job = Job.fetch(id, connection=conn)
             status = job.get_status()
 
             # If job is finished, return the recommendations page link
@@ -225,7 +226,7 @@ def tvshowProgress(id):
 @app.route('/tvshows/recommendations/<string:id>/', methods=['GET'])
 def tvshowRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=worker_conn)
+        job = Job.fetch(id, connection=conn)
 
         if job.get_status() == 'finished':
             tvshowInfo = job.result
@@ -307,7 +308,7 @@ def actorEnqueue():
 def actorProgress(id):
     def actorStatus():
         try:
-            job = Job.fetch(id, connection=worker_conn)
+            job = Job.fetch(id, connection=conn)
             status = job.get_status()
 
             if status == 'finished':
@@ -344,7 +345,7 @@ def actorProgress(id):
 @app.route('/actor/recommendations/<string:id>', methods=['GET'])
 def actorRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=worker_conn)
+        job = Job.fetch(id, connection=conn)
 
         if job.get_status() == 'finished':
             actorInfo = job.result
@@ -424,7 +425,7 @@ def directorEnqueue():
 def directorProgress(id):
     def directorStatus():
         try:
-            job = Job.fetch(id, connection=worker_conn)
+            job = Job.fetch(id, connection=conn)
             status = job.get_status()
 
             if status == 'finished':
@@ -461,7 +462,7 @@ def directorProgress(id):
 @app.route('/director/recommendations/<string:id>', methods=['GET'])
 def directorRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=worker_conn)
+        job = Job.fetch(id, connection=conn)
 
         if job.get_status() == 'finished':
             directorInfo = job.result
@@ -541,7 +542,7 @@ def producerEnqueue():
 def producerProgress(id):
     def producerStatus():
         try:
-            job = Job.fetch(id, connection=worker_conn)
+            job = Job.fetch(id, connection=conn)
             status = job.get_status()
 
             if status == 'finished':
@@ -578,7 +579,7 @@ def producerProgress(id):
 @app.route('/producer/recommendations/<string:id>', methods=['GET'])
 def producerRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=worker_conn)
+        job = Job.fetch(id, connection=conn)
 
         if job.get_status() == 'finished': 
             producerInfo = job.result
@@ -646,7 +647,7 @@ def similarEnqueue():
 def similarProgress(id):
     def similarStatus():
         try:
-            job = Job.fetch(id, connection=worker_conn)
+            job = Job.fetch(id, connection=conn)
             status = job.get_status()
 
             if status == 'finished':
@@ -683,7 +684,7 @@ def similarProgress(id):
 @app.route('/similar/recommendations/<string:id>', methods=['GET'])
 def similarRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=worker_conn)
+        job = Job.fetch(id, connection=conn)
 
         if job.get_status() == 'finished': 
             similarInfo = job.result
