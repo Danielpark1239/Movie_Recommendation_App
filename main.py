@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, Response
-import scraper
+import scraping.scraper as scraper
 from rq import Queue
 from rq.job import Job
 import json

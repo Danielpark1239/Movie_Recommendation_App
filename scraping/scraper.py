@@ -3,12 +3,12 @@ from bs4 import BeautifulSoup
 import random
 import re
 from constants import *
-import movieScraper
-import showScraper
+import scraping.movieScraper as movieScraper
+import scraping.showScraper as showScraper
 from collections import deque
 import time
 from rq import get_current_job
-import proxyGetter
+import scraping.proxyGetter as proxyGetter
 
 # Generate movie URLs for scraping based on the filters
 def generateMovieURLs(
