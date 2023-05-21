@@ -8,7 +8,7 @@ def test_scrapeMovies():
         [], [], [], 50, 50, 10, True
     )
     data = scraper.scrapeMovies(URLs, 50, 50, 10)
-    assert data is not None
+    assert len(data[0]) > 3 and len(data[1]) > 2
 
 
 def test_scrapeTVshows():
@@ -16,7 +16,8 @@ def test_scrapeTVshows():
     URLs = scraper.generateTVshowURLs(
         [], [], [], 50, 50, 10, True
     )
-    scraper.scrapeTVshows(URLs, 50, 50, 10)
+    data = scraper.scrapeTVshows(URLs, 50, 50, 10)
+    assert len(data[0]) > 3 and len(data[1]) > 2
 
 def test_scrapeActor():
     load_dotenv()
@@ -33,7 +34,8 @@ def test_scrapeActor():
         "audienceScore": 50,
         "limit": 10
     }
-    scraper.scrapeActor(filterData)
+    data = scraper.scrapeActor(filterData)
+    assert len(data[0]) > 3 and len(data[1]) > 2
 
 def test_scrapeDirectorProducer():
     load_dotenv()
@@ -49,7 +51,8 @@ def test_scrapeDirectorProducer():
         "audienceScore": 50,
         "limit": 10
     }
-    scraper.scrapeDirectorProducer(filterData, "director")
+    data = scraper.scrapeDirectorProducer(filterData, "director")
+    assert len(data[0]) > 3 and len(data[1]) > 2
 
 def test_scrapeSimilar():
     load_dotenv()
@@ -61,4 +64,31 @@ def test_scrapeSimilar():
         "audienceScore": 50,
         "limit": 10
     }
-    scraper.scrapeSimilar(filterData)
+    data = scraper.scrapeSimilar(filterData)
+    assert len(data[0]) > 3 and len(data[1]) > 2
+
+def test_scrapeSimilar2():
+    load_dotenv()
+    filterData = {
+        "url": 'https://www.rottentomatoes.com/tv/breaking_bad',
+        "oldestYear": 2010,
+        "platforms": 'all',
+        "tomatometerScore": 50,
+        "audienceScore": 50,
+        "limit": 10
+    }
+    data = scraper.scrapeSimilar(filterData)
+    assert len(data[0]) > 3 and len(data[1]) > 2
+
+def test_scrapeSimilar3():
+    load_dotenv()
+    filterData = {
+        "url": 'https://www.rottentomatoes.com/m/21_jump_street_2011',
+        "oldestYear": 2010,
+        "platforms": 'all',
+        "tomatometerScore": 50,
+        "audienceScore": 50,
+        "limit": 10
+    }
+    data = scraper.scrapeSimilar(filterData)
+    assert len(data[0]) > 3 and len(data[1]) > 2
