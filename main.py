@@ -15,6 +15,52 @@ conn = redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379'))
 cache = conn
 q = Queue(connection=conn)
 
+# Helper func that generates json SSE for a given job
+def jobStatus(id):
+    try:
+        job = AsyncResult(id)
+
+        # While job is running, use server-sent events to yield data every second
+        while not job.ready():
+            if job.info and 'progress' in job.info:
+                data = {'progress': job.info['progress']}
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+            time.sleep(1)
+
+        # If job failed, return error
+        if job.failed():
+            data = {'failure': True}
+            json_data = json.dumps(data)
+            yield f"data:{json_data}\n\n"
+            job.forget()
+            return
+        
+        # If job is finished, return the link to the recommendations page
+        data = {'progress': 100}
+        json_data = json.dumps(data)
+        yield f"data:{json_data}\n\n"
+        if job.info and 'result' in job.info:
+            data = {'result': job.info['result']}
+            json_data = json.dumps(data)
+            yield f"data:{json_data}\n\n"
+            cache.set(job.info['key'], job.id, ex=86399) # Each job cached for 1 day
+            return
+        else:
+            data = {'failure': True}
+            json_data = json.dumps(data)
+            yield f"data:{json_data}\n\n"
+            job.forget()
+            return
+
+    except Exception as e:
+        print("Error getting job status", e)
+        data = {'failure': True}
+        json_data = json.dumps(data)
+        yield f"data:{json_data}\n\n"
+        job.forget()
+        return
+
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -37,7 +83,7 @@ def moviesEnqueue():
         limit = 10 if formData["limit"] == "" else int(formData["limit"])
         popular = True if "popular" in formData else False
 
-        # Generate a cache key from the client filters
+        # Generate a cache key and return cache hit
         keyArray = [
             "M", "".join(genres), "".join(ratings), "".join(platforms), "T",
             formData["tomatometerSlider"], "A", formData["audienceSlider"], "L", 
@@ -47,16 +93,15 @@ def moviesEnqueue():
             keyArray.append("P")
         key = "".join(keyArray)
         keyHash = hashlib.sha1(key.encode()).hexdigest()
-
-        # value = cache.get(keyHash)
-        # if value is not None:
-        #     return {'job_id': value}
+        value = cache.get(keyHash)
+        if value is not None:
+            return {'job_id': value.decode()}
         
         # Generate a list of URLs to search 
         URLs = scraper.generateMovieURLs(
             genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
         )
-        # Enqueue the job
+        # Enqueue the job on a cache miss
         job = scraper.scrapeMovies.delay(URLs, tomatometerScore, audienceScore, limit, key=keyHash)
         return {'job_id': job.id}
     except Exception as e:
@@ -66,40 +111,7 @@ def moviesEnqueue():
 # Get progress of current job
 @app.route('/movies/progress/<string:id>', methods=['GET'])
 def movieProgress(id):
-    def movieStatus():
-        try:
-            job = AsyncResult(id)
-
-            # While job is running, use server-sent events to yield data every second
-            while not job.ready():
-                if job.info and 'progress' in job.info:
-                    data = {'progress': job.info['progress']}
-                    json_data = json.dumps(data)
-                    yield f"data:{json_data}\n\n"
-                time.sleep(1)
-
-            # If job failed, return error
-            if job.failed():
-                data = {'failure': True}
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
-                job.forget()
-                return
-            
-            # If job is finished, return the link to the recommendations page
-            data = {'progress': 100}
-            json_data = json.dumps(data)
-            yield f"data:{json_data}\n\n"
-            data = {'result': job.info['result']}
-            json_data = json.dumps(data)
-            yield f"data:{json_data}\n\n"
-            cache.set(job.info['key'], job.id, ex=86399) # Each job cached for 1 day
-            return
-
-        except Exception as e:
-            print("Error getting movie job status", e)
-            return {}
-    return Response(movieStatus(), mimetype='text/event-stream')
+    return Response(jobStatus(id), mimetype='text/event-stream')
 
 # Return the recommendations page for a given job id
 @app.route('/movies/recommendations/<string:id>/', methods=['GET'])
@@ -107,19 +119,20 @@ def movieRecommendations(id):
     try: 
         job = AsyncResult(id, app=celery_app)
         if job.ready():
+            if job.failed():
+                return "Job failed, please try again", 400
+            # You'd want to check for error and redirect to another page here
             movieInfo = job.result["movieInfo"]
 
             # No recommendations found
             if len(movieInfo[0]) == 0:
                 return render_template("movieNotFound.html")
-
             return render_template("movieRecommendations.html", movieInfo=movieInfo)
         return "Job in progress", 400
 
     # If job id not in Redis, it expired
     except Exception as e:
         print("Error getting movie rec page", e)
-        raise e
         return "Record not found", 400
 
 # TV shows form page
@@ -140,7 +153,7 @@ def tvshowsEnqueue():
         limit = 10 if formData["limit"] == "" else int(formData["limit"])
         popular = True if "popular" in formData else False
 
-        # Generate cache key from client filters
+        # Generate cache key, return cache hit
         keyArray = [
             "T", "".join(genres), "".join(ratings), "".join(platforms), "T",
             formData["tomatometerSlider"], "A", formData["audienceSlider"], "L", 
@@ -149,23 +162,17 @@ def tvshowsEnqueue():
         if popular:
             keyArray.append("P")
         key = "".join(keyArray)
-
-        value = cache.get(key)
+        keyHash = hashlib.sha1(key.encode()).hexdigest()
+        value = cache.get(keyHash)
         if value is not None:
-            return {'job_id': value}
+            return {'job_id': value.decode()}
 
         # Generate list of URLs to search based on filters
         URLs = scraper.generateTVshowURLs(
             genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
         )
-
-        # Enqueue a job that stores its result for 1 day
-        job = q.enqueue(
-            scraper.scrapeTVshows, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
-        )
-
-        job.meta['key'] = key
-        job.save_meta()
+        # Enqueue the job on a cache miss
+        job = scraper.scrapeTVshows.delay(URLs, tomatometerScore, audienceScore, limit, key=keyHash)
         return {'job_id': job.id}
     except Exception as e:
         print("Error enqueuing tv show job", e)
@@ -174,62 +181,26 @@ def tvshowsEnqueue():
 # Progress for tv show scraping job
 @app.route('/tvshows/progress/<string:id>', methods=['GET'])
 def tvshowProgress(id):
-    def tvshowStatus():
-        try:
-            job = Job.fetch(id, connection=conn)
-            status = job.get_status()
-
-            # If job is finished, return the recommendations page link
-            if status == 'finished':
-                data = {'progress': 100}
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
-                data = {'result': 'recommendations/' + job.id}
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
-                return
-
-            # If job, yield progress from 0-99 every second with SSE
-            while status != 'finished':
-                status = job.get_status()
-                job.refresh()
-                
-                if 'progress' in job.meta:
-                    data = {'progress': job.meta['progress']}
-                    json_data = json.dumps(data)
-                    yield f"data:{json_data}\n\n"
-                time.sleep(1)
-
-            # When job finishes, return the recommendations page link
-            job.refresh()
-            cache.set(job.meta['key'], job.id, ex=86399)
-            data = {'result': job.meta['result']}
-            json_data = json.dumps(data)
-            yield f"data:{json_data}\n\n"
-            return
-
-        except Exception as e:
-            print("Error getting tv show job status", e)
-            return {}
-    return Response(tvshowStatus(), mimetype='text/event-stream')
+    return Response(jobStatus(id), mimetype='text/event-stream')
 
 # TV show recommendations page for a given job id
 @app.route('/tvshows/recommendations/<string:id>/', methods=['GET'])
 def tvshowRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=conn)
+        job = AsyncResult(id, app=celery_app)
+        if job.ready():
+            if job.failed():
+                return "Job failed, please try again", 400
+            tvShowInfo = job.result["tvShowInfo"]
 
-        if job.get_status() == 'finished':
-            tvshowInfo = job.result
-
-            if len(tvshowInfo[0]) == 0:
+            # No recommendations found
+            if len(tvShowInfo[0]) == 0:
                 return render_template("tvshowNotFound.html")
-
-            return render_template("tvshowRecommendations.html", tvShowInfo=tvshowInfo)
+            return render_template("tvshowRecommendations.html", tvShowInfo=tvShowInfo)
         return "Job in progress", 400
 
     except Exception as e:
-        print("Error getting movies rec page", e)
+        print("Error getting tv show rec page", e)
         return "Record not found", 400
 
 # Movies/tv shows by actor form page
@@ -242,7 +213,6 @@ def actor():
 def actorEnqueue():
     try:
         formData = request.form
-
         roles = formData.getlist("role")
         if len(roles) == 0 or "all" in roles:
             roles = ["all"]
@@ -271,7 +241,7 @@ def actorEnqueue():
         }
         actor = formData["actorURL"].split("/")[-1]
 
-        # Generate a cache key
+        # Generate a cache key and return a cache hit
         keyArray = [
             "A", actor, "".join(formData["category"]), "".join(roles), 
             formData["yearSlider"], "B", formData["boxOffice"], "".join(genres), 
@@ -279,16 +249,13 @@ def actorEnqueue():
             "A", formData["audienceSlider"], "L", formData["limit"] 
         ]
         key = "".join(keyArray)
-
-        value = cache.get(key)
+        keyHash = hashlib.sha1(key.encode()).hexdigest()
+        value = cache.get(keyHash)
         if value is not None:
-            return {'job_id': value}
+            return {'job_id': value.decode()}
 
-        job = q.enqueue(
-            scraper.scrapeActor, filterData, result_ttl=86400
-        )
-        job.meta["key"] = key
-        job.save_meta()
+        # Enqueue the job on a cache miss
+        job = scraper.scrapeActor.delay(filterData, key=keyHash)
         return {'job_id': job.id}
     except Exception as e:
         print("Error getting actor job", e)
@@ -297,56 +264,23 @@ def actorEnqueue():
 # Get progress for an actor scraping job for a given id
 @app.route('/actor/progress/<string:id>', methods=['GET'])
 def actorProgress(id):
-    def actorStatus():
-        try:
-            job = Job.fetch(id, connection=conn)
-            status = job.get_status()
-
-            if status == 'finished':
-                data = {'progress': 100}
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
-                data = {'result': 'recommendations/' + job.id}
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
-                return
-
-            while status != 'finished':
-                status = job.get_status()
-                job.refresh()
-
-                if 'progress' in job.meta:
-                    data = {'progress': job.meta['progress']}
-                    json_data = json.dumps(data)
-                    yield f"data:{json_data}\n\n"
-                time.sleep(1)
-
-            job.refresh()
-            cache.set(job.meta["key"], job.id, ex=86399)
-            data = {'result': job.meta['result']}
-            json_data = json.dumps(data)
-            yield f"data:{json_data}\n\n"
-
-        except Exception as e:
-            print("Error getting actor job progress", e)
-            return {}
-    return Response(actorStatus(), mimetype='text/event-stream')
+    return Response(jobStatus(id), mimetype='text/event-stream')
 
 # Actor recommendations page for a given id
 @app.route('/actor/recommendations/<string:id>', methods=['GET'])
 def actorRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=conn)
-
-        if job.get_status() == 'finished':
-            actorInfo = job.result
-
+        job = AsyncResult(id, app=celery_app)
+        if job.ready():
+            if job.failed():
+                return "Job failed, please try again", 400
+            actorInfo = job.result["actorInfo"]
+            # Invalid actor url
             if actorInfo is None:
                 return render_template("actorInvalid.html")
-    
+            # No recommendations found
             if len(actorInfo[0]) == 0:
                 return render_template("actorNotFound.html")
-            
             return render_template("actorRecommendations.html", actorInfo=actorInfo)
         return "Job in progress", 400
 
@@ -364,7 +298,6 @@ def director():
 def directorEnqueue():
     try:
         formData = request.form
-
         genres = formData.getlist("genres")
         if len(genres) == 0 or "all" in genres:
             genres = ["all"]
@@ -374,7 +307,6 @@ def directorEnqueue():
         platforms = formData.getlist("platforms")
         if len(platforms) == 0 or "all" in platforms:
             platforms = ["all"]
-
         filterData = {
             "url": formData["directorURL"],
             "category": formData["category"],
@@ -387,8 +319,8 @@ def directorEnqueue():
             "audienceScore": int(formData["audienceSlider"]),
             "limit": 10 if formData["limit"] == "" else int(formData["limit"])
         }
+        # Generate a cache key and return cache hit
         director = formData["directorURL"].split("/")[-1]
-        # Cache key
         keyArray = [
             "D", director, "".join(formData["category"]), formData["yearSlider"],
             "B", formData["boxOffice"], "".join(genres), "".join(ratings), 
@@ -396,16 +328,13 @@ def directorEnqueue():
             formData["audienceSlider"], "L", formData["limit"] 
         ]
         key = "".join(keyArray)
-
-        value = cache.get(key)
+        keyHash = hashlib.sha1(key.encode()).hexdigest()
+        value = cache.get(keyHash)
         if value is not None:
-            return {'job_id': value}
-
-        job = q.enqueue(
-            scraper.scrapeDirectorProducer, filterData, "director", result_ttl=86400
-        )
-        job.meta['key'] = key
-        job.save_meta()
+            return {'job_id': value.decode()}
+        
+        # Enqueue the job on a cache miss
+        job = scraper.scrapeDirectorProducer.delay(filterData, "director", key=keyHash)
         return {"job_id": job.id}
     except Exception as e:
         print("Error enqueuing director job", e)
@@ -414,56 +343,23 @@ def directorEnqueue():
 # For a given id, get progress of director scraping job
 @app.route('/director/progress/<string:id>', methods=['GET'])
 def directorProgress(id):
-    def directorStatus():
-        try:
-            job = Job.fetch(id, connection=conn)
-            status = job.get_status()
-
-            if status == 'finished':
-                data = {'progress': 100}
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
-                data = {'result': 'recommendations/' + job.id}
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
-                return
-
-            while status != 'finished':
-                status = job.get_status()
-                job.refresh()
-
-                if 'progress' in job.meta:
-                    data = {'progress': job.meta['progress']}
-                    json_data = json.dumps(data)
-                    yield f"data:{json_data}\n\n"
-                time.sleep(1)
-
-            job.refresh()
-            cache.set(job.meta['key'], job.id, ex=86399)
-            data = {'result': job.meta['result']}
-            json_data = json.dumps(data)
-            yield f"data:{json_data}\n\n"
-
-        except Exception as e:
-            print("Error getting progress of director job", e)
-            return {}
-    return Response(directorStatus(), mimetype='text/event-stream')
+    return Response(jobStatus(id), mimetype='text/event-stream')
 
 # Director recommendations page for a given id
 @app.route('/director/recommendations/<string:id>', methods=['GET'])
 def directorRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=conn)
-
-        if job.get_status() == 'finished':
-            directorInfo = job.result
-
+        job = AsyncResult(id, app=celery_app)
+        if job.ready():
+            if job.failed():
+                return "Job failed, please try again", 400
+            directorInfo = job.result['filmographyInfo']
+            # Invalid director url
             if directorInfo is None:
                 return render_template("directorInvalid.html")
-    
+            # No recommendations found
             if len(directorInfo[0]) == 0:
                 return render_template("directorNotFound.html")
-
             return render_template("directorRecommendations.html", directorInfo=directorInfo)
         return "Job in progress", 400
 
@@ -481,7 +377,6 @@ def producer():
 def producerEnqueue():
     try:
         formData = request.form
-
         genres = formData.getlist("genres")
         if len(genres) == 0 or "all" in genres:
             genres = ["all"]
@@ -491,7 +386,6 @@ def producerEnqueue():
         platforms = formData.getlist("platforms")
         if len(platforms) == 0 or "all" in platforms:
             platforms = ["all"]
-
         filterData = {
             "url": formData["producerURL"],
             "category": formData["category"],
@@ -504,8 +398,9 @@ def producerEnqueue():
             "audienceScore": int(formData["audienceSlider"]),
             "limit": 10 if formData["limit"] == "" else int(formData["limit"])
         }
+
+        # Generate a cache key and return cache hit
         producer = formData["producerURL"].split("/")[-1]
-        # Cache key based on filter data
         keyArray = [
             "P", producer, "".join(formData["category"]), formData["yearSlider"],
             "B", formData["boxOffice"], "".join(genres), "".join(ratings), 
@@ -513,16 +408,13 @@ def producerEnqueue():
             formData["audienceSlider"], "L", formData["limit"] 
         ]
         key = "".join(keyArray)
-        value = cache.get(key)
+        keyHash = hashlib.sha1(key.encode()).hexdigest()
+        value = cache.get(keyHash)
         if value is not None:
-            return {'job_id': value}
+            return {'job_id': value.decode()}
 
-        # Enqueue the job if the results aren't cached
-        job = q.enqueue(
-            scraper.scrapeDirectorProducer, filterData, "producer", result_ttl=86400
-        )
-        job.meta['key'] = key
-        job.save_meta()
+        # Enqueue the job on a cache miss
+        job = scraper.scrapeDirectorProducer.delay(filterData, "producer", key=keyHash)
         return {"job_id": job.id}
     except Exception as e:
         print("Error enqueuing producer job", e)
@@ -531,56 +423,23 @@ def producerEnqueue():
 # Given an id, return the progress of a producer scraping job
 @app.route('/producer/progress/<string:id>', methods=['GET'])
 def producerProgress(id):
-    def producerStatus():
-        try:
-            job = Job.fetch(id, connection=conn)
-            status = job.get_status()
-
-            if status == 'finished':
-                data = {'progress': 100}
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
-                data = {'result': 'recommendations/' + job.id}
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
-                return
-
-            while status != 'finished':
-                status = job.get_status()
-                job.refresh()
-
-                if 'progress' in job.meta:
-                    data = {'progress': job.meta['progress']}
-                    json_data = json.dumps(data)
-                    yield f"data:{json_data}\n\n"
-                time.sleep(1)
-
-            job.refresh()
-            cache.set(job.meta['key'], job.id, ex=86399)
-            data = {'result': job.meta['result']}
-            json_data = json.dumps(data)
-            yield f"data:{json_data}\n\n"
-
-        except Exception as e:
-            print("Error getting producer job status", e)
-            return {}
-    return Response(producerStatus(), mimetype='text/event-stream')
+    return Response(jobStatus(id), mimetype='text/event-stream')
 
 # Producer recommendations page for a given id
 @app.route('/producer/recommendations/<string:id>', methods=['GET'])
 def producerRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=conn)
-
-        if job.get_status() == 'finished': 
-            producerInfo = job.result
-
+        job = AsyncResult(id, app=celery_app)
+        if job.ready():
+            if job.failed():
+                return "Job failed, please try again", 400
+            producerInfo = job.result["filmographyInfo"]
+            # Invalid producer URL
             if producerInfo is None:
                 return render_template("producerInvalid.html")
-    
+            # No recommendations found
             if len(producerInfo[0]) == 0:
                 return render_template("producerNotFound.html")
-
             return render_template("producerRecommendations.html", producerInfo=producerInfo)
         return "Job in progress", 400
 
@@ -598,11 +457,9 @@ def similar():
 def similarEnqueue():
     try:
         formData = request.form
-
         platforms = formData.getlist("platforms")
         if len(platforms) == 0 or "all" in platforms:
             platforms = ["all"]
-
         filterData = {
             "url": formData["url"],
             "oldestYear": int(formData["yearSlider"]),
@@ -617,17 +474,14 @@ def similarEnqueue():
             formData["tomatometerSlider"], "A", formData["audienceSlider"], 
             "L", formData["limit"]
         ]
-        # Cache key
+        # Generate a cache key and return cache hit
         key = "".join(keyArray)
-        value = cache.get(key)
+        keyHash = hashlib.sha1(key.encode()).hexdigest()
+        value = cache.get(keyHash)
         if value is not None:
-            return {'job_id': value}
+            return {'job_id': value.decode()}
 
-        job = q.enqueue(
-            scraper.scrapeSimilar, filterData, result_ttl=86400
-        )
-        job.meta["key"] = key
-        job.save_meta()
+        job = scraper.scrapeSimilar.delay(filterData, key=keyHash)
         return {'job_id': job.id}
     except Exception as e:
         print("Error enqueuing similar job", e)
@@ -636,66 +490,33 @@ def similarEnqueue():
 # Given an id, get the progress of a similar scraping job
 @app.route('/similar/progress/<string:id>', methods=['GET'])
 def similarProgress(id):
-    def similarStatus():
-        try:
-            job = Job.fetch(id, connection=conn)
-            status = job.get_status()
-
-            if status == 'finished':
-                data = {'progress': 100}
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
-                data = {'result': 'recommendations/' + job.id}
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
-                return
-
-            while status != 'finished':
-                status = job.get_status()
-                job.refresh()
-
-                if 'progress' in job.meta:
-                    data = {'progress': job.meta['progress']}
-                    json_data = json.dumps(data)
-                    yield f"data:{json_data}\n\n"
-                time.sleep(1)
-
-            job.refresh()
-            cache.set(job.meta["key"], job.id, ex=86399)
-            data = {'result': job.meta['result']}
-            json_data = json.dumps(data)
-            yield f"data:{json_data}\n\n"
-
-        except Exception as e:
-            print("Error getting progress of similar job", e)
-            return {}
-    return Response(similarStatus(), mimetype='text/event-stream')
+    return Response(jobStatus(id), mimetype='text/event-stream')
 
 # Similar recommendations page for a job id
 @app.route('/similar/recommendations/<string:id>', methods=['GET'])
 def similarRecommendations(id):
     try: 
-        job = Job.fetch(id, connection=conn)
-
-        if job.get_status() == 'finished': 
-            similarInfo = job.result
-
+        job = AsyncResult(id, app=celery_app)
+        if job.ready():
+            if job.failed():
+                return "Job failed, please try again", 400
+            similarInfo = job.result["similarInfo"]
+            # Bad similar media URL
             if similarInfo is None:
                 return render_template("similarInvalid.html")
-    
+            # No recommendations found
             if len(similarInfo[0]) == 0:
                 return render_template("similarNotFound.html")
-            
+            # Return page based on media type
             if similarInfo[0][0]["similar"] == "movie":
                 return render_template(
                     "similarMovieRecommendations.html", movieInfo=similarInfo
                 )
-            
             if similarInfo[0][0]["similar"] == "tv":
                 return render_template(
                     "similarTVRecommendations.html", tvShowInfo=similarInfo
                 )
-
+            # Think this is vestigial, but will keep for now
             return render_template(
                 "similarRecommendations.html", similarInfo=similarInfo
             )

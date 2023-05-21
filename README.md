@@ -34,13 +34,13 @@ It may be helpful to have US-based proxies, as the app was built to accomodate s
 1. Install Redis for your OS here: https://redis.io/docs/getting-started/
 2. Run `redis-server` in a separate window and verify that the displayed port is 6739
 
-### Run worker
-1. Run `python worker.py` in a separate window
+### Run Celery worker
+1. Run `celery -A app.celery_app worker --loglevel=INFO -E` in a separate window
 
-### Run server
+### Run Flask server
 1. Run `flask run`
 
 ### Testing
-1. Run `pytest tests.py` for some basic tests! (should take ~60s to run)
+1. Optional: Run `pytest tests.py` for some basic tests! (should take ~60s to run)
 
 # Screenshots
