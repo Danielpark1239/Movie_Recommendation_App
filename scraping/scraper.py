@@ -1,4 +1,5 @@
 import requests
+import itertools
 from bs4 import BeautifulSoup
 import random
 import re
@@ -7,8 +8,10 @@ import scraping.movieScraper as movieScraper
 import scraping.showScraper as showScraper
 from collections import deque
 import time
-from rq import get_current_job
 import scraping.proxyGetter as proxyGetter
+from app import celery_app
+from celery.utils.log import get_task_logger
+logger = get_task_logger(__name__)
 
 # Generate movie URLs for scraping based on the filters
 def generateMovieURLs(
@@ -17,97 +20,59 @@ def generateMovieURLs(
     try:
         start = time.time()
         URLs = []
-        # If scores are above a certain threshold, generate more pages to search
-        gourmet = True if tomatometerScore >= GOURMET_THRESHOLD or\
-        audienceScore >= GOURMET_THRESHOLD else False
-        gourmetPages = tomatometerScore // 10 + audienceScore // 10
-
         theatersURL = BASE_MOVIE_THEATERS_URL
         homeURL = BASE_MOVIE_HOME_URL
-            
+        
+        # Set URL search queries
         audienceStrings = ["audience:upright~"]
         if audienceScore < FRESH_THRESHOLD:   
             audienceStrings.append("audience:spilled~")
-
         tomatometerStrings = ["critics:fresh~"]
         if tomatometerScore < FRESH_THRESHOLD:
             tomatometerStrings.append("critics:rotten~")
-
-        # number of combinations of score strings
-        scoreCombinations = len(audienceStrings) * len(tomatometerStrings)
-
         if "all" in genres or len(genres) == 0:
             genreString = ""
         else:
-            genreString = "genres:" + ",".join(genres) + "~"
-            
+            genreString = "genres:" + ",".join(genres) + "~"       
         if "all" in ratings or len(ratings) == 0:
             ratingString = ""
         else:
             ratingString = "ratings:" + ",".join(ratings) + "~"
-
         if len(platforms) == 0:
             platforms.append("all")
+        # Determine the number of pages we need
+        pageString = "sort:popular?page=5" # 5 is the new max?
 
         # Generate from theatersURL
         if "all" in platforms or "showtimes" in platforms:
             if "showtimes" in platforms:
                 platforms.remove("showtimes")
-
-        # Determine the number of pages we need
-        pageString = "sort:popular?page="
-
-        if "all" in platforms or len(platforms) > 0:
-            if gourmet:
-                pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
-            else:
-                pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
-        else:
-            if gourmet:
-                pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations)+ gourmetPages)
-            else:
-                pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
-
-        for audienceString in audienceStrings:
-            for tomatometerString in tomatometerStrings:
-                URLs.append(
-                    theatersURL + audienceString + tomatometerString \
-                    + genreString + ratingString + pageString
-                )
-            
+            for audienceString in audienceStrings:
+                for tomatometerString in tomatometerStrings:
+                    URLs.append(
+                        theatersURL + audienceString + tomatometerString \
+                        + genreString + ratingString + pageString
+                    )
         # Generate from homeURL
         if "all" in platforms or len(platforms) > 0:
             if "all" in platforms:
                 platformString = ""
-
             else:
                 platforms = [URL_PLATFORM_DICT[platform] for platform in platforms]
                 platformString = "affiliates:" + ",".join(platforms) + "~"
-                
-            pageString = "sort:popular?page="
-            if len(URLs) > 0:
-                if gourmet:
-                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
-                else:
-                    pageString += str(limit // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
-            else:
-                if gourmet:
-                    pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
-                else:
-                    pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
-
             for audienceString in audienceStrings:
                 for tomatometerString in tomatometerStrings:
                     URLs.append(
                         homeURL + audienceString + tomatometerString + platformString\
                         + genreString + ratingString + pageString
                     )
-            if not popular:
-                random.shuffle(URLs)
-            end = time.time()
-            print(f'Time to generate movie URLs: {end - start}')
-            print(f'Movie URLs: {URLs}')
-            return URLs
+        if not popular:
+            # To have a better chance of showing movies from other URLs
+            random.shuffle(URLs)
+        end = time.time()
+        print(f'Time to generate movie URLs: {end - start}')
+        print(f'Movie URLs: {URLs}')
+        return URLs
     except:
         print("Error generating movie URLS")
         raise
@@ -119,29 +84,22 @@ def generateTVshowURLs(
     try:
         start = time.time()
         URLs = []
-        gourmet = True if tomatometerScore >= GOURMET_THRESHOLD or\
-        audienceScore >= GOURMET_THRESHOLD else False
-        gourmetPages = tomatometerScore // 10 + audienceScore // 10
 
+        # Set URL search queries
         audienceStrings = ["audience:upright~"]
         if audienceScore < FRESH_THRESHOLD:   
             audienceStrings.append("audience:spilled~")
-
         tomatometerStrings = ["critics:fresh~"]
         if tomatometerScore < FRESH_THRESHOLD:
             tomatometerStrings.append("critics:rotten~")
-        scoreCombinations = len(audienceStrings) * len(tomatometerStrings)
-        
         if "all" in genres or len(genres) == 0:
             genreString = ""
         else:
             genreString = "genres:" + ",".join(genres) + "~"
-            
         if "all" in ratings or len(ratings) == 0:
             ratingString = ""
         else:
             ratingString = "ratings:" + ",".join(ratings) + "~"
-
         if len(platforms) == 0:
             platforms.append("all")
         if "all" in platforms:
@@ -149,12 +107,7 @@ def generateTVshowURLs(
         else:
             platforms = [URL_PLATFORM_DICT[platform] for platform in platforms]
             platformString = "affiliates:" + ",".join(platforms) + "~"
-        
-        pageString = "sort:popular?page="
-        if gourmet:
-            pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + gourmetPages)
-        else:
-            pageString +=  str((2 * limit) // (ENTRIES_PER_PAGE * scoreCombinations) + 1)
+        pageString = "sort:popular?page=5"
 
         for audienceString in audienceStrings:
             for tomatometerString in tomatometerStrings:
@@ -162,6 +115,7 @@ def generateTVshowURLs(
                     BASE_TV_URL + audienceString + tomatometerString\
                     + platformString + genreString + ratingString + pageString
                 )
+        # To get a better chance of showing less popular shows
         if not popular:
             random.shuffle(URLs)
         end = time.time()
@@ -174,13 +128,16 @@ def generateTVshowURLs(
         raise
 
 # return a dictionary of movie recommendations based on the URLs and filters,
-# setting the job meta result
-def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipURL=None):
+# setting the job meta result; if key is passed, use background job
+@celery_app.task(bind=True, track_started=True, ignore_result=False, name="scraping/scraper/scrapeMovies")
+def scrapeMovies(self, URLs, tomatometerScore, audienceScore, limit, year=None, skipURL=None, key=None):
     try:
         start = time.time()
-        job = get_current_job()
-        job.meta['progress'] = 0
-        job.save_meta()
+        if key:
+            self.update_state(
+                state="STARTED",
+                meta={'progress': 0}
+            )
 
         # array of row arrays; each row array contains up to 4 dictionaries/movies
         movieInfo = [[]]
@@ -194,7 +151,7 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
         ]
         proxies = proxyGetter.get_proxy()
         headers = proxyGetter.get_user_agent()
-
+        print(URLs)
         for url in URLs:
             if movieCount == limit:
                 break
@@ -206,25 +163,26 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
             ).text
             # check if the request is getting blocked
             print(f"HTML_TEXT OUTPUT: {html_text[:150]}")
+
+            # Scrape movies page
             moviePageSoup = BeautifulSoup(html_text, "lxml")
-
-            # Specify a limit if we have more than 2 URLs to search
-            if len(URLs) > 2:
-                movies = moviePageSoup.find_all(
-                    "a", 
-                    attrs={"href": re.compile("/m/"), "data-id": True}, 
-                    limit=(limit // len(URLs)) + (MAX_LIMIT // 2 * len(URLs))
-                )
-            else:
-                movies = moviePageSoup.find_all(
-                    "a", 
-                    attrs={"href": re.compile("/m/"), "data-id": True}, 
-                )
-
-            for movie in movies:
+            oldMovies = moviePageSoup.find_all(
+                "a", 
+                attrs={
+                    "href": re.compile("/m/"),
+                    "data-qa": "discovery-media-list-item"
+                }
+            )
+            movies = moviePageSoup.find_all(
+                "a", 
+                attrs={
+                    "href": re.compile("/m/"),
+                    "data-qa": "discovery-media-list-item-caption"
+                }
+            )
+            for movie in itertools.chain(oldMovies or [], movies or []):
                 if movieCount == limit:
                     break
-
                 currTime = time.time()
                 if currTime - start > TIMEOUT:
                     break
@@ -232,27 +190,22 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
                 # 80% chance of movie being added to recommendations
                 # if scores are below 80
                 # --> Users get different movies each time for the same inputs
-                if useRandom:
-                    randomInt = random.randint(0, 4)
-                    if randomInt == 0:
-                        continue
-
-                url = BASE_URL + movie["href"]
-                if skipURL:
-                    if skipURL == url:
-                        continue
-                data = movie.find("div", slot="caption")
-                scores = data.contents[1]
-
-                # Filter based on scores
-                if scores["audiencescore"] == "" or int(scores["audiencescore"]) < audienceScore:
+                if useRandom and random.randint(0,4) == 0:
                     continue
-                if scores["criticsscore"] == "" or int(scores["criticsscore"]) < tomatometerScore:
+                url = BASE_URL + movie["href"]
+                if skipURL and skipURL == url:
+                    continue
+                
+                # Filter based on scores
+                scoreData = movie.find("score-pairs")
+                if scoreData["audiencescore"] == "" or int(scoreData["audiencescore"]) < audienceScore:
+                    continue
+                if scoreData["criticsscore"] == "" or int(scoreData["criticsscore"]) < tomatometerScore:
                     continue
                 
                 movieInfoDict = {
-                    "audienceScore": scores["audiencescore"],
-                    "criticsScore": scores["criticsscore"],
+                    "audienceScore": scoreData["audiencescore"],
+                    "criticsScore": scoreData["criticsscore"],
                     "url": url
                 }
                 if year:
@@ -267,30 +220,21 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
                 movieSoup = BeautifulSoup(movie_html_text, "lxml")
 
                 name = movieScraper.getName(movieSoup)
-                if name is None:
+                if name is None or name in movieDict: # Avoid dups
                     continue
-                
-                # Avoid duplicates
-                if name in movieDict:
-                    continue
-                else:
-                    movieDict[name] = True
-                
+                movieDict[name] = True
                 movieInfoDict["name"] = name
-                
                 movieScraper.setPosterImage(movieSoup, movieInfoDict)
                 movieScraper.setPlatforms(movieSoup, movieInfoDict)
                 movieScraper.setCast(movieSoup, movieInfoDict)
 
                 # Additional information (rating, genre, etc.)
                 additionalInfo = movieSoup.find_all(
-                    "div", 
+                    "b", 
                     attrs={"data-qa": "movie-info-item-label"}
                 )
-                
                 # If true, year filter failed; break
                 yearFlag = False
-
                 for info in additionalInfo:
                     # Set info depending on category
                     if info.text == desiredInfoCategories[0]:
@@ -320,13 +264,11 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
                     elif info.text == desiredInfoCategories[8]:
                         movieScraper.setWriters(info, movieInfoDict)
                     else:
-                        continue
-                
+                        continue   
                 if yearFlag:
                     continue
-                    
-                print(name)
 
+                print(name)
                 # if the last row is full, create a new row
                 if len(movieInfo[-1]) == 4:
                     movieInfo.append([movieInfoDict])
@@ -334,28 +276,38 @@ def scrapeMovies(URLs, tomatometerScore, audienceScore, limit, year=None, skipUR
                     movieInfo[-1].append(movieInfoDict)
 
                 movieCount += 1
-                job.meta['progress'] = int((movieCount / limit) * 100)
-                job.save_meta()
-                
+                if key:
+                    self.update_state(
+                        state="STARTED",
+                        meta={'progress': int((movieCount / limit) * 100)}
+                    )
         end = time.time()
         print(f'Time to generate movie recs: {end - start}')
-        job.meta['result'] = "recommendations/" + job.id
-        job.save_meta()
-
+        if key:
+            self.update_state(
+                state="SUCCESS",
+                meta={
+                    'result': "recommendations/" + self.request.id,
+                    'key': key,
+                    'movieInfo': movieInfo
+                }
+            )
         return movieInfo
-    
     except:
         print("Error scraping movies")
         raise
 
 # return a dictionary of TV show recommendations based on the URLs and filters,
-# setting the job meta result
-def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipURL=None):
+# setting the job meta result; if key is passed, use background job
+@celery_app.task(bind=True, track_started=True, ignore_result=False, name="scraping/scraper/scrapeTVshows")
+def scrapeTVshows(self, URLs, tomatometerScore, audienceScore, limit, year=None, skipURL=None, key=None):
     try:
         start = time.time()
-        job = get_current_job()
-        job.meta['progress'] = 0
-        job.save_meta()
+        if key:
+            self.update_state(
+                state="STARTED",
+                meta={'progress': 0}
+            )
 
         # array of row arrays; each row array contains up to 4 dictionaries/shows
         tvShowInfo = [[]]
@@ -365,6 +317,7 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
         audienceScore <= RANDOM_THRESHOLD else False
         proxies = proxyGetter.get_proxy()
         headers = proxyGetter.get_user_agent()
+        print(URLs)
 
         for url in URLs:
             if tvShowCount == limit:
@@ -377,44 +330,31 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
             ).text
             # Debugging: check if the request is getting blocked
             print(f"HTML_TEXT OUTPUT: {html_text[:150]}")
+
+            # Scrape tv shows page
             tvShowPageSoup = BeautifulSoup(html_text, "lxml")
-
-            # Specify a limit if we have more than 2 URLs to search
-            if len(URLs) > 2:
-                tvShows = tvShowPageSoup.find_all(
-                    "a", 
-                    attrs={"href": re.compile("/tv/"), "data-id": True}, 
-                    limit=(limit // len(URLs)) + (MAX_LIMIT // 2 * len(URLs))
-                )
-            else:
-                tvShows = tvShowPageSoup.find_all(
-                    "a", 
-                    attrs={"href": re.compile("/tv/"), "data-id": True}, 
-                )
-
-
+            tvShows = tvShowPageSoup.find_all(
+                "a", 
+                attrs={
+                    "href": re.compile("/tv/"),
+                    "data-qa": "discovery-media-list-item"
+                }
+            )
             for tvShow in tvShows:
                 if tvShowCount == limit:
                     break
-
                 currTime = time.time()
                 if currTime - start > TIMEOUT:
                     break
-                
-                if useRandom: # 80% chance of show being selected
-                    randomInt = random.randint(0, 4)
-                    if randomInt == 0:
-                        continue
-
+                if useRandom and random.randint(0,4) == 0:
+                    continue
                 url = BASE_URL + tvShow["href"]
-                if skipURL:
-                    if skipURL == url:
-                        continue
-
+                if skipURL and skipURL == url:
+                    continue
+                
+                # Filter based on scores
                 data = tvShow.find("div", slot="caption")
                 scores = data.contents[1]
-
-                # Filter based on scores
                 if scores["audiencescore"] == "" or int(scores["audiencescore"]) < audienceScore:
                     continue
                 if scores["criticsscore"] == "" or int(scores["criticsscore"]) < tomatometerScore:
@@ -437,17 +377,10 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
                 tvShowSoup = BeautifulSoup(tvshow_html_text, "lxml")
 
                 name = showScraper.getName(tvShowSoup)
-                if name is None:
+                if name is None or name in tvShowDict: # Avoid dups
                     continue
-
-                # Avoid duplicates
-                if name in tvShowDict:
-                    continue
-                else:
-                    tvShowDict[name] = True
-
+                tvShowDict[name] = True
                 tvShowInfoDict["name"] = name
-
                 if year:
                     yearFilter = showScraper.setPremiereDateWithFilter(
                         tvShowSoup, tvShowInfoDict, year
@@ -456,7 +389,6 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
                         continue
                 else:
                     showScraper.setPremiereDate(tvShowSoup, tvShowInfoDict)
-
                 showScraper.setPosterImage(tvShowSoup, tvShowInfoDict)
                 showScraper.setPlatforms(tvShowSoup, tvShowInfoDict)
                 showScraper.setNetwork(tvShowSoup, tvShowInfoDict)
@@ -466,7 +398,6 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
                 showScraper.setCast(tvShowSoup, tvShowInfoDict)
 
                 print(name)
-
                 # if the last row is full, create a new row
                 if len(tvShowInfo[-1]) == 4:
                     tvShowInfo.append([tvShowInfoDict])
@@ -474,33 +405,42 @@ def scrapeTVshows(URLs, tomatometerScore, audienceScore, limit, year=None, skipU
                     tvShowInfo[-1].append(tvShowInfoDict)
 
                 tvShowCount += 1
-                job.meta['progress'] = int((tvShowCount / limit) * 100)
-                job.save_meta()
-
+                if key:
+                    self.update_state(
+                        state="STARTED",
+                        meta={'progress': int((tvShowCount / limit) * 100)}  
+                    )
         end = time.time()
         print(f'Time it takes to generate tv show recs: {end - start}')
-        job.meta['result'] = "recommendations/" + job.id
-        job.save_meta()
-        
+        if key:
+            self.update_state(
+                state="SUCCESS",
+                meta={
+                    'result': 'recommendations/' + self.request.id,
+                    'key': key,
+                    'tvShowInfo': tvShowInfo 
+                }
+            )
         return tvShowInfo
-
     except:
-        print("Error scraping TV show")
+        print("Error scraping TV shows")
         raise
 
 # return a dictionary of actor movie/show recommendations based on the 
-# URLs and filters, setting the job meta result
-def scrapeActor(filterData):
+# URLs and filters, setting the job meta result; if key is passed, use background job
+@celery_app.task(bind=True, track_started=True, ignore_result=False, name="scraping/scraper/scrapeActor")
+def scrapeActor(self, filterData, key=None):
     try:
         start = time.time()
-        job = get_current_job()
-        job.meta['progress'] = 0
-        job.save_meta()
+        if key:
+            self.update_state(
+                state="STARTED",
+                meta={'progress': 0}
+            )
         count = 0
         filmographyInfo = [[]]
         proxies = proxyGetter.get_proxy()
         headers = proxyGetter.get_user_agent()
-
         html_text = requests.get(
             url=filterData["actorURL"],
             headers=headers,
@@ -513,8 +453,20 @@ def scrapeActor(filterData):
         # If URL is invalid, return None
         main_page_content = soup.find("div", attrs={"id": "main-page-content"})
         if main_page_content is not None:
-            if main_page_content.contents[1].contents[1].text.strip() == "404 - Not Found":
-                return None
+            h1 = main_page_content.find("h1")
+            if h1.text.strip() == "404 - Not Found":
+                if key:
+                    self.update_state(
+                        state="SUCCESS",
+                        meta={
+                            'result': "recommendations/" + self.request.id,
+                            'key': key,
+                            'actorInfo': None
+                        }
+                    )
+                    return
+                else:
+                    return None
 
         # Scrape movies
         if filterData["category"] == "movie":
@@ -524,17 +476,17 @@ def scrapeActor(filterData):
             for movie in movies:
                 if count == filterData["limit"]:
                     break
-
                 currTime = time.time()
                 if currTime - start > TIMEOUT:
                     break
-
                 name = movie["data-title"]
                 boxOffice = int(movie["data-boxoffice"]) if movie["data-boxoffice"] else 0
                 year = int(movie["data-year"])
                 tomatometerScore = int(movie["data-tomatometer"])
                 audienceScore = int(movie["data-audiencescore"])
-                role = movie.contents[7].text.strip()
+                role = movie.find("td", attrs={"class": "celebrity-filmography__credits"})
+                if role:
+                    role = role.text.strip()
 
                 # Filter by scores
                 if tomatometerScore < filterData["tomatometerScore"]:
@@ -544,7 +496,7 @@ def scrapeActor(filterData):
 
                 # Filter by role if specified
                 roles = filterData["roles"]
-                if "all" not in roles:
+                if role and "all" not in roles:
                     if ("(Character)" in role or "Self" in role) and "character" not in roles:
                         continue
                     elif "(Voice)" in role and "voice" not in roles:
@@ -552,24 +504,22 @@ def scrapeActor(filterData):
                     elif "(Character)" not in role and "Self" not in role and \
                     "(Voice)" not in role and "other" not in roles:
                         continue
-                
                 # Filter by box office
                 if boxOffice // 1000000 < filterData["boxOffice"]:
                     continue
-                    
                 # Filter by year
                 if year < filterData["oldestYear"]:
                     continue
 
                 # Search movie page
-                moviePageURL = BASE_URL + movie.contents[5].contents[1]["href"]
+                href = movie.find("a")['href']
+                moviePageURL = BASE_URL + href
                 movie_html_text = requests.get(
                     url=moviePageURL,
                     headers=headers,
                     proxies=proxies
                 ).text
                 movieSoup = BeautifulSoup(movie_html_text, "lxml")
-
                 movieInfoDict = {
                     "type": "movie",
                     "name": name,
@@ -580,7 +530,6 @@ def scrapeActor(filterData):
                     "boxOffice": "$" + str(boxOffice // 1000000) + "M",
                     "year": year
                 }
-
                 # Available streaming platforms
                 # If none of the movie's platforms match the filter, skip
                 platformFlag = movieScraper.setPlatformsWithFilter(
@@ -588,13 +537,11 @@ def scrapeActor(filterData):
                 )
                 if not platformFlag:
                     continue
-
                 # Additional information (rating, genre, original language, runtime)
                 additionalInfo = movieSoup.find_all(
-                    "div", 
+                    "b", 
                     attrs={"data-qa": "movie-info-item-label"}
                 )
-
                 # If a movie doesn't pass the rating filter, skip it
                 ratingFlag = False
                 # If a movie doesn't pass the genre filter, skip it
@@ -608,28 +555,22 @@ def scrapeActor(filterData):
                         )
                         if not ratingFlag:
                             break
-
                     elif info.text == "Genre:":
                         genreFlag = movieScraper.setGenresWithFilter(
                             info, movieInfoDict, filterData["genres"]
                         )
                         if not genreFlag:
                             break
-
                     elif info.text == "Original Language:":
                         movieScraper.setLanguage(info, movieInfoDict)
                     elif info.text == "Runtime:":
                         movieScraper.setRuntime(info, movieInfoDict)
                     else:
                         continue
-                
                 if not ratingFlag or not genreFlag:
                     continue
-
                 movieScraper.setPosterImage(movieSoup, movieInfoDict)
-
                 print(name)
-
                 # if the last row is full, create a new row
                 if len(filmographyInfo[-1]) == 4:
                     filmographyInfo.append([movieInfoDict])
@@ -637,9 +578,11 @@ def scrapeActor(filterData):
                     filmographyInfo[-1].append(movieInfoDict)
 
                 count += 1
-                job.meta['progress'] = int((count / filterData['limit']) * 100)
-                job.save_meta()
-
+                if key:
+                    self.update_state(
+                        state="STARTED",
+                        meta={'progress': int((count / filterData['limit']) * 100)}
+                    )
 
         # Scrape TV shows
         elif filterData["category"] == "tv":
@@ -649,11 +592,9 @@ def scrapeActor(filterData):
             for tvShow in tvShows:
                 if count == filterData["limit"]:
                     break
-
                 currTime = time.time()
                 if currTime - start > TIMEOUT:
                     break
-
                 name = tvShow["data-title"]
                 year = int(tvShow["data-appearance-year"][1:5])
                 yearString = tvShow["data-appearance-year"][1:-1].replace(",", ", ")
@@ -715,12 +656,10 @@ def scrapeActor(filterData):
                 )
                 if not platformFlag:
                     continue
-
                 showScraper.setNetwork(showSoup, showInfoDict)
                 showScraper.setPosterImage(showSoup, showInfoDict)
 
                 print(name)
-
                 # if the last row is full, create a new row
                 if len(filmographyInfo[-1]) == 4:
                     filmographyInfo.append([showInfoDict])
@@ -728,14 +667,23 @@ def scrapeActor(filterData):
                     filmographyInfo[-1].append(showInfoDict)
 
                 count += 1
-                job.meta['progress'] = int((count / filterData['limit']) * 100)
-                job.save_meta()
+                if key:
+                    self.update_state(
+                        state="STARTED",
+                        meta={'progress': int((count / filterData['limit']) * 100)}
+                    )
 
         end = time.time()
         print(f'Time to generate actor recs: {end - start}')
-
-        job.meta['result'] = "recommendations/" + job.id
-        job.save_meta()
+        if key:
+            self.update_state(
+                state="SUCCESS",
+                meta={
+                    'result': "recommendations/" + self.request.id,
+                    'key': key,
+                    'actorInfo': filmographyInfo
+                }
+            )
         return filmographyInfo
     
     except:
@@ -744,13 +692,17 @@ def scrapeActor(filterData):
 
 # return a dictionary of director or producer movie/show recommendations
 # based on the URLs and filters, setting the job meta result
-def scrapeDirectorProducer(filterData, type):
+# if key is passed, use background job
+@celery_app.task(bind=True, track_started=True, ignore_result=False, name="scraping/scraper/scrapeDirectorProducer")
+def scrapeDirectorProducer(self, filterData, type, key=None):
     try:
         start = time.time()
+        if key:
+            self.update_state(
+                state="STARTED",
+                meta={'progress': 0}
+            )
         count = 0
-        job = get_current_job()
-        job.meta['progress'] = 0
-        job.save_meta()
         filmographyInfo = [[]]
         proxies = proxyGetter.get_proxy()
         headers = proxyGetter.get_user_agent()
@@ -767,8 +719,20 @@ def scrapeDirectorProducer(filterData, type):
         # If URL is invalid, return None
         main_page_content = soup.find("div", attrs={"id": "main-page-content"})
         if main_page_content is not None:
-            if main_page_content.contents[1].contents[1].text.strip() == "404 - Not Found":
-                return None
+            h1 = main_page_content.find("h1")
+            if h1.text.strip() == "404 - Not Found":
+                if key:
+                    self.update_state(
+                        state="SUCCESS",
+                        meta={
+                            'result': "recommendations/" + self.request.id,
+                            'key': key,
+                            'filmographyInfo': None
+                        }
+                    )
+                    return
+                else:
+                    return None
 
         # Scrape movies
         if filterData["category"] == "movie":
@@ -778,11 +742,9 @@ def scrapeDirectorProducer(filterData, type):
             for movie in movies:
                 if count == filterData["limit"]:
                     break
-
                 currTime = time.time()
                 if currTime - start > TIMEOUT:
                     break
-
                 name = movie["data-title"]
                 boxOffice = int(movie["data-boxoffice"]) if movie["data-boxoffice"] else 0
                 year = int(movie["data-year"])
@@ -795,7 +757,6 @@ def scrapeDirectorProducer(filterData, type):
                     continue
                 if audienceScore < filterData["audienceScore"]:
                     continue
-
                 # Filter by role
                 if type == "director":
                     desiredRole = "Director"
@@ -804,15 +765,12 @@ def scrapeDirectorProducer(filterData, type):
                 
                 if desiredRole not in role:
                     continue
-                
                 # Filter by box office
                 if boxOffice // 1000000 < filterData["boxOffice"]:
                     continue
-                    
                 # Filter by year
                 if year < filterData["oldestYear"]:
                     continue
-
                 # Search movie page
                 moviePageURL = BASE_URL + movie.contents[5].contents[1]["href"]
                 movie_html_text = requests.get(
@@ -841,10 +799,9 @@ def scrapeDirectorProducer(filterData, type):
 
                 # Additional information
                 additionalInfo = movieSoup.find_all(
-                    "div", 
+                    "b", 
                     attrs={"data-qa": "movie-info-item-label"}
                 )
-
                 # If a movie doesn't pass the rating filter, skip it
                 ratingFlag = False
                 # If a movie doesn't pass the genre filter, skip it
@@ -880,15 +837,12 @@ def scrapeDirectorProducer(filterData, type):
                         movieScraper.setWriters(info, movieInfoDict)
                     else:
                         continue
-                
                 if not ratingFlag or not genreFlag:
                     continue
-            
                 movieScraper.setCast(movieSoup, movieInfoDict)
                 movieScraper.setPosterImage(movieSoup, movieInfoDict)
 
                 print(name)
-
                 # if the last row is full, create a new row
                 if len(filmographyInfo[-1]) == 4:
                     filmographyInfo.append([movieInfoDict])
@@ -896,8 +850,11 @@ def scrapeDirectorProducer(filterData, type):
                     filmographyInfo[-1].append(movieInfoDict)
 
                 count += 1
-                job.meta['progress'] = int((count / filterData['limit']) * 100)
-                job.save_meta()
+                if key:
+                    self.update_state(
+                        state="STARTED",
+                        meta={'progress': int((count / filterData['limit']) * 100)}  
+                    )
 
 
         # Scrape TV shows
@@ -908,11 +865,9 @@ def scrapeDirectorProducer(filterData, type):
             for tvShow in tvShows:
                 if count == filterData["limit"]:
                     break
-
                 currTime = time.time()
                 if currTime - start > TIMEOUT:
                     break
-                
                 name = tvShow["data-title"]
                 year = int(tvShow["data-appearance-year"][1:5])
                 yearString = tvShow["data-appearance-year"][1:-1].replace(",", ", ")
@@ -925,20 +880,16 @@ def scrapeDirectorProducer(filterData, type):
                     continue
                 if audienceScore < filterData["audienceScore"]:
                     continue
-
                 # Filter by role
                 if type == "director":
                     desiredRole = "Director"
                 elif type == "producer":
                     desiredRole = "Producer"
-
                 if desiredRole not in role:
                     continue
-                    
                 # Filter by year
                 if year < filterData["oldestYear"]:
                     continue
-
                 # Search tv show page
                 showPageURL = BASE_URL + tvShow.contents[5].contents[1]["href"]
                 show_html_text = requests.get(
@@ -963,7 +914,6 @@ def scrapeDirectorProducer(filterData, type):
                 )
                 if not genreFlag:
                     continue
-
                 # Available streaming platforms
                 # If none of the show's platforms match the filter, skip
                 platformFlag = showScraper.setPlatformsWithFilter(
@@ -971,7 +921,6 @@ def scrapeDirectorProducer(filterData, type):
                 )
                 if not platformFlag:
                     continue
-
                 showScraper.setNetwork(showSoup, showInfoDict)
                 showScraper.setPremiereDate(showSoup, showInfoDict)
                 showScraper.setCreators(showSoup, showInfoDict)
@@ -980,7 +929,6 @@ def scrapeDirectorProducer(filterData, type):
                 showScraper.setPosterImage(showSoup, showInfoDict)
 
                 print(name)
-
                 # if the last row is full, create a new row
                 if len(filmographyInfo[-1]) == 4:
                     filmographyInfo.append([showInfoDict])
@@ -988,33 +936,46 @@ def scrapeDirectorProducer(filterData, type):
                     filmographyInfo[-1].append(showInfoDict)
                 
                 count += 1
-                job.meta['progress'] = int((count / filterData['limit']) * 100)
-                job.save_meta()
-
+                if key:
+                    self.update_state(
+                        state="STARTED",
+                        meta={'progress': int((count / filterData['limit']) * 100)}  
+                    )
         end = time.time()
         print(f'Time to generate director/producer recs: {end - start}')
-        job.meta['result'] =  "recommendations/" + job.id
-        job.save_meta()
+        if key:
+            self.update_state(
+                state="SUCCESS",
+                meta={
+                    'result': 'recommendations/' + self.request.id,
+                    'key': key,
+                    'filmographyInfo': filmographyInfo 
+                }
+            )
         return filmographyInfo
-
     except:
         print("Error scraping director/producer")
         raise
 
 # return a dictionary of similar movie/show recommendations based on the 
 # URLs and filters, setting the job meta result
-def scrapeSimilar(filterData):
+# if key is passed, use background job
+@celery_app.task(bind=True, track_started=True, ignore_result=False, name="scraping/scraper/scrapeSimilar")
+def scrapeSimilar(self, filterData, key=None):
     try:
         start = time.time()
         addedCount = 0
         limit = filterData["limit"]
-        job = get_current_job()
-        job.meta['progress'] = 0
-        job.save_meta()
+        tomatometerScore = filterData["tomatometerScore"]
+        audienceScore = filterData["audienceScore"]
+        if key:
+            self.update_state(
+                state="STARTED",
+                meta={'progress': 0}
+            )
         similarInfo = [[]]
         proxies = proxyGetter.get_proxy()
         headers = proxyGetter.get_user_agent()
-
         html_text = requests.get(
             url=filterData["url"],
             headers=headers,
@@ -1027,70 +988,74 @@ def scrapeSimilar(filterData):
         # If URL is invalid, return None
         main_page_content = soup.find("div", attrs={"id": "main-page-content"})
         if main_page_content is not None:
-            if main_page_content.contents[1].contents[1].text.strip() == "404 - Not Found":
-                return None
+            h1 = main_page_content.find("h1")
+            if h1.text.strip() == "404 - Not Found":
+                if key:
+                    self.update_state(
+                        state="SUCCESS",
+                        meta={
+                            'result': "recommendations/" + self.request.id,
+                            'key': key,
+                            'similarInfo': None
+                        }
+                    )
+                    return
+                else:
+                    return None
 
-        # Breadth-First-search
+        # Breadth-First-search; intuition is that media that
+        # have fewer steps to each other are more closely related
         queue = deque()
         marked = {
             filterData["url"]: True
         }
-        similarItems = soup.find_all(
+        carouselItems = soup.find_all(
             "tiles-carousel-responsive-item", attrs={"slot": "tile"}
         )
-
+        if carouselItems and len(carouselItems) > 0:
+            for carouselItem in carouselItems:
+                a = carouselItem.find("a")
+                if not a:
+                    continue
+                href = a['href']
+                itemURL = BASE_URL + href
+                marked[itemURL] = True
+                queue.append(itemURL)
         # If no similar items, default to scrapeMovies and scrapeTvShows
-        if similarItems is None or len(similarItems) == 0:
+        if len(queue) == 0:
             platforms = filterData["platforms"]
-            tomatometerScore = filterData["tomatometerScore"]
-            audienceScore = filterData["audienceScore"]
             oldestYear = filterData["oldestYear"]
 
             if "/m/" in filterData["url"]:
                 genres = movieScraper.getGenreArray(soup)
                 ratings = movieScraper.getRatingArray(soup)
-
                 URLs = generateMovieURLs(
                     genres, ratings, platforms, tomatometerScore, audienceScore,
                     limit, True
                 )
-
                 return scrapeMovies(
                     URLs, tomatometerScore, audienceScore, limit, 
-                    oldestYear, filterData["url"]
+                    year=oldestYear, skipURL=filterData["url"]
                 )
 
             elif "/tv/" in filterData["url"]:
                 genres = showScraper.getGenreArray(soup)
                 ratings = ["all"]
-
                 URLs = generateTVshowURLs(
                     genres, ratings, platforms, tomatometerScore, audienceScore,
                     limit, True
                 )
-
                 return scrapeTVshows(
                     URLs, tomatometerScore, audienceScore, limit, 
-                    oldestYear, filterData["url"]
+                    year=oldestYear, skipURL=filterData["url"]
                 )
-
-        for item in similarItems:
-            # get URL
-            href = item.contents[1]["href"]
-            if href is None or href == "":
-                continue
-            itemURL = BASE_URL + href
-            marked[itemURL] = True
-            queue.append(itemURL)
 
         while len(queue) > 0:
             if addedCount == limit:
                 break
-
             currTime = time.time()
             if currTime - start > TIMEOUT:
                 break
-
             url = queue.popleft()
             html_text = requests.get(
                 url=url,
@@ -1100,54 +1065,41 @@ def scrapeSimilar(filterData):
             itemSoup = BeautifulSoup(html_text, "lxml")
 
             # Add similar items to BFS queue
-            similarItems = itemSoup.find_all(
+            carouselItems = soup.find_all(
                 "tiles-carousel-responsive-item", attrs={"slot": "tile"}
             )
-            if similarItems is not None and len(similarItems) != 0:
-                for item in similarItems:
-                    # get URL
-                    href = item.contents[1]["href"]
-                    if href is None or href == "":
-                        continue
-                    itemURL = BASE_URL + href
-                    # If we've already marked the item, skip over it
-                    if marked.get(itemURL, None) is not None:
-                        continue
-                    marked[itemURL] = True
-                    queue.append(itemURL)
+            if not carouselItems or len(carouselItems) == 0:
+                continue
+            for carouselItem in carouselItems:
+                a = carouselItem.find("a")
+                if not a:
+                    continue
+                href = a['href']
+                itemURL = BASE_URL + href
+                # If we've already marked the item, skip over it
+                if marked.get(itemURL, None) is not None:
+                    continue
+                marked[itemURL] = True
+                queue.append(itemURL)
 
             if "/m/" in url:
                 name = movieScraper.getName(itemSoup)
                 if name is None:
                     continue
-
-                scoreBoard = itemSoup.find("score-board", attrs={
-                    "class": "scoreboard",
-                    "data-qa": "score-panel"
-                })
-                if scoreBoard is None:
+                # Filter based on scores
+                criticsScoreLabel = itemSoup.find("score-icon-critic")
+                audienceScoreLabel = itemSoup.find("score-icon-audience")
+                if not audienceScoreLabel or int(audienceScoreLabel['percentage']) < audienceScore:
                     continue
-
-                if scoreBoard["audiencescore"]:
-                    audienceScore = int(scoreBoard["audiencescore"])
-                else:
-                    continue
-                if audienceScore < filterData["audienceScore"]:
-                    continue
-
-                if scoreBoard["tomatometerscore"]:
-                    criticsScore = int(scoreBoard["tomatometerscore"])
-                else:
-                    continue
-                if criticsScore < filterData["tomatometerScore"]:
+                if not criticsScoreLabel or int(criticsScoreLabel['percentage']) < tomatometerScore:
                     continue
 
                 similarInfoDict = {
                     "type": "movie",
                     "name": name,
                     "url": url,
-                    "criticsScore": criticsScore,
-                    "audienceScore": audienceScore,
+                    "criticsScore": int(criticsScoreLabel['percentage']),
+                    "audienceScore": int(audienceScoreLabel['percentage']),
                     "similar": "both"
                 }
 
@@ -1156,10 +1108,9 @@ def scrapeSimilar(filterData):
                 )
                 if not platformFlag:
                     continue
-
                 # Additional information (rating, genre, etc.)
                 additionalInfo = itemSoup.find_all(
-                    "div", 
+                    "b", 
                     attrs={"data-qa": "movie-info-item-label"}
                 )
                 dateFlag = False
@@ -1189,44 +1140,28 @@ def scrapeSimilar(filterData):
                         movieScraper.setWriters(info, similarInfoDict)
                     else:
                         continue
-                
                 if not dateFlag:
                     continue
                 movieScraper.setPosterImage(itemSoup, similarInfoDict)
                 movieScraper.setCast(itemSoup, similarInfoDict)
-
                 print(name)
             
             elif "/tv/" in url:         
                 name = showScraper.getName(itemSoup)
                 if name is None:
                     continue
-
-                tomatometerHeader = itemSoup.find("span", attrs={
-                    "class": "mop-ratings-wrap__percentage",
-                    "data-qa": "tomatometer"
-                })
-                if tomatometerHeader is None:
+                # Filter based on scores
+                criticsScoreLabel = itemSoup.find("score-icon-critic")
+                audienceScoreLabel = itemSoup.find("score-icon-audience")
+                if not audienceScoreLabel or int(audienceScoreLabel['percentage']) < audienceScore:
                     continue
-                tomatometer = int(tomatometerHeader.contents[0].text.strip()[:-1])
-                if tomatometer < filterData["tomatometerScore"]:
+                if not criticsScoreLabel or int(criticsScoreLabel['percentage']) < tomatometerScore:
                     continue
-
-                audienceScoreHeader = itemSoup.find("span", attrs={
-                    "class": "mop-ratings-wrap__percentage",
-                    "data-qa": "audience-score"
-                })
-                if audienceScoreHeader is None:
-                    continue
-                audienceScore = int(audienceScoreHeader.contents[0].text.strip()[:-1])
-                if audienceScore < filterData["audienceScore"]:
-                    continue
-            
                 similarInfoDict = {
                     "type": "tv",
                     "name": name,
-                    "audienceScore": audienceScore,
-                    "criticsScore": tomatometer,
+                    "audienceScore": int(audienceScoreLabel['percentage']),
+                    "criticsScore": int(criticsScoreLabel['percentage']),
                     "url": url,
                     "similar": "both"
                 }
@@ -1247,7 +1182,6 @@ def scrapeSimilar(filterData):
                 showScraper.setCreators(itemSoup, similarInfoDict)
                 showScraper.setProducers(itemSoup, similarInfoDict)
                 showScraper.setCast(itemSoup, similarInfoDict)
-
                 print(name)
             
             # if the last row is full, create a new row
@@ -1257,15 +1191,73 @@ def scrapeSimilar(filterData):
                 similarInfo[-1].append(similarInfoDict)
             
             addedCount += 1
-            job.meta['progress'] = int((addedCount / limit) * 100)
-            job.save_meta()
+            if key:
+                self.update_state(
+                    state="STARTED",
+                    meta={'progress': int((addedCount / limit) * 100)}  
+                )
+        
+        # If we need more items, use scrapeMovies and scrapeTVshows
+        numElements = 4 * (len(similarInfo) - 1) + len(similarInfo[-1])
+        if numElements < limit:
+            platforms = filterData["platforms"]
+            oldestYear = filterData["oldestYear"]
 
+            if "/m/" in filterData["url"]:
+                genres = movieScraper.getGenreArray(soup)
+                ratings = movieScraper.getRatingArray(soup)
+                URLs = generateMovieURLs(
+                    genres, ratings, platforms, tomatometerScore, audienceScore,
+                    limit - numElements, True
+                )
+                res =  scrapeMovies(
+                    URLs, tomatometerScore, audienceScore, limit - numElements, 
+                    year=oldestYear, skipURL=filterData["url"]
+                )
+                for row in res:
+                    for entry in row:
+                        entry['type'] = 'movie'
+
+
+            elif "/tv/" in filterData["url"]:
+                genres = showScraper.getGenreArray(soup)
+                ratings = ["all"]
+                URLs = generateTVshowURLs(
+                    genres, ratings, platforms, tomatometerScore, audienceScore,
+                    limit - numElements, True
+                )
+                res =  scrapeTVshows(
+                    URLs, tomatometerScore, audienceScore, limit - numElements, 
+                    year=oldestYear, skipURL=filterData["url"]
+                )
+                for row in res:
+                    for entry in row:
+                        entry['type'] = 'tv'
+        for row in res:
+            for entry in row:
+                # if the last row is full, create a new row
+                if len(similarInfo[-1]) == 4:
+                    similarInfo.append([entry])
+                else:
+                    similarInfo[-1].append(entry)
+                addedCount += 1
+                if key:
+                    self.update_state(
+                        state="STARTED",
+                        meta={'progress': int((addedCount / limit) * 100)}  
+                    )
         end = time.time()
         print(f'Time to generate similar recs: {end - start}')
-        job.meta['result'] =  "recommendations/" + job.id
-        job.save_meta()
+        if key:
+            self.update_state(
+                state="SUCCESS",
+                meta={
+                    'result': 'recommendations/' + self.request.id,
+                    'key': key,
+                    'similarInfo': similarInfo 
+                }
+            )
         return similarInfo
-
     except:
         print("Error scraping similar")
         raise

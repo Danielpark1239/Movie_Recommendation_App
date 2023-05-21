@@ -7,7 +7,7 @@ def getName(movieSoup):
     name = movieSoup.find(
         "h1",
         attrs={
-            "data-qa": "score-panel-movie-title"
+            "data-qa": "score-panel-title"
         }
     )
     if name is None or name.text.strip() == "":
@@ -18,9 +18,9 @@ def getName(movieSoup):
 # in the movieInfoDict
 def setPosterImage(movieSoup, movieInfoDict):
     posterImage = movieSoup.find(
-        "img",
-         attrs={"class": re.compile("posterImage")}
-    )
+        "tile-dynamic",
+        attrs={"class": "thumbnail"}
+    ).find("img", recursive=False)
     if posterImage is None:
         movieInfoDict["posterImage"] = BLANK_POSTER
     elif posterImage.has_attr("data-src"):
@@ -84,17 +84,22 @@ def setCast(movieSoup, movieInfoDict):
         movieInfoDict["cast"] = castDict
 
 def setRating(info, movieInfoDict):
-    rating = info.next_sibling.next_sibling.text.split()[0]
+    ratingSpan = info.find_next_sibling("span")
+    if ratingSpan is None:
+        return
+    rating = ratingSpan.text.split()[0]
     if rating is not None:
         movieInfoDict["rating"] = rating
 
 # Returns True if the movie's rating matches the filter, False otherwise
 def setRatingWithFilter(info, movieInfoDict, filterList):
     flag = True if "all" in filterList else False
-    rating = info.next_sibling.next_sibling.text.split()[0]
+    ratingSpan = info.find_next_sibling("span")
+    if ratingSpan is None:
+        return False
+    rating = ratingSpan.text.split()[0]
     if rating in filterList:
         flag = True
-
     if rating is not None:
         movieInfoDict["rating"] = rating
     return flag

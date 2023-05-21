@@ -8,7 +8,7 @@ def getName(showSoup):
     name = showSoup.find(
         "h1",
         attrs={
-            "data-qa": "score-panel-series-title"
+            "data-qa": "score-panel-title"
         }
     )
     if name is None or name.text.strip() == "":
@@ -18,9 +18,9 @@ def getName(showSoup):
 # For a given showSoup, set the poster image in showInfoDict
 def setPosterImage(showSoup, showInfoDict):
     posterImage = showSoup.find(
-        "img",
-        attrs={"class": re.compile("posterImage")}
-    )
+        "tile-dynamic",
+        attrs={"class": "thumbnail"}
+    ).find("img", recursive=False)
     if posterImage is None:
         showInfoDict["posterImage"] = BLANK_POSTER
     elif posterImage.has_attr("data-src"):
@@ -70,27 +70,31 @@ def setPlatformsWithFilter(showSoup, showInfoDict, filterList):
 
 # For a given showSoup, set the TV network in showInfoDict
 def setNetwork(showSoup, showInfoDict):
-    network = showSoup.find(
-        "td", 
+    networkTag = showSoup.find(
+        "b", 
         attrs={"data-qa": "series-details-network"}
     )
-    if network is not None:
-        showInfoDict["network"] = network.text
+    print(networkTag)
+    if networkTag is not None:
+        networkValueTag = networkTag.find_next_sibling("span")
+        print(networkValueTag)
+        if networkValueTag is not None:
+            showInfoDict["network"] = networkValueTag.text.strip()
 
 # For a given showSoup, set the premiere date in showInfoDict
 def setPremiereDate(showSoup, showInfoDict):
     premiereDate = showSoup.find(
-        "td", 
+        "span", 
         attrs={"data-qa": "series-details-premiere-date"}
     )
     if premiereDate is not None and premiereDate.text != "":
-        showInfoDict["premiereDate"] = premiereDate.text
+        showInfoDict["premiereDate"] = premiereDate.text.strip()
 
 # Returns True if the show premiered on or after a certain year,
 # False otherwise. If no date can be found, returns False
 def setPremiereDateWithFilter(showSoup, showInfoDict, oldestYear):
     premiereDate = showSoup.find(
-        "td", 
+        "span", 
         attrs={"data-qa": "series-details-premiere-date"}
     )
     if premiereDate is None or premiereDate.text == "":
@@ -98,18 +102,17 @@ def setPremiereDateWithFilter(showSoup, showInfoDict, oldestYear):
     year = int(premiereDate.text[-4:])
     if year < oldestYear:
         return False
-    showInfoDict["premiereDate"] = premiereDate.text
+    showInfoDict["premiereDate"] = premiereDate.text.strip()
     return True
 
 # For a given showSoup, set the genre in showInfoDict
 def setGenre(showSoup, showInfoDict):
     genreTag = showSoup.find(
-        "td", 
+        "span", 
         attrs={"data-qa": "series-details-genre"}
     )
     if genreTag is not None:
         genre = genreTag.text.strip()
-
         if genre in TV_TO_FRONTEND_GENRE_DICT:
             showInfoDict["genre"] = TV_TO_FRONTEND_GENRE_DICT[genre]
         else:
@@ -122,10 +125,9 @@ def setGenreWithFilter(showSoup, showInfoDict, filterList):
             lambda x: MOVIE_TO_TV_GENRE_DICT[x], filterList
         )
     )
-
     flag = True if "all" in filterList else False
     genreTag = showSoup.find(
-        "td", 
+        "span", 
         attrs={"data-qa": "series-details-genre"}
     )
     if genreTag is not None:
@@ -141,7 +143,7 @@ def setGenreWithFilter(showSoup, showInfoDict, filterList):
 # Default to ["all"] if no genre can be found
 def getGenreArray(showSoup):
     genreTag = showSoup.find(
-        "td", 
+        "span", 
         attrs={"data-qa": "series-details-genre"}
     )
     genreArray = ["all"]
@@ -150,7 +152,6 @@ def getGenreArray(showSoup):
         print(genre)
         if genre in TV_TO_URL_GENRE_DICT:
             genreArray = [TV_TO_URL_GENRE_DICT[genre]]
-    
     return genreArray
        
 # For a given showSoup, set the creators in showInfoDict
