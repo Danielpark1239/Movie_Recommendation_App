@@ -1,19 +1,17 @@
-from flask import Flask, render_template, request, Response
+from flask import render_template, request, Response
 import scraping.scraper as scraper
 from rq import Queue
 from rq.job import Job
 import json
 import time
-from worker import conn
 import os
 import redis
-from dotenv import load_dotenv
-
-# Load environment variables and run app
-load_dotenv()
-app = Flask(__name__)
+from celery.result import AsyncResult
+import hashlib
+from app import app, celery_app
 
 # Use Redis for cache
+conn = redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379'))
 cache = conn
 q = Queue(connection=conn)
 
@@ -48,23 +46,18 @@ def moviesEnqueue():
         if popular:
             keyArray.append("P")
         key = "".join(keyArray)
-        
-        value = cache.get(key)
-        if value is not None:
-            return {'job_id': value}
+        keyHash = hashlib.sha1(key.encode()).hexdigest()
+
+        # value = cache.get(keyHash)
+        # if value is not None:
+        #     return {'job_id': value}
         
         # Generate a list of URLs to search 
         URLs = scraper.generateMovieURLs(
             genres, ratings, platforms, tomatometerScore, audienceScore, limit, popular
         )
-
         # Enqueue the job
-        scraper.scrapeMovies(URLs, tomatometerScore, audienceScore, limit)
-        job = q.enqueue(
-            scraper.scrapeMovies, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
-        )
-        job.meta['key'] = key
-        job.save_meta()
+        job = scraper.scrapeMovies.delay(URLs, tomatometerScore, audienceScore, limit, key=keyHash)
         return {'job_id': job.id}
     except Exception as e:
         print("Error enqueuing movies job", e)
@@ -75,35 +68,33 @@ def moviesEnqueue():
 def movieProgress(id):
     def movieStatus():
         try:
-            job = Job.fetch(id, connection=conn)
-            status = job.get_status(refresh=True)
-            
-            # If job is finished, return the link to the recommendations page
-            if status == 'finished':
-                data = {'progress': 100}
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
-                data = {'result': 'recommendations/' + job.id}
-                json_data = json.dumps(data)
-                yield f"data:{json_data}\n\n"
-                return
+            job = AsyncResult(id)
 
-            # If not, use server-sent events to yield data every second
-            while status != 'finished':
-                status = job.get_status()
-                job.refresh()
-
-                if 'progress' in job.meta:
-                    data = {'progress': job.meta['progress']}
+            # While job is running, use server-sent events to yield data every second
+            while not job.ready():
+                if job.info and 'progress' in job.info:
+                    data = {'progress': job.info['progress']}
                     json_data = json.dumps(data)
                     yield f"data:{json_data}\n\n"
                 time.sleep(1)
 
-            job.refresh()
-            cache.set(job.meta['key'], job.id, ex=86399) # Each job cached for 1 day
-            data = {'result': job.meta['result']}
+            # If job failed, return error
+            if job.failed():
+                data = {'failure': True}
+                json_data = json.dumps(data)
+                yield f"data:{json_data}\n\n"
+                job.forget()
+                return
+            
+            # If job is finished, return the link to the recommendations page
+            data = {'progress': 100}
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
+            data = {'result': job.info['result']}
+            json_data = json.dumps(data)
+            yield f"data:{json_data}\n\n"
+            cache.set(job.info['key'], job.id, ex=86399) # Each job cached for 1 day
+            return
 
         except Exception as e:
             print("Error getting movie job status", e)
@@ -114,10 +105,9 @@ def movieProgress(id):
 @app.route('/movies/recommendations/<string:id>/', methods=['GET'])
 def movieRecommendations(id):   
     try: 
-        job = Job.fetch(id, connection=conn)
-
-        if job.get_status() == 'finished':
-            movieInfo = job.result
+        job = AsyncResult(id, app=celery_app)
+        if job.ready():
+            movieInfo = job.result["movieInfo"]
 
             # No recommendations found
             if len(movieInfo[0]) == 0:
@@ -129,6 +119,7 @@ def movieRecommendations(id):
     # If job id not in Redis, it expired
     except Exception as e:
         print("Error getting movie rec page", e)
+        raise e
         return "Record not found", 400
 
 # TV shows form page
@@ -169,7 +160,6 @@ def tvshowsEnqueue():
         )
 
         # Enqueue a job that stores its result for 1 day
-        scraper.scrapeTVshows(URLs, tomatometerScore, audienceScore, limit)
         job = q.enqueue(
             scraper.scrapeTVshows, URLs, tomatometerScore, audienceScore, limit, result_ttl=86400
         )
@@ -216,6 +206,7 @@ def tvshowProgress(id):
             data = {'result': job.meta['result']}
             json_data = json.dumps(data)
             yield f"data:{json_data}\n\n"
+            return
 
         except Exception as e:
             print("Error getting tv show job status", e)
