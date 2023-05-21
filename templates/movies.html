@@ -155,7 +155,7 @@
                   oninput="this.value = Math.abs(this.value) > 0 ? Math.abs(this.value) : null" />
 
                 <label class="checkbox mt-3">
-                  <input name="popular" id="popular" type="checkbox" />
+                  <input name="popular" id="popular" type="checkbox" checked="true"/>
                   Prioritize popular movies
                 </label>
               </div>
@@ -277,6 +277,8 @@
 
           source.onmessage = function (event) {
             const data = JSON.parse(event.data);
+
+            // if data("failure")
             if (data["progress"]) {
               updateProgress(data["progress"]);
             }
