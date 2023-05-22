@@ -130,10 +130,11 @@ def generateTVshowURLs(
 # return a dictionary of movie recommendations based on the URLs and filters,
 # setting the job meta result; if key is passed, use background job
 @celery_app.task(bind=True, track_started=True, ignore_result=False, name="scraping/scraper/scrapeMovies")
-def scrapeMovies(self, URLs, tomatometerScore, audienceScore, limit, year=None, skipURL=None, key=None):
+def scrapeMovies(self, URLs, tomatometerScore, audienceScore, limit, year=None,
+                 skipURL=None, key=None, similarProgress=None, similarTask=None):
     try:
         start = time.time()
-        if key:
+        if key and similarProgress is None:
             self.update_state(
                 state="STARTED",
                 meta={'progress': 0}
@@ -267,6 +268,8 @@ def scrapeMovies(self, URLs, tomatometerScore, audienceScore, limit, year=None, 
                         continue   
                 if yearFlag:
                     continue
+                if similarProgress is not None:
+                    movieInfoDict['type'] = 'movie'
 
                 print(name)
                 # if the last row is full, create a new row
@@ -277,13 +280,19 @@ def scrapeMovies(self, URLs, tomatometerScore, audienceScore, limit, year=None, 
 
                 movieCount += 1
                 if key:
-                    self.update_state(
-                        state="STARTED",
-                        meta={'progress': int((movieCount / limit) * 100)}
-                    )
+                    if similarProgress is None:
+                        self.update_state(
+                            state="STARTED",
+                            meta={'progress': int((movieCount / limit) * 100)}
+                        )
+                    else:
+                        similarTask.update_state(
+                            state="STARTED",
+                            meta={'progress': int((movieCount + similarProgress) / (limit + similarProgress) * 100)}
+                        )
         end = time.time()
         print(f'Time to generate movie recs: {end - start}')
-        if key:
+        if key and similarProgress is None:
             self.update_state(
                 state="SUCCESS",
                 meta={
@@ -300,10 +309,11 @@ def scrapeMovies(self, URLs, tomatometerScore, audienceScore, limit, year=None, 
 # return a dictionary of TV show recommendations based on the URLs and filters,
 # setting the job meta result; if key is passed, use background job
 @celery_app.task(bind=True, track_started=True, ignore_result=False, name="scraping/scraper/scrapeTVshows")
-def scrapeTVshows(self, URLs, tomatometerScore, audienceScore, limit, year=None, skipURL=None, key=None):
+def scrapeTVshows(self, URLs, tomatometerScore, audienceScore, limit, year=None, 
+                  skipURL=None, key=None, similarProgress=None, similarTask=None):
     try:
         start = time.time()
-        if key:
+        if key and similarProgress is None:
             self.update_state(
                 state="STARTED",
                 meta={'progress': 0}
@@ -396,6 +406,8 @@ def scrapeTVshows(self, URLs, tomatometerScore, audienceScore, limit, year=None,
                 showScraper.setCreators(tvShowSoup, tvShowInfoDict)
                 showScraper.setProducers(tvShowSoup, tvShowInfoDict)
                 showScraper.setCast(tvShowSoup, tvShowInfoDict)
+                if similarProgress is not None:
+                    tvShowInfoDict['type'] = 'tv'
 
                 print(name)
                 # if the last row is full, create a new row
@@ -406,13 +418,19 @@ def scrapeTVshows(self, URLs, tomatometerScore, audienceScore, limit, year=None,
 
                 tvShowCount += 1
                 if key:
-                    self.update_state(
-                        state="STARTED",
-                        meta={'progress': int((tvShowCount / limit) * 100)}  
-                    )
+                    if similarProgress is None:
+                        self.update_state(
+                            state="STARTED",
+                            meta={'progress': int((tvShowCount / limit) * 100)}  
+                        )
+                    else:
+                        similarTask.update_state(
+                            state="STARTED",
+                            meta={'progress': int(((tvShowCount + similarProgress) / (limit + similarProgress)) * 100)}
+                        )
         end = time.time()
         print(f'Time it takes to generate tv show recs: {end - start}')
-        if key:
+        if key and similarProgress is None:
             self.update_state(
                 state="SUCCESS",
                 meta={
@@ -856,7 +874,6 @@ def scrapeDirectorProducer(self, filterData, type, key=None):
                         meta={'progress': int((count / filterData['limit']) * 100)}  
                     )
 
-
         # Scrape TV shows
         elif filterData["category"] == "tv":
             tvShows = soup.find_all("tr", attrs={
@@ -1018,6 +1035,9 @@ def scrapeSimilar(self, filterData, key=None):
                 if not a:
                     continue
                 href = a['href']
+                # Ignore trailers and other links
+                if href.count('/') > 2:
+                    continue
                 itemURL = BASE_URL + href
                 marked[itemURL] = True
                 queue.append(itemURL)
@@ -1025,7 +1045,6 @@ def scrapeSimilar(self, filterData, key=None):
         if len(queue) == 0:
             platforms = filterData["platforms"]
             oldestYear = filterData["oldestYear"]
-
             if "/m/" in filterData["url"]:
                 genres = movieScraper.getGenreArray(soup)
                 ratings = movieScraper.getRatingArray(soup)
@@ -1033,11 +1052,26 @@ def scrapeSimilar(self, filterData, key=None):
                     genres, ratings, platforms, tomatometerScore, audienceScore,
                     limit, True
                 )
-                return scrapeMovies(
-                    URLs, tomatometerScore, audienceScore, limit, 
-                    year=oldestYear, skipURL=filterData["url"]
-                )
-
+                if key:
+                    res = scrapeMovies(
+                        URLs, tomatometerScore, audienceScore, limit, 
+                        year=oldestYear, skipURL=filterData["url"], key=key,
+                        similarProgress=0, similarTask=self
+                    )
+                    self.update_state(
+                        state="SUCCESS",
+                        meta={
+                            'result': 'recommendations/' + self.request.id,
+                            'key': key,
+                            'similarInfo': res 
+                        }
+                    )
+                    return
+                else:
+                    return scrapeMovies(
+                        URLs, tomatometerScore, audienceScore, limit, 
+                        year=oldestYear, skipURL=filterData["url"]
+                    )
             elif "/tv/" in filterData["url"]:
                 genres = showScraper.getGenreArray(soup)
                 ratings = ["all"]
@@ -1045,11 +1079,26 @@ def scrapeSimilar(self, filterData, key=None):
                     genres, ratings, platforms, tomatometerScore, audienceScore,
                     limit, True
                 )
-                return scrapeTVshows(
-                    URLs, tomatometerScore, audienceScore, limit, 
-                    year=oldestYear, skipURL=filterData["url"]
-                )
-
+                if key:
+                    res = scrapeTVshows(
+                        URLs, tomatometerScore, audienceScore, limit, 
+                        year=oldestYear, skipURL=filterData["url"], key=key,
+                        similarProgress=0, similarTask=self
+                    )
+                    self.update_state(
+                        state="SUCCESS",
+                        meta={
+                            'result': 'recommendations/' + self.request.id,
+                            'key': key,
+                            'similarInfo': res 
+                        }
+                    )
+                    return
+                else:
+                    return scrapeTVshows(
+                        URLs, tomatometerScore, audienceScore, limit, 
+                        year=oldestYear, skipURL=filterData["url"]
+                    )
         while len(queue) > 0:
             if addedCount == limit:
                 break
@@ -1075,6 +1124,9 @@ def scrapeSimilar(self, filterData, key=None):
                 if not a:
                     continue
                 href = a['href']
+                # Ignore trailers and other links
+                if href.count('/') > 2:
+                    continue
                 itemURL = BASE_URL + href
                 # If we've already marked the item, skip over it
                 if marked.get(itemURL, None) is not None:
@@ -1189,50 +1241,41 @@ def scrapeSimilar(self, filterData, key=None):
                 similarInfo.append([similarInfoDict])
             else:
                 similarInfo[-1].append(similarInfoDict)
-            
             addedCount += 1
             if key:
                 self.update_state(
                     state="STARTED",
                     meta={'progress': int((addedCount / limit) * 100)}  
                 )
-        
+
         # If we need more items, use scrapeMovies and scrapeTVshows
-        numElements = 4 * (len(similarInfo) - 1) + len(similarInfo[-1])
-        if numElements < limit:
+        if addedCount < limit:
             platforms = filterData["platforms"]
             oldestYear = filterData["oldestYear"]
-
             if "/m/" in filterData["url"]:
                 genres = movieScraper.getGenreArray(soup)
                 ratings = movieScraper.getRatingArray(soup)
                 URLs = generateMovieURLs(
                     genres, ratings, platforms, tomatometerScore, audienceScore,
-                    limit - numElements, True
+                    limit - addedCount, True
                 )
                 res =  scrapeMovies(
-                    URLs, tomatometerScore, audienceScore, limit - numElements, 
-                    year=oldestYear, skipURL=filterData["url"]
+                    URLs, tomatometerScore, audienceScore, limit - addedCount, 
+                    year=oldestYear, skipURL=filterData["url"], key=key,
+                    similarProgress=addedCount, similarTask=self
                 )
-                for row in res:
-                    for entry in row:
-                        entry['type'] = 'movie'
-
-
             elif "/tv/" in filterData["url"]:
                 genres = showScraper.getGenreArray(soup)
                 ratings = ["all"]
                 URLs = generateTVshowURLs(
                     genres, ratings, platforms, tomatometerScore, audienceScore,
-                    limit - numElements, True
+                    limit - addedCount, True
                 )
                 res =  scrapeTVshows(
-                    URLs, tomatometerScore, audienceScore, limit - numElements, 
-                    year=oldestYear, skipURL=filterData["url"]
+                    URLs, tomatometerScore, audienceScore, limit - addedCount, 
+                    year=oldestYear, skipURL=filterData["url"], key=key,
+                    similarProgress=addedCount, similarTask=self
                 )
-                for row in res:
-                    for entry in row:
-                        entry['type'] = 'tv'
         for row in res:
             for entry in row:
                 # if the last row is full, create a new row
@@ -1240,12 +1283,6 @@ def scrapeSimilar(self, filterData, key=None):
                     similarInfo.append([entry])
                 else:
                     similarInfo[-1].append(entry)
-                addedCount += 1
-                if key:
-                    self.update_state(
-                        state="STARTED",
-                        meta={'progress': int((addedCount / limit) * 100)}  
-                    )
         end = time.time()
         print(f'Time to generate similar recs: {end - start}')
         if key:

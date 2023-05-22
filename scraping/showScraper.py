@@ -74,10 +74,8 @@ def setNetwork(showSoup, showInfoDict):
         "b", 
         attrs={"data-qa": "series-details-network"}
     )
-    print(networkTag)
     if networkTag is not None:
         networkValueTag = networkTag.find_next_sibling("span")
-        print(networkValueTag)
         if networkValueTag is not None:
             showInfoDict["network"] = networkValueTag.text.strip()
 

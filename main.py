@@ -18,7 +18,7 @@ q = Queue(connection=conn)
 # Helper func that generates json SSE for a given job
 def jobStatus(id):
     try:
-        job = AsyncResult(id)
+        job = AsyncResult(id, app=celery_app)
 
         # While job is running, use server-sent events to yield data every second
         while not job.ready():
@@ -508,15 +508,15 @@ def similarRecommendations(id):
             if len(similarInfo[0]) == 0:
                 return render_template("similarNotFound.html")
             # Return page based on media type
-            if similarInfo[0][0]["similar"] == "movie":
+            if similarInfo[0][0]["type"] == "movie":
                 return render_template(
                     "similarMovieRecommendations.html", movieInfo=similarInfo
                 )
-            if similarInfo[0][0]["similar"] == "tv":
+            if similarInfo[0][0]["type"] == "tv":
                 return render_template(
                     "similarTVRecommendations.html", tvShowInfo=similarInfo
                 )
-            # Think this is vestigial, but will keep for now
+            # Vestigial, but will keep for now
             return render_template(
                 "similarRecommendations.html", similarInfo=similarInfo
             )
