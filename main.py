@@ -106,7 +106,7 @@ def moviesEnqueue():
         return {'job_id': job.id}
     except Exception as e:
         print("Error enqueuing movies job", e)
-        return {}
+        return {} # Need better handling here, but this shouldn't ever throw an error
 
 # Get progress of current job
 @app.route('/movies/progress/<string:id>', methods=['GET'])
@@ -120,7 +120,7 @@ def movieRecommendations(id):
         job = AsyncResult(id, app=celery_app)
         if job.ready():
             if job.failed():
-                return "Job failed, please try again", 400
+                return render_template("movieError.html")
             # You'd want to check for error and redirect to another page here
             movieInfo = job.result["movieInfo"]
 
@@ -190,7 +190,7 @@ def tvshowRecommendations(id):
         job = AsyncResult(id, app=celery_app)
         if job.ready():
             if job.failed():
-                return "Job failed, please try again", 400
+                return render_template("tvshowError.html")
             tvShowInfo = job.result["tvShowInfo"]
 
             # No recommendations found
@@ -273,7 +273,7 @@ def actorRecommendations(id):
         job = AsyncResult(id, app=celery_app)
         if job.ready():
             if job.failed():
-                return "Job failed, please try again", 400
+                return render_template("actorError.html")
             actorInfo = job.result["actorInfo"]
             # Invalid actor url
             if actorInfo is None:
@@ -352,7 +352,7 @@ def directorRecommendations(id):
         job = AsyncResult(id, app=celery_app)
         if job.ready():
             if job.failed():
-                return "Job failed, please try again", 400
+                return render_template("directorError.html")
             directorInfo = job.result['filmographyInfo']
             # Invalid director url
             if directorInfo is None:
@@ -432,7 +432,7 @@ def producerRecommendations(id):
         job = AsyncResult(id, app=celery_app)
         if job.ready():
             if job.failed():
-                return "Job failed, please try again", 400
+                return render_template("producerError.html")
             producerInfo = job.result["filmographyInfo"]
             # Invalid producer URL
             if producerInfo is None:
@@ -499,7 +499,7 @@ def similarRecommendations(id):
         job = AsyncResult(id, app=celery_app)
         if job.ready():
             if job.failed():
-                return "Job failed, please try again", 400
+                return render_template("similarError.html")
             similarInfo = job.result["similarInfo"]
             # Bad similar media URL
             if similarInfo is None:

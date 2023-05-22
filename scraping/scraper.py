@@ -10,8 +10,6 @@ from collections import deque
 import time
 import scraping.proxyGetter as proxyGetter
 from app import celery_app
-from celery.utils.log import get_task_logger
-logger = get_task_logger(__name__)
 
 # Generate movie URLs for scraping based on the filters
 def generateMovieURLs(

@@ -16,32 +16,27 @@
       RT Recommendations
       <img src="{{ url_for('static', filename='tomato-favicon-32x32.png') }}" alt="tomato" />
     </p>
-
-    <p class="subtitle">
-      Need something to watch? Check out these recommendations scraped from
-      <strong>Rotten Tomatoes</strong>!
-    </p>
+    <p class="subtitle"><strong>TV show recommendations job error</strong></p>
+    <a class="button" href="/">Home</a>
   </div>
 </section>
 
 <body class="has-background-light">
   <section class="section">
-    <aside class="menu">
-      <p class="menu-label">Navigation</p>
-      <ul class="menu-list">
-        <li>
-          <a href="/movies">Get movie recommendations</a>
-          <a href="/tvshows">Get TV show recommendations</a>
-          <a href="/similar">Get similar movies or shows</a>
-          <a href="/actor">Get works by actor</a>
-          <a href="/director">Get works by director</a>
-          <a href="/producer">Get works by producer</a>
-        </li>
-      </ul>
-    </aside>
+    <nav class="level">
+      <div class="level-item has-text-centered">
+        <div class="subtitle">
+          Something went wrong! Please try again and contact the developer on repeated errors.
+        </div>
+      </div>
+    </nav>
+    <nav class="level">
+      <div class="level-item has-text-centered">
+        <a class="button is-info is-medium" href="/tvshows">Back to TV Shows Page</a>
+      </div>
+    </nav>
   </section>
 </body>
-
 <footer class="footer has-background-light">
   <div class="content has-text-centered">
     <p>
