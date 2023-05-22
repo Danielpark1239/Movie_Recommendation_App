@@ -1,5 +1,4 @@
 # RT Recommendations
-
 Website that generates movie/TV show recommendations by scraping Rotten Tomatoes based on user filters
 
 Built using Flask, Bulma, and BeautifulSoup
@@ -7,8 +6,8 @@ Built using Flask, Bulma, and BeautifulSoup
 ~~Hosted at https://rt-recommendations.herokuapp.com/~~
 
 - Available until Nov 28, 2022, when Heroku shuts down free dynos; not feasible to deploy on Render with a free plan,
-  so the website is no longer active :(
-- Note: This app is not regularly maintained, so it may fail to generate recommendations. If the Rotten Tomatoes website has changed, the webscraping code needs to be updated.
+  so the website is no longer active :(. I'm currently working to deploy on another platform, so stay tuned!
+- Note: This app may fail to generate recommendations if the Rotten Tomatoes website has changed. While I do try to maintain the website regularly, it won't be working all the time.
 
 # Initial setup
 ### Install dependencies
@@ -41,6 +40,9 @@ It may be helpful to have US-based proxies, as the app was built to accomodate s
 1. Run `flask run`
 
 ### Testing
-1. Optional: Run `pytest tests.py` for some basic tests! (should take ~60s to run)
+1. Optional: Run `pytest tests.py` for some basic tests! (should take ~90s to run)
 
 # Screenshots
+![rt_home_page](https://github.com/Danielpark1239/RT_Recommendations/assets/90424009/d7ba1ab3-13cc-4703-93ad-208e768d4994)
+![rt_movies](https://github.com/Danielpark1239/RT_Recommendations/assets/90424009/e95e5cc1-f59a-4061-aca6-de7d79fc7f3a)
+![rt_movie_recs](https://github.com/Danielpark1239/RT_Recommendations/assets/90424009/ead41ca6-2ae7-458b-9c8b-35b4b50ade8d)
