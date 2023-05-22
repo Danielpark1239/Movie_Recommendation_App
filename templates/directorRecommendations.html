@@ -64,28 +64,26 @@
               <li>
                 <strong>Directors:</strong> {% for director in item.directors
                 %}
-                <a href="{{item.directors[director]}}" target="_blank">{{director + ", " if not loop.last else
-                  director}}</a>
+                <a href="{{item.directors[director]}}" target="_blank">{{director}}</a>
                 {% endfor %}
               </li>
               {% endif %} {% if item.producers %}
               <li>
                 <strong>Producers:</strong> {% for producer in item.producers
                 %}
-                <a href="{{item.producers[producer]}}" target="_blank">{{producer + ", " if not loop.last else
-                  producer}}</a>
+                <a href="{{item.producers[producer]}}" target="_blank">{{producer}}</a>
                 {% endfor %}
               </li>
               {% endif %} {% if item.writers %}
               <li>
                 <strong>Writers:</strong> {% for writer in item.writers %}
-                <a href="{{item.writers[writer]}}" target="_blank">{{writer + ", " if not loop.last else writer}}</a>
+                <a href="{{item.writers[writer]}}" target="_blank">{{writer}}</a>
                 {% endfor %}
               </li>
               {% endif %} {% if item.cast %}
               <li>
                 <strong>Cast:</strong> {% for actor in item.cast %}
-                <a href="{{item.cast[actor]}}" target="_blank">{{actor + ", " if not loop.last else actor}}</a>
+                <a href="{{item.cast[actor]}}" target="_blank">{{actor}}</a>
                 {% endfor %}
               </li>
               {% endif %} {% if item["language"] %}
