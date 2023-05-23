@@ -2,6 +2,7 @@ from flask import Flask
 from celery import Celery, Task
 from dotenv import load_dotenv
 import os
+import redis
 
 def celery_init_app(app: Flask) -> Celery:
     class FlaskTask(Task):
@@ -21,8 +22,18 @@ app = Flask(__name__)
 # set up celery
 app.config.from_mapping(
     CELERY=dict(
-        broker_url=os.getenv('REDIS_URL', 'redis://localhost:6379'),
-        result_backend=os.getenv('REDIS_URL', 'redis://localhost:6379'),
+        broker_url=os.getenv('BROKER_URL', ''),
+        broker_transport_options={
+            'region': 'us-east-1',
+            'predefined_queues': {
+                'celery': {
+                    'url': os.getenv('SQS_URL', ''),
+                    'access_key_id':  os.getenv('AWS_ACCESS_KEY', ''),
+                    'secret_access_key': os.getenv('AWS_SECRET_KEY', ''),
+                }
+            }
+        },
+        result_backend=os.getenv('REDIS_URL', ''),
         imports=['scraping.scraper']
     )
 )

@@ -1,7 +1,5 @@
 from flask import render_template, request, Response
 import scraping.scraper as scraper
-from rq import Queue
-from rq.job import Job
 import json
 import time
 import os
@@ -11,9 +9,8 @@ import hashlib
 from app import app, celery_app
 
 # Use Redis for cache
-conn = redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379'))
+conn = redis.from_url(os.getenv('REDIS_URL', ''))
 cache = conn
-q = Queue(connection=conn)
 
 # Helper func that generates json SSE for a given job
 def jobStatus(id):
