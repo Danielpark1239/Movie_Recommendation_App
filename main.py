@@ -9,7 +9,10 @@ import hashlib
 from app import app, celery_app
 
 # Use Redis for cache
-conn = redis.from_url(os.getenv('REDIS_URL', ''))
+if os.getenv('APP_MODE') == 'production':
+    conn = redis.from_url(os.getenv('REDIS_URL', ''))
+else:
+    conn = redis.from_url('redis://localhost:6379')
 cache = conn
 
 # Helper func that generates json SSE for a given job
