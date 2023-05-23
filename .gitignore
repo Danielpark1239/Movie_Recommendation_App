@@ -5,3 +5,8 @@ __pycache__
 dump.rdb
 .vscode
 redis.conf
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
