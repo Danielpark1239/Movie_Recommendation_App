@@ -1,6 +1,11 @@
 .vscode
 .env.template
 .env
-README.me
+README.md
 runtime.txt
 venv
+__pycache__
+.pytest_cache
+.gitignore
+dump.rdb
+redis.conf
