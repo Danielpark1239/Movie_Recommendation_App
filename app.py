@@ -25,26 +25,35 @@ app = Flask(__name__)
 if os.getenv('APP_MODE') == 'production':
     app.config.from_mapping(
         PROD=dict(
-            broker_url=f"sqs://{os.getenv('AWS_ACCESS_KEY', '')}:{os.getenv('AWS_SECRET_KEY')}@",
-            broker_transport_options={
-                'region': 'us-east-1',
-                'predefined_queues': {
-                    'celery': {
-                        'url': os.getenv('SQS_URL', ''),
-                        'access_key_id':  os.getenv('AWS_ACCESS_KEY', ''),
-                        'secret_access_key': os.getenv('AWS_SECRET_KEY', ''),
-                    }
-                }
-            },
+            broker_url=os.getenv('REDIS_URL', ''),
             result_backend=os.getenv('REDIS_URL', ''),
             imports=['scraping.scraper']
         )
     )
+
+    # Old config for Elastic Beanstalk
+    # app.config.from_mapping(
+    #     PROD=dict(
+    #         broker_url=f"sqs://{os.getenv('AWS_ACCESS_KEY', '')}:{os.getenv('AWS_SECRET_KEY')}@",
+    #         broker_transport_options={
+    #             'region': 'us-east-1',
+    #             'predefined_queues': {
+    #                 'celery': {
+    #                     'url': os.getenv('SQS_URL', ''),
+    #                     'access_key_id':  os.getenv('AWS_ACCESS_KEY', ''),
+    #                     'secret_access_key': os.getenv('AWS_SECRET_KEY', ''),
+    #                 }
+    #             }
+    #         },
+    #         result_backend=os.getenv('REDIS_URL', ''),
+    #         imports=['scraping.scraper']
+    #     )
+    # )
 else:
     app.config.from_mapping(
         DEBUG=dict(
-            broker_url='redis://localhost:6379',
-            result_backend='redis://localhost:6379',
+            broker_url=os.getenv('LOCAL_REDIS_URL', ''),
+            result_backend=os.getenv('LOCAL_REDIS_URL', ''),
             imports=['scraping.scraper']
         )
     )

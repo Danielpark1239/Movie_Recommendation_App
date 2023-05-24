@@ -9,3 +9,4 @@ __pycache__
 .gitignore
 dump.rdb
 redis.conf
+.python-version
