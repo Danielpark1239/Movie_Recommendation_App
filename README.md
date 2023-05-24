@@ -44,6 +44,6 @@ It may be helpful to have US-based proxies, as the app was built to accomodate s
 ![rt_movies](https://github.com/Danielpark1239/RT_Recommendations/assets/90424009/e95e5cc1-f59a-4061-aca6-de7d79fc7f3a)
 ![rt_movie_recs](https://github.com/Danielpark1239/RT_Recommendations/assets/90424009/ead41ca6-2ae7-458b-9c8b-35b4b50ade8d)
 
-# Schema
+# Schema (Click to see arrows)
 ![RT-Recs-schema](https://github.com/Danielpark1239/RT_Recommendations/assets/90424009/c6b46c1c-fdfd-4bc8-af90-7921e081a2ac)
 
