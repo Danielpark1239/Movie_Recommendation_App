@@ -23,7 +23,6 @@ lxml==4.9.1
 MarkupSafe==2.1.1
 packaging==21.3
 prompt-toolkit==3.0.30
-pycurl
 pyparsing==3.0.9
 pytest
 python-dotenv==0.21.0
