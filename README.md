@@ -7,7 +7,7 @@ Hosted at [rt-recs.com](https://rt-recs.com/)
 - Note: This app may fail to generate recommendations if the Rotten Tomatoes website has changed. While I do try to maintain the website regularly, it won't be working all the time.
 - Frontend improvements coming soon!
 
-# Initial setup
+# Want to run it yourself?
 ### Install dependencies
 Note: You could also use a conda env or any venv of your choice
 ```
