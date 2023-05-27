@@ -185,12 +185,6 @@ def scrapeMovies(self, URLs, tomatometerScore, audienceScore, limit, year=None,
                 currTime = time.time()
                 if currTime - start > TIMEOUT:
                     break
-                
-                # 80% chance of movie being added to recommendations
-                # if scores are below 80
-                # --> Users get different movies each time for the same inputs
-                if useRandom and random.randint(0,4) == 0:
-                    continue
                 url = BASE_URL + movie["href"]
                 if skipURL and skipURL == url:
                     continue
@@ -354,8 +348,6 @@ def scrapeTVshows(self, URLs, tomatometerScore, audienceScore, limit, year=None,
                 currTime = time.time()
                 if currTime - start > TIMEOUT:
                     break
-                if useRandom and random.randint(0,4) == 0:
-                    continue
                 url = BASE_URL + tvShow["href"]
                 if skipURL and skipURL == url:
                     continue
