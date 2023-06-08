@@ -5,7 +5,7 @@ Built using Flask, Bulma, Celery, and BeautifulSoup
 Hosted at [rt-recs.com](https://rt-recs.com/)
 - Deployed using AWS Elastic Beanstalk and Redis
 - Note: This app may fail to generate recommendations if the Rotten Tomatoes website has changed. While I do try to maintain the website regularly, it won't be working all the time.
-- Frontend improvements coming soon!
+- Frontend and filter improvements coming soon!
 
 # Want to run it yourself?
 ### Install dependencies
